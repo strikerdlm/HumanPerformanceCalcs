@@ -8,7 +8,17 @@ import numpy as np
 import pymc3 as pm
 import multiprocessing as mp
 
-def run_sampling(years, incidence_rates):
+def run_sampling(years: np.ndarray, incidence_rates: np.ndarray) -> pm.backends.base.MultiTrace:
+    """
+    Run MCMC sampling for a linear model of incidence rates over years using PyMC3.
+
+    Args:
+        years (np.ndarray): Array of years (independent variable).
+        incidence_rates (np.ndarray): Array of observed incidence rates (dependent variable).
+
+    Returns:
+        pm.backends.base.MultiTrace: PyMC3 trace object containing posterior samples.
+    """
     with pm.Model() as model:
         # Priors
         alpha = pm.Normal("alpha", mu=0, sigma=10)

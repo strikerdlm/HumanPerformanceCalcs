@@ -10,7 +10,34 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime
 
-def homeostatic_process(t, prev_reservoir_level, asleep, ai, sleep_quality, sleep_quantity, rem_sleep_time, non_rem_sleep_time, sleep_debt):
+def homeostatic_process(
+    t: float,
+    prev_reservoir_level: float,
+    asleep: bool,
+    ai: float,
+    sleep_quality: float,
+    sleep_quantity: float,
+    rem_sleep_time: float,
+    non_rem_sleep_time: float,
+    sleep_debt: float
+) -> float:
+    """
+    Calculate the homeostatic sleep process (Process S) for fatigue modeling.
+
+    Args:
+        t (float): Time in hours since last sleep.
+        prev_reservoir_level (float): Previous sleep reservoir level.
+        asleep (bool): Whether the subject is currently asleep.
+        ai (float): Activity index.
+        sleep_quality (float): Sleep quality (0-1).
+        sleep_quantity (float): Sleep quantity (hours).
+        rem_sleep_time (float): REM sleep time (hours).
+        non_rem_sleep_time (float): Non-REM sleep time (hours).
+        sleep_debt (float): Sleep debt (hours).
+
+    Returns:
+        float: Updated sleep reservoir level.
+    """
     K = 0.5
     K_adjusted = K * (1 + (8 - sleep_quantity) * 0.1)
     as_factor = 0.235

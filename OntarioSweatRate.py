@@ -7,10 +7,33 @@ Created on Tue Mar 28 18:45:26 2023
 
 import math
 
-def body_surface_area(height, weight):
+def body_surface_area(height: float, weight: float) -> float:
+    """
+    Calculate body surface area (BSA) using the Du Bois formula.
+
+    Args:
+        height (float): Height in centimeters.
+        weight (float): Weight in kilograms.
+
+    Returns:
+        float: Body surface area in square meters (m^2).
+    """
     return math.sqrt(height * weight / 3600)
 
-def ontario_sweat_estimator(bsa, hr_rest, hr_exercise, t_rest, t_exercise):
+def ontario_sweat_estimator(bsa: float, hr_rest: float, hr_exercise: float, t_rest: float, t_exercise: float) -> float:
+    """
+    Estimate sweat rate using the Ontario Sweat Rate formula.
+
+    Args:
+        bsa (float): Body surface area in square meters (m^2).
+        hr_rest (float): Resting heart rate in beats per minute (bpm).
+        hr_exercise (float): Exercise heart rate in beats per minute (bpm).
+        t_rest (float): Resting ambient temperature in degrees Celsius (°C).
+        t_exercise (float): Exercise ambient temperature in degrees Celsius (°C).
+
+    Returns:
+        float: Estimated sweat rate in milliliters per hour (mL/h).
+    """
     delta_hr = hr_exercise - hr_rest
     delta_t = t_exercise - t_rest
     sweat_rate = 0.019 * bsa * (delta_hr * delta_t) / (hr_rest * t_rest)
