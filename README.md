@@ -49,7 +49,10 @@ This repository provides Python implementations of advanced physiological calcul
 - **Refactored utility modules** for input validation and common functions
 - **Comprehensive unit testing** suite for core calculation functions
 - **Configurable file paths** eliminating hardcoded dependencies
-- **Centralized model management** with standardized saving/loading (see MODEL_MANAGEMENT.md)
+- **Centralized model management** with standardized saving/loading (see docs/MODEL_MANAGEMENT.md)
+- **🆕 Organized project structure** with domain-based calculator organization
+- **🆕 Unified CLI entry point** (run_calculator.py) for easy access to all tools
+- **🆕 Professional package structure** suitable for research and educational use
 
 ## Installation Requirements
 
@@ -59,15 +62,32 @@ pip install pandas numpy matplotlib scikit-learn joblib category-encoders
 
 ## Usage
 
-Each module can be run independently:
+### Unified CLI Interface (Recommended)
+Use the new organized entry point for all calculators:
 
 ```bash
-python ModuleName.py
+python run_calculator.py
 ```
 
-Follow the prompts to input required parameters.
+This provides an organized menu system with calculators grouped by medical domain.
 
-For the web app:
+### Individual Calculator Modules
+Each calculator can also be run independently:
+
+```bash
+# New organized structure
+python aerospace_medicine/heat_stress/strain_index.py
+python aerospace_medicine/decompression/dcs_risk.py
+python aerospace_medicine/cold_stress/wind_chill.py
+
+# Legacy scripts (still available)
+python PhysiolStrainIndex.py
+python DCSCalcV5.py
+python WCT.py
+```
+
+### Web Interface
+For the interactive web app:
 
 ```bash
 streamlit run streamlit_app.py

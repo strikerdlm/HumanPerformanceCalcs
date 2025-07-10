@@ -36,9 +36,9 @@ def load_model_files(model_dir: str = None) -> tuple:
     except ImportError as e:
         raise ImportError(f"Required libraries not found: {e}. Install with: pip install joblib category-encoders")
     
-    # Default model directory
+    # Default model directory - look for models in project root
     if model_dir is None:
-        model_dir = Path(__file__).parent / "models"
+        model_dir = Path(__file__).parent.parent.parent / "models" / "dcs"
     else:
         model_dir = Path(model_dir)
     
@@ -59,21 +59,18 @@ def load_model_files(model_dir: str = None) -> tuple:
         print("Missing model files:")
         for file in missing_files:
             print(f"  - {file}")
-        print("\nPlease ensure all model files are in the 'models' directory:")
+        print("\nPlease ensure all model files are in the 'models/dcs' directory:")
         print("  - trained_model.joblib")
         print("  - onehot_encoder.joblib")
         print("  - column_names.joblib")
         raise FileNotFoundError("Required model files not found")
     
-    # Load files
+    # Load the models
     try:
         model = load(model_files['model'])
         onehot_encoder = load(model_files['encoder'])
         column_names = load(model_files['columns'])
-        
-        print(f"Model files loaded successfully from: {model_dir}")
         return model, onehot_encoder, column_names
-        
     except Exception as e:
         raise RuntimeError(f"Error loading model files: {e}")
 
@@ -85,38 +82,13 @@ def get_user_input() -> tuple:
         tuple: (altitude, prebreathing_time, time_at_altitude, exercise_level)
     """
     print("DCS Risk Calculator")
+    print("For research and educational use only. Not for operational or clinical decision-making.")
     print("Enter mission parameters:")
     print("-" * 30)
     
-    while True:
-        try:
-            altitude = float(input("Altitude (ft): "))
-            if altitude < 0 or altitude > 100000:
-                print("Please enter a realistic altitude (0-100,000 ft)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number for altitude")
-    
-    while True:
-        try:
-            prebreathing = float(input("Prebreathing time (min): "))
-            if prebreathing < 0 or prebreathing > 300:
-                print("Please enter a realistic prebreathing time (0-300 min)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number for prebreathing time")
-    
-    while True:
-        try:
-            time_alt = float(input("Time at altitude (min): "))
-            if time_alt < 0 or time_alt > 1440:
-                print("Please enter a realistic time at altitude (0-1440 min)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number for time at altitude")
+    altitude = get_float_input("Altitude (ft): ", min_value=0, max_value=100000)
+    prebreathing = get_float_input("Prebreathing time (min): ", min_value=0, max_value=300)
+    time_alt = get_float_input("Time at altitude (min): ", min_value=0, max_value=1440)
     
     while True:
         exercise = input("Exercise level (Rest/Mild/Heavy): ").strip().title()
@@ -128,70 +100,77 @@ def get_user_input() -> tuple:
 
 def create_input_dataframe(user_input: tuple, onehot_encoder, column_names) -> pd.DataFrame:
     """
-    Create input dataframe for model prediction.
+    Create a properly formatted DataFrame for model prediction.
     
     Args:
         user_input (tuple): User input values
-        onehot_encoder: Trained OneHotEncoder
-        column_names: Expected column names
+        onehot_encoder: Trained one-hot encoder
+        column_names: Expected column names for the model
     
     Returns:
         pd.DataFrame: Formatted input dataframe
     """
     altitude, prebreathing_time, time_at_altitude, exercise_level = user_input
-
+    
+    # Create initial dataframe
     input_data = {
-        'altitude': [altitude],
-        'prebreathing_time': [prebreathing_time],
-        'time_at_altitude': [time_at_altitude],
-        'exercise_level': [exercise_level]
+        'Altitude': [altitude],
+        'Prebreathing_Time': [prebreathing_time],
+        'Time_at_Altitude': [time_at_altitude],
+        'Exercise_Level': [exercise_level]
     }
-
+    
     input_df = pd.DataFrame(input_data)
-
-    # One-hot encode the exercise level
-    try:
-        exercise_level_encoded = onehot_encoder.transform(input_df[['exercise_level']])
-        exercise_level_columns = onehot_encoder.get_feature_names_out(['exercise_level'])
-        exercise_level_df = pd.DataFrame(exercise_level_encoded, columns=exercise_level_columns)
-
-        # Combine with other features
-        input_df = pd.concat([input_df.drop('exercise_level', axis=1), exercise_level_df], axis=1)
-
-        # Ensure column order matches training data
-        input_df = input_df.reindex(columns=column_names, fill_value=0)
+    
+    # Apply one-hot encoding to categorical variables
+    categorical_columns = input_df.select_dtypes(include=['object']).columns
+    if len(categorical_columns) > 0:
+        encoded_categorical = onehot_encoder.transform(input_df[categorical_columns])
         
-        return input_df
-        
-    except Exception as e:
-        raise RuntimeError(f"Error processing input data: {e}")
+        # Remove original categorical columns and add encoded ones
+        input_df = input_df.drop(columns=categorical_columns)
+        input_df = pd.concat([input_df, encoded_categorical], axis=1)
+    
+    # Ensure all expected columns are present
+    for col in column_names:
+        if col not in input_df.columns:
+            input_df[col] = 0
+    
+    # Reorder columns to match training data
+    input_df = input_df[column_names]
+    
+    return input_df
 
-def interpret_dcs_risk(risk_percentage):
+def interpret_dcs_risk(risk_percentage: float) -> str:
     """
-    Interpret DCS risk percentage.
+    Interpret the DCS risk percentage.
     
     Args:
-        risk_percentage (float): DCS risk as percentage
+        risk_percentage (float): Predicted risk percentage
     
     Returns:
         str: Risk interpretation
     """
-    if risk_percentage < 1:
-        return "Very low risk - routine precautions sufficient"
+    if risk_percentage < 2:
+        return "Very Low Risk - Standard precautions recommended"
     elif risk_percentage < 5:
-        return "Low risk - standard protocols recommended"
+        return "Low Risk - Monitor for symptoms"
     elif risk_percentage < 15:
-        return "Moderate risk - enhanced monitoring recommended"
+        return "Moderate Risk - Enhanced monitoring recommended"
     elif risk_percentage < 30:
-        return "High risk - consider mission modification"
+        return "High Risk - Consider mission modification"
     else:
-        return "Very high risk - mission not recommended without significant precautions"
+        return "Very High Risk - Mission modification strongly recommended"
 
 def main() -> None:
     """
     Main function to run the DCS risk calculator.
     """
     try:
+        print("\nDecompression Sickness (DCS) Risk Calculator")
+        print("For research and educational use only. Not for operational or clinical decision-making.")
+        print("-" * 70)
+        
         # Load model files
         model, onehot_encoder, column_names = load_model_files()
         
@@ -238,13 +217,12 @@ def main() -> None:
     except (FileNotFoundError, ImportError, RuntimeError) as e:
         print(f"Error: {e}")
         sys.exit(1)
-    except ValueError as e:
-        print(f"Input error: {e}")
     except KeyboardInterrupt:
-        print("\nCalculation cancelled by user.")
+        print("\nCalculation interrupted by user.")
+        sys.exit(0)
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    main() 
