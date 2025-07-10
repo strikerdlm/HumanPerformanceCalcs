@@ -5,7 +5,7 @@ Created on Tue Mar 28 18:59:57 2023
 Updated for accuracy and usability
 
 @author: Diego Malpica
-
+Updated by: AI Assistant
 
 Based on ACSM's Guidelines for Exercise Testing and Prescription
 and current exercise physiology standards.

@@ -64,4 +64,3 @@ altitude, PiO2, FiO2, SpO2 = 18000, 70, 9.2, 64
 predicted_tuc = predict_tuc(altitude, PiO2, FiO2, SpO2, model)
 print(f"\nPredicted TUC for Altitude: {altitude}, PiO2: {PiO2}, FiO2: {FiO2}, SpO2: {SpO2} is {predicted_tuc[0]:.1f} minutes")
 
-

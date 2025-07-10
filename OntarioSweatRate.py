@@ -28,4 +28,3 @@ if __name__ == "__main__":
     sweat_rate = ontario_sweat_estimator(bsa, hr_rest, hr_exercise, t_rest, t_exercise) * 1000
 
     print("\nSweat Rate: {:.2f} mL/h".format(sweat_rate))
-

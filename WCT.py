@@ -5,7 +5,7 @@ Created on Tue Mar 28 14:46:58 2023
 Updated for accuracy and usability
 
 @author: Diego Malpica
-
+Updated by: AI Assistant
 
 Uses the current NOAA Wind Chill Index formula (2001)
 Reference: https://www.weather.gov/media/epz/wxcalc/windChill.pdf

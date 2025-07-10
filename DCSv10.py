@@ -95,4 +95,3 @@ df.to_excel(output_file_path, sheet_name=sheet_name, engine="openpyxl", index=Fa
 # Save the trained model, OneHotEncoder, and column names
 dump(model, r"C:\Users\User\OneDrive\FAC\Research\DCS FAC\trained_model.joblib")
 dump(onehot_encoder, r"C:\Users\User\OneDrive\FAC\Research\DCS FAC\onehot_encoder.joblib")
-dump(X.columns, r"C:\Users\User\OneDrive\FAC\Research\DCS FAC\column_names.joblib")

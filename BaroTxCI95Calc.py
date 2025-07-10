@@ -5,8 +5,6 @@ Created on Sat Apr 15 11:45:26 2023
 @author: Diego Malpica
 """
 
-
-
 total_cases = 257
 total_trained = 6745
 proportion = total_cases / total_trained
@@ -29,5 +27,4 @@ print(f"The 95% confidence interval for the total incidence rate is ({ci_lower_i
 
 ef = np.sqrt(upper_limit / lower_limit)
 print(f"The error factor for the given confidence interval is approximately {ef:.2f}")
-
 

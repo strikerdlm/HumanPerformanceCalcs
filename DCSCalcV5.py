@@ -6,7 +6,6 @@ Updated for portability and usability
 
 @author: Diego Malpica
 
-
 Machine learning-based DCS risk prediction for aerospace medicine.
 Requires trained model files in the same directory or specified path.
 """
