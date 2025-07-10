@@ -15,7 +15,7 @@ import os
 import sys
 from pathlib import Path
 
-def load_model_files(model_dir=None):
+def load_model_files(model_dir: str = None) -> tuple:
     """
     Load the trained model files with error handling.
     
@@ -76,7 +76,7 @@ def load_model_files(model_dir=None):
     except Exception as e:
         raise RuntimeError(f"Error loading model files: {e}")
 
-def get_user_input():
+def get_user_input() -> tuple:
     """
     Get user input with validation and error handling.
     
@@ -125,7 +125,7 @@ def get_user_input():
     
     return altitude, prebreathing, time_alt, exercise
 
-def create_input_dataframe(user_input, onehot_encoder, column_names):
+def create_input_dataframe(user_input: tuple, onehot_encoder, column_names) -> pd.DataFrame:
     """
     Create input dataframe for model prediction.
     
@@ -186,8 +186,10 @@ def interpret_dcs_risk(risk_percentage):
     else:
         return "Very high risk - mission not recommended without significant precautions"
 
-def main():
-    """Main function to run the DCS risk calculator."""
+def main() -> None:
+    """
+    Main function to run the DCS risk calculator.
+    """
     try:
         # Load model files
         model, onehot_encoder, column_names = load_model_files()

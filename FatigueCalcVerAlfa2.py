@@ -56,15 +56,33 @@ def homeostatic_process(
         return prev_reservoir_level - (K_adjusted + sleep_debt_factor) * t
 
 
-def circadian_process(t, chronotype_offset):
+def circadian_process(t: float, chronotype_offset: float) -> float:
+    """
+    Calculate the circadian process (Process C) for fatigue modeling.
+
+    Args:
+        t (float): Time in hours.
+        chronotype_offset (float): Chronotype offset in hours.
+
+    Returns:
+        float: Circadian rhythm value (unitless).
+    """
     p = 18 + chronotype_offset
     p_prime = 3 + chronotype_offset
     beta = 0.5
-
     return math.cos(2 * math.pi * (t - p) / 24) + beta * math.cos(4 * math.pi * (t - p_prime) / 24)
 
 
-def sleep_inertia(t):
+def sleep_inertia(t: float) -> float:
+    """
+    Calculate sleep inertia effect on cognitive performance.
+
+    Args:
+        t (float): Time since awakening in hours.
+
+    Returns:
+        float: Sleep inertia value (unitless).
+    """
     Imax = 5
     i = 0.04
 
@@ -73,14 +91,38 @@ def sleep_inertia(t):
     else:
         return 0
 
-def cognitive_performance(t, Rt, Ct, It):
+def cognitive_performance(t: float, Rt: float, Ct: float, It: float) -> float:
+    """
+    Calculate cognitive performance based on homeostatic, circadian, and inertia processes.
+
+    Args:
+        t (float): Time in hours.
+        Rt (float): Homeostatic process value.
+        Ct (float): Circadian process value.
+        It (float): Sleep inertia value.
+
+    Returns:
+        float: Cognitive performance score.
+    """
     a1 = 7
     a2 = 5
     Rc = 2880
 
     return 100 * (Rt / Rc) + (a1 + a2 * (Rc - Rt) / Rc) * Ct + It
 
-def workload(t, Wt_prev, load_rating, asleep):
+def workload(t: float, Wt_prev: float, load_rating: float, asleep: bool) -> float:
+    """
+    Calculate workload for the current time step.
+
+    Args:
+        t (float): Time in hours.
+        Wt_prev (float): Previous workload value.
+        load_rating (float): Workload rating (0-1).
+        asleep (bool): Whether the subject is asleep.
+
+    Returns:
+        float: Updated workload value.
+    """
     Wc = 75
     Wd = 1.14
     Wr = 11
@@ -90,11 +132,44 @@ def workload(t, Wt_prev, load_rating, asleep):
     else:
         return Wt_prev - Wd * (1 + load_rating)
 
-def cognitive_performance_with_workload(t, Rt, Ct, It, Wt, Wc):
+def cognitive_performance_with_workload(t: float, Rt: float, Ct: float, It: float, Wt: float, Wc: float) -> float:
+    """
+    Calculate cognitive performance with workload adjustment.
+
+    Args:
+        t (float): Time in hours.
+        Rt (float): Homeostatic process value.
+        Ct (float): Circadian process value.
+        It (float): Sleep inertia value.
+        Wt (float): Current workload value.
+        Wc (float): Workload capacity.
+
+    Returns:
+        float: Adjusted cognitive performance score.
+    """
     Et_base = cognitive_performance(t, Rt, Ct, It)
     return Et_base * (Wc - Wt) / Wc
 
-def simulate_cognitive_performance(prediction_hours, sleep_history, work_history, load_rating_history, chronotype_offset):
+def simulate_cognitive_performance(
+    prediction_hours: int,
+    sleep_history: list[tuple[int, int, float, float, float, float, float]],
+    work_history: list[tuple[int, int]],
+    load_rating_history: list[float],
+    chronotype_offset: float
+) -> tuple[list[datetime.datetime], list[float], list[float]]:
+    """
+    Simulate cognitive performance over a prediction period.
+
+    Args:
+        prediction_hours (int): Number of hours to predict.
+        sleep_history (list): List of sleep session tuples.
+        work_history (list): List of work session tuples.
+        load_rating_history (list): List of workload ratings.
+        chronotype_offset (float): Chronotype offset in hours.
+
+    Returns:
+        tuple: (time_points, circadian_rhythms, cognitive_performances)
+    """
     Wt_prev = 0
     Wc = 75
     sleep_debt = 0

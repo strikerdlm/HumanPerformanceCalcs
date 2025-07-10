@@ -15,20 +15,25 @@ Used in aerospace medicine for heat stress assessment.
 
 import math
 
-def physiological_strain_index(initial_core_temp, initial_heart_rate, 
-                             final_core_temp, final_heart_rate, 
-                             max_heart_rate=None, age=None):
+def physiological_strain_index(
+    initial_core_temp: float,
+    initial_heart_rate: float,
+    final_core_temp: float,
+    final_heart_rate: float,
+    max_heart_rate: float = None,
+    age: int = None
+) -> float:
     """
     Calculate the Physiological Strain Index (PSI).
-    
+
     PSI = 5 × (Tct - Tc0)/(39 - Tc0) + 5 × (HRt - HR0)/(180 - HR0)
-    
+
     Where:
     - Tct, Tc0 = final and initial core temperatures (°C)
     - HRt, HR0 = final and initial heart rates (bpm)
     - 39°C = assumed maximum sustainable core temperature
     - 180 bpm = assumed maximum heart rate (can be adjusted)
-    
+
     Args:
         initial_core_temp (float): Initial core temperature in °C
         initial_heart_rate (float): Initial heart rate in bpm
@@ -36,10 +41,10 @@ def physiological_strain_index(initial_core_temp, initial_heart_rate,
         final_heart_rate (float): Final heart rate in bpm
         max_heart_rate (float, optional): Maximum heart rate (default: 180 bpm)
         age (int, optional): Age for age-adjusted max HR calculation
-    
+
     Returns:
         float: Physiological Strain Index (0-10 scale)
-        
+
     Raises:
         ValueError: If inputs are outside physiological ranges
     """
@@ -123,7 +128,7 @@ def calculate_heat_stress_risk(psi_value, duration_minutes=None):
     else:
         return base_risk
 
-def get_user_input():
+def get_user_input() -> tuple:
     """
     Get user input with validation.
     
@@ -209,8 +214,10 @@ def get_user_input():
     
     return initial_temp, final_temp, initial_hr, final_hr, age, duration
 
-def main():
-    """Main function to run the PSI calculator."""
+def main() -> None:
+    """
+    Main function to run the PSI calculator.
+    """
     try:
         initial_temp, final_temp, initial_hr, final_hr, age, duration = get_user_input()
         
