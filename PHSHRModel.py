@@ -26,7 +26,7 @@ class PHSHRModel:
     personal factors, and heart rate response.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the PHS-HR model with default constants."""
         # Physical constants
         self.delta_Hv = 2454  # Latent heat of vaporization (kJ/kg)
@@ -37,7 +37,18 @@ class PHSHRModel:
         self.body_surface_area = 1.8  # m² (average adult)
         self.specific_heat_body = 3.5  # kJ/kg·K
         
-    def validate_inputs(self, ta, tr, pa, va, hr, hr0, icl, age, weight):
+    def validate_inputs(
+        self,
+        ta: float,
+        tr: float,
+        pa: float,
+        va: float,
+        hr: float,
+        hr0: float,
+        icl: float,
+        age: int,
+        weight: float
+    ) -> None:
         """
         Validate all input parameters.
         
@@ -157,10 +168,22 @@ class PHSHRModel:
         
         return thermal_resistance, permeability_factor
     
-    def calculate_heat_exchanges(self, ta, tr, pa, va, hr, hr0, icl, age, weight, tsk=35.0):
+    def calculate_heat_exchanges(
+        self,
+        ta: float,
+        tr: float,
+        pa: float,
+        va: float,
+        hr: float,
+        hr0: float,
+        icl: float,
+        age: int,
+        weight: float,
+        tsk: float = 35.0
+    ) -> dict:
         """
-        Calculate various heat exchange components.
-        
+        Calculate heat exchanges for the PHS-HR model.
+
         Args:
             ta (float): Air temperature (°C)
             tr (float): Radiant temperature (°C)
@@ -170,11 +193,11 @@ class PHSHRModel:
             hr0 (float): Resting heart rate (bpm)
             icl (float): Clothing insulation (clo)
             age (int): Age (years)
-            weight (float): Weight (kg)
+            weight (float): Body weight (kg)
             tsk (float): Skin temperature (°C)
-        
+
         Returns:
-            dict: Heat exchange components
+            dict: Calculated heat exchange values
         """
         # Calculate heat transfer coefficients
         hc = self.calculate_convective_heat_transfer_coefficient(va)
@@ -219,7 +242,19 @@ class PHSHRModel:
             'skin_temperature': tsk
         }
     
-    def predict_heat_strain(self, ta, tr, pa, va, hr, hr0, icl, age, weight, duration_min=60):
+    def predict_heat_strain(
+        self,
+        ta: float,
+        tr: float,
+        pa: float,
+        va: float,
+        hr: float,
+        hr0: float,
+        icl: float,
+        age: int,
+        weight: float,
+        duration_min: int = 60
+    ) -> dict:
         """
         Predict heat strain using the PHS-HR model.
         
@@ -273,15 +308,15 @@ class PHSHRModel:
             'duration_minutes': duration_min
         }
     
-    def interpret_results(self, results):
+    def interpret_results(self, results: dict) -> str:
         """
-        Interpret heat strain prediction results.
-        
+        Interpret the results of the PHS-HR model.
+
         Args:
-            results (dict): Results from predict_heat_strain()
-        
+            results (dict): Results from predict_heat_strain
+
         Returns:
-            dict: Interpreted results with recommendations
+            str: Interpretation of the results
         """
         core_temp = results['predicted_core_temperature']
         strain_index = results['heat_strain_index']
@@ -357,7 +392,7 @@ class PHSHRModel:
         
         return recommendations
 
-def get_user_input():
+def get_user_input() -> dict:
     """
     Get user input with validation.
     
@@ -464,8 +499,10 @@ def get_user_input():
     
     return inputs
 
-def main():
-    """Main function to run the PHS-HR model."""
+def main() -> None:
+    """
+    Main function to run the PHS-HR model.
+    """
     try:
         # Get user input
         inputs = get_user_input()
