@@ -12,6 +12,7 @@ Reference: https://www.weather.gov/media/epz/wxcalc/windChill.pdf
 """
 
 import math
+from calculators.utils import get_float_input, get_choice_input
 
 def wind_chill_temperature(temp_celsius, wind_speed_ms, output_unit='celsius'):
     """
@@ -56,48 +57,6 @@ def wind_chill_temperature(temp_celsius, wind_speed_ms, output_unit='celsius'):
     else:
         raise ValueError("Output unit must be 'celsius' or 'fahrenheit'")
 
-def get_user_input():
-    """
-    Get user input with validation and error handling.
-    
-    Returns:
-        tuple: (temperature in °C, wind speed in m/s, output unit)
-    """
-    while True:
-        try:
-            temp_c = float(input("Enter air temperature in °C: "))
-            if temp_c > 10:
-                print("Warning: Wind chill is only meaningful for temperatures ≤ 10°C")
-                if input("Continue anyway? (y/n): ").lower() != 'y':
-                    continue
-            break
-        except ValueError:
-            print("Please enter a valid number for temperature.")
-    
-    while True:
-        try:
-            wind_ms = float(input("Enter wind speed in m/s: "))
-            if wind_ms < 0:
-                print("Wind speed cannot be negative.")
-                continue
-            if wind_ms < 1.34:
-                print("Warning: Wind chill formula is most accurate for wind speeds ≥ 1.34 m/s (3 mph)")
-                if input("Continue anyway? (y/n): ").lower() != 'y':
-                    continue
-            break
-        except ValueError:
-            print("Please enter a valid number for wind speed.")
-    
-    while True:
-        unit = input("Output unit (celsius/fahrenheit) [celsius]: ").lower()
-        if unit == "":
-            unit = "celsius"
-        if unit in ['celsius', 'fahrenheit']:
-            break
-        print("Please enter 'celsius' or 'fahrenheit'.")
-    
-    return temp_c, wind_ms, unit
-
 def interpret_wind_chill(wind_chill_c):
     """
     Provide interpretation of wind chill temperature for safety.
@@ -120,38 +79,38 @@ def interpret_wind_chill(wind_chill_c):
         return "Extreme risk: Exposed skin may freeze in less than 2 minutes"
 
 def main():
-    """Main function to run the wind chill calculator."""
-    print("Wind Chill Temperature Calculator")
+    print("\nWind Chill Temperature Calculator")
     print("Using NOAA Wind Chill Index Formula (2001)")
-    print("-" * 45)
-    
+    print("For research and educational use only. Not for operational or clinical decision-making.")
+    print("-" * 60)
     try:
-        temp_c, wind_ms, output_unit = get_user_input()
-        
-        # Calculate wind chill
-        wind_chill = wind_chill_temperature(temp_c, wind_ms, output_unit)
-        
-        # Display results
+        temp_c = get_float_input("Enter air temperature in °C: ", max_value=10)
+        wind_ms = get_float_input("Enter wind speed in m/s: ", min_value=0)
+        if wind_ms < 1.34:
+            print("Warning: Wind chill formula is most accurate for wind speeds ≥ 1.34 m/s (3 mph)")
+            cont = get_choice_input("Continue anyway?", ["y", "n"], case_sensitive=False)
+            if cont != "y":
+                return
+        unit = get_choice_input("Output unit", ["celsius", "fahrenheit"], case_sensitive=False, allow_blank=True, default="celsius")
+        wind_chill = wind_chill_temperature(temp_c, wind_ms, unit)
         print(f"\nResults:")
         print(f"Air temperature: {temp_c:.1f}°C")
         print(f"Wind speed: {wind_ms:.1f} m/s")
-        
-        if output_unit == 'celsius':
+        if unit == 'celsius':
             print(f"Wind chill temperature: {wind_chill:.1f}°C")
             print(f"Safety assessment: {interpret_wind_chill(wind_chill)}")
         else:
             print(f"Wind chill temperature: {wind_chill:.1f}°F")
             wind_chill_c = (wind_chill - 32) * 5/9
             print(f"Safety assessment: {interpret_wind_chill(wind_chill_c)}")
-        
-        # Additional information
-        print(f"\nNote: This calculation uses the current NOAA Wind Chill Index formula (2001)")
-        print(f"Most accurate for temperatures ≤ 10°C and wind speeds ≥ 1.34 m/s")
-        
+        print("\nNote: This calculation uses the current NOAA Wind Chill Index formula (2001)")
+        print("Most accurate for temperatures ≤ 10°C and wind speeds ≥ 1.34 m/s")
     except ValueError as e:
         print(f"Error: {e}")
     except KeyboardInterrupt:
         print("\nCalculation cancelled by user.")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 if __name__ == "__main__":
     main()
