@@ -12,6 +12,8 @@ and current exercise physiology standards.
 """
 
 import math
+import sys
+from calculators.utils import get_float_input
 
 def calculate_sweat_rate(pre_weight_kg, post_weight_kg, fluid_intake_l, 
                         urine_volume_l, exercise_duration_hours):
@@ -138,60 +140,15 @@ def get_user_input():
     print("Sweat Rate Calculator")
     print("Enter measurements in the requested units:")
     print("-" * 40)
-    
-    while True:
-        try:
-            pre_weight = float(input("Pre-exercise body weight (kg): "))
-            if pre_weight <= 0 or pre_weight > 300:
-                print("Please enter a realistic body weight (0-300 kg)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number")
-    
-    while True:
-        try:
-            post_weight = float(input("Post-exercise body weight (kg): "))
-            if post_weight <= 0 or post_weight > 300:
-                print("Please enter a realistic body weight (0-300 kg)")
-                continue
-            if abs(pre_weight - post_weight) > 5:
-                print("Weight change > 5kg seems unrealistic. Please verify measurements.")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number")
-    
-    while True:
-        try:
-            fluid_intake = float(input("Fluid intake during exercise (L): "))
-            if fluid_intake < 0 or fluid_intake > 10:
-                print("Please enter a realistic fluid intake (0-10 L)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number")
-    
-    while True:
-        try:
-            urine_volume = float(input("Urine volume during exercise (L): "))
-            if urine_volume < 0 or urine_volume > 2:
-                print("Please enter a realistic urine volume (0-2 L)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number")
-    
-    while True:
-        try:
-            duration = float(input("Exercise duration (hours): "))
-            if duration <= 0 or duration > 24:
-                print("Please enter a realistic exercise duration (0-24 hours)")
-                continue
-            break
-        except ValueError:
-            print("Please enter a valid number")
-    
+
+    pre_weight = get_float_input("Pre-exercise body weight (kg): ", min_value=0, max_value=300)
+    post_weight = get_float_input("Post-exercise body weight (kg): ", min_value=0, max_value=300)
+    while abs(pre_weight - post_weight) > 5:
+        print("Weight change > 5kg seems unrealistic. Please verify measurements.")
+        post_weight = get_float_input("Post-exercise body weight (kg): ", min_value=0, max_value=300)
+    fluid_intake = get_float_input("Fluid intake during exercise (L): ", min_value=0, max_value=10)
+    urine_volume = get_float_input("Urine volume during exercise (L): ", min_value=0, max_value=2)
+    duration = get_float_input("Exercise duration (hours): ", min_value=0, max_value=24)
     return pre_weight, post_weight, fluid_intake, urine_volume, duration
 
 def main():
