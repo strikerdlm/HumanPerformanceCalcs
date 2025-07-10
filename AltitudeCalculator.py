@@ -5,6 +5,7 @@ Created on Wed Mar 29 15:29:03 2023
 @author: Diego Malpica
 """
 import math
+from calculators.utils import get_float_input
 
 def altitude_from_pressure(pressure, sea_level_pressure=1013.25):
     altitude_feet = (1 - (pressure / sea_level_pressure) ** (1/5.255)) * 145366.45
@@ -40,21 +41,26 @@ def calculate_parameters(barometric_pressure, FiO2=0.21, PACO2=40, PH2O=47, A_a_
 
     return PAO2, FiO2_eq, PaO2, V_exp
 
-#Ask user for barometric pressure in mmHg
-barometric_pressure_mmHg = float(input("Please enter the barometric pressure in mmHg: "))
+def main():
+    print("\nAltitude Calculator (Barometric Method)")
+    print("For research and educational use only. Not for operational or clinical decision-making.")
+    print("-" * 60)
+    try:
+        barometric_pressure_mmHg = get_float_input("Please enter the barometric pressure in mmHg: ", min_value=100, max_value=800)
+        barometric_pressure_hPa = barometric_pressure_mmHg * 1.33322
+        altitude_meters = altitude_from_pressure(barometric_pressure_hPa)
+        altitude_feet = meters_to_feet(altitude_meters)
+        PAO2, FiO2_eq, PaO2, V_exp = calculate_parameters(barometric_pressure_hPa)
+        print(f"Altitude: {altitude_meters:.2f} meters ({altitude_feet:.2f} feet)")
+        print(f"PAO2: {PAO2:.2f} mmHg")
+        print(f"Equivalent FiO2 at altitude: {FiO2_eq:.2f}")
+        print(f"PaO2: {PaO2:.2f} mmHg")
+        print(f"Expected volume expansion in a wet bubble at given altitude: {V_exp:.2f} L")
+        print("\nNote: For research/educational use only. Consult qualified professionals for operational guidance.")
+    except Exception as e:
+        print(f"Error: {e}")
+        return
 
-#Convert barometric pressure from mmHg to hPa
-barometric_pressure_hPa = barometric_pressure_mmHg * 1.33322
-
-#Calculate altitude and other parameters
-altitude_meters = altitude_from_pressure(barometric_pressure_hPa)
-altitude_feet = meters_to_feet(altitude_meters)
-PAO2, FiO2_eq, PaO2, V_exp = calculate_parameters(barometric_pressure_hPa)
-
-print(f"Altitude: {altitude_meters:.2f} meters ({altitude_feet:.2f} feet)")
-print(f"PAO2: {PAO2:.2f} mmHg")
-print(f"Equivalent FiO2 at altitude: {FiO2_eq:.2f}")
-print(f"PaO2: {PaO2:.2f} mmHg")
-#print(f"Calculated SpO2: {SpO2:2f}%")
-print(f"Expected volume expansion in a wet bubble at given altitude: {V_exp:.2f} L")
+if __name__ == "__main__":
+    main()
 
