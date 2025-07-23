@@ -20,6 +20,10 @@ This repository provides Python implementations of advanced physiological calcul
 - **PHSHRModel.py**: Complete implementation of the Predicted Heat Strain using Heart Rate (PHS-HR) model, compliant with ISO 7933, including core temperature, heart rate, and sweat rate predictions.
 - **PhysiolStrainIndex.py**: Accurate calculation of the Physiological Strain Index (PSI) with age-adjusted heart rate options and detailed risk interpretation.
 - **SimpleSweatRate.py**: Sweat rate and dehydration risk calculator aligned with ACSM guidelines, including fluid replacement recommendations and performance warnings.
+- **WBGT** (`calculators/wbgt.py`): Wet Bulb Globe Temperature index with optional wet-bulb estimation (ISO 7243:2017).
+
+### 8. Occupational Hygiene & Noise
+- **Noise Dose Calculator** (`calculators/noise_exposure.py`): OSHA (5-dB) and NIOSH (3-dB) noise dose, permissible duration, and exposure risk.
 
 ### 4. Cold Stress and Environmental Conditions
 - **WCT.py**: Wind Chill Temperature calculator using the latest NOAA formula, with input validation, frostbite risk assessment, and safety warnings.
@@ -101,6 +105,10 @@ The implementations are based on established formulas and models from:
 - Physiological Strain Index (Moran et al., 1998)
 - ISO 7933:2004 (Heat stress assessment)
 - Various aerospace medicine and human factors research
+- ISO 7243:2017. Ergonomics of the Thermal Environment—Assessment of Heat Stress Using WBGT Index.
+- Occupational Safety and Health Administration. (2023). 29 CFR §1910.95 Occupational Noise Exposure.
+- National Institute for Occupational Safety and Health. (1998). Criteria for a Recommended Standard: Occupational Noise Exposure. DHHS (NIOSH) Publication No. 98-126.
+- Stull, R. (2011). Wet-Bulb Temperature from Relative Humidity and Air Temperature. *Journal of Applied Meteorology and Climatology, 50*(11), 2267–2269. https://doi.org/10.1175/JAMC-D-11-0143.1
 
 ## Contributing
 
