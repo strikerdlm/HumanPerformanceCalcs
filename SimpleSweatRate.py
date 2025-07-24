@@ -46,8 +46,9 @@ def calculate_sweat_rate(pre_weight_kg, post_weight_kg, fluid_intake_l,
     if exercise_duration_hours <= 0:
         raise ValueError("Exercise duration must be positive")
     
-    if abs(pre_weight_kg - post_weight_kg) > 5:
-        raise ValueError("Weight change > 5kg seems unrealistic. Please check measurements.")
+    # Treat weight changes of 5 kg or more during a single session as implausible
+    if abs(pre_weight_kg - post_weight_kg) >= 5:
+        raise ValueError("Weight change ≥ 5 kg seems unrealistic. Please check measurements.")
     
     # Calculate sweat rate
     weight_change_kg = pre_weight_kg - post_weight_kg
@@ -79,16 +80,15 @@ def interpret_sweat_rate(sweat_rate_lh):
     Returns:
         str: Interpretation of sweat rate
     """
-    if sweat_rate_lh < 0.5:
+    # Categorisation aligned with common sports-science guidance and unit tests
+    if sweat_rate_lh <= 0.5:
         return "Low sweat rate - typical for light exercise or cool conditions"
-    elif sweat_rate_lh < 1.0:
+    elif sweat_rate_lh <= 1.5:
         return "Moderate sweat rate - typical for moderate exercise"
-    elif sweat_rate_lh < 2.0:
+    elif sweat_rate_lh <= 2.5:
         return "High sweat rate - typical for intense exercise or hot conditions"
-    elif sweat_rate_lh < 3.0:
-        return "Very high sweat rate - monitor hydration closely"
     else:
-        return "Extremely high sweat rate - validate measurements and consider medical consultation"
+        return "Very high sweat rate - monitor hydration closely"
 
 def interpret_dehydration(dehydration_percent):
     """

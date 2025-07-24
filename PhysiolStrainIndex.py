@@ -95,11 +95,11 @@ def interpret_psi(psi_value):
     """
     if psi_value < 2:
         return "Low heat stress - minimal physiological strain"
-    elif psi_value < 4:
+    elif psi_value <= 4:
         return "Moderate heat stress - monitor for signs of heat strain"
-    elif psi_value < 6:
+    elif psi_value <= 6:
         return "High heat stress - implement cooling measures"
-    elif psi_value < 8:
+    elif psi_value <= 8:
         return "Very high heat stress - immediate cooling required"
     else:
         return "Extreme heat stress - stop activity, immediate medical attention may be needed"
