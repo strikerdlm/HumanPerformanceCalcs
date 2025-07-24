@@ -14,7 +14,7 @@ def g_loc_time(Gz: float | int) -> float:
     """Return estimated maximum exposure time in seconds before G-LOC.
 
     Based on a simplified interpretation of the Stoll curve (USAF, 1956).
-    Works for +G\_z accelerations in the seated position, no anti-G suit.
+    Works for +Gz accelerations in the seated position, no anti-G suit.
     """
     Gz = float(Gz)
 

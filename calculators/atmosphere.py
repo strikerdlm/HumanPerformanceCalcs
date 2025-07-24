@@ -73,7 +73,7 @@ def alveolar_PO2(
     PaCO2: float = 40.0,
     RQ: float = 0.8,
 ) -> float:
-    """Compute alveolar \(\text{PAO₂}\) via the alveolar gas equation.
+    r"""Compute alveolar PAO₂ via the alveolar gas equation.
 
     All pressures in mmHg here for pedagogical familiarity.
     """
