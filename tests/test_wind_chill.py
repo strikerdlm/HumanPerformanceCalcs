@@ -1,9 +1,9 @@
 """
 Unit tests for WCT.py (Wind Chill Temperature Calculator)
 """
-import pytest
-import sys
 import os
+import sys
+import pytest
 
 # Add the parent directory to the path to import the module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,17 +16,17 @@ class TestWindChillCalculation:
     
     def test_basic_calculation_celsius(self):
         """Test basic wind chill calculation in Celsius."""
-        # Test case: 0°C, 10 m/s wind
+        # Test case: 0°C, 10 m/s wind (NOAA exponent 0.16)
         wind_chill = wind_chill_temperature(0.0, 10.0, 'celsius')
-        # Expected: approximately -10.5°C based on NOAA formula
-        assert -12.0 < wind_chill < -9.0
+        # Expected: approximately -7°C based on NOAA formula
+        assert -9.0 < wind_chill < -5.0
     
     def test_basic_calculation_fahrenheit(self):
         """Test basic wind chill calculation in Fahrenheit."""
         # Test case: 32°F (0°C), 22.37 mph (10 m/s) wind
         wind_chill = wind_chill_temperature(0.0, 10.0, 'fahrenheit')
-        # Expected: approximately 13°F based on NOAA formula
-        assert 10.0 < wind_chill < 16.0
+        # Expected: approximately 19°F based on NOAA formula
+        assert 17.0 < wind_chill < 22.0
     
     def test_minimal_wind(self):
         """Test calculation with minimal wind speed."""
@@ -103,4 +103,4 @@ class TestWindChillEdgeCases:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])
