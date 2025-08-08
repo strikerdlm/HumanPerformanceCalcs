@@ -13,7 +13,8 @@ Scientific Source:
     - ICRP Publication 132 (2016). Radiation Dose to Aircrew.
     - Model is a simplified educational approximation, not for operational use.
 """
- 
+
+
 def dose_rate(altitude_ft: float | int, polar: bool = False) -> float:
     """Return approximate cosmic-radiation dose rate at cruise altitude.
 

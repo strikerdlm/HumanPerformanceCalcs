@@ -164,6 +164,7 @@ def wbgt_indoor(
     return wbgt
 
 
+
 def wbgt_outdoor(
     T_nwb: float | None = None,
     T_g: float | None = None,

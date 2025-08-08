@@ -6,6 +6,7 @@ Created on Wed Mar 29 15:29:03 2023
 """
 from calculators.utils import get_float_input
 
+
 def altitude_from_pressure(
     pressure_hPa: float, sea_level_pressure_hPa: float = 1013.25
 ) -> float:
@@ -16,8 +17,10 @@ def altitude_from_pressure(
     altitude_meters = altitude_feet * 0.3048
     return altitude_meters
 
+
 def meters_to_feet(meters: float) -> float:
     return meters * 3.28084
+
 
 def calculate_parameters(
     barometric_pressure_hPa: float,
@@ -67,6 +70,7 @@ def calculate_parameters(
 
     return PAO2_mmHg, FiO2_eq_sea, PaO2_mmHg, SpO2_pct, V_expansion_L
 
+
 def main():
     print("\nAltitude Calculator (Barometric Method)")
     print(
@@ -95,6 +99,7 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         return
+
 
 if __name__ == "__main__":
     main()
