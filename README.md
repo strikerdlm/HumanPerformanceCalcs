@@ -33,8 +33,9 @@ Specialized calculations for common aerospace chemicals including:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip package manager
+- Windows: Use PowerShell; macOS/Linux: bash/zsh
 
 ### Installation
 
@@ -44,17 +45,29 @@ Specialized calculations for common aerospace chemicals including:
    cd aerospace-medicine-calculators
    ```
 
-2. **Install dependencies**
+2. **Create and activate a virtual environment (recommended)**
    ```bash
+   # Windows (PowerShell)
+   py -m venv .venv
+   .venv\\Scripts\\Activate.ps1
+   
+   # macOS/Linux
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   python -m pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-3. **Run the application**
+4. **Run the application**
    ```bash
    streamlit run streamlit_app.py
    ```
 
-4. **Access the application**
+5. **Access the application**
    Open your browser and navigate to `http://localhost:8501`
 
 ### Alternative: Run with Python directly
@@ -64,9 +77,9 @@ python run_calculator.py
 
 ## 🧪 Testing
 
-Verify all calculator functions work correctly:
+Run unit tests (if pytest is installed):
 ```bash
-python test_calculators.py
+pytest -q
 ```
 
 ## 📊 Application Structure
@@ -150,6 +163,7 @@ This application is designed for:
 - **NumPy**: Numerical computations
 - **Pandas**: Data manipulation and analysis
 - **Plotly**: Interactive visualizations
+- **SciPy**: Scientific utilities
 
 ### Performance
 - Optimized for real-time calculations
@@ -174,13 +188,18 @@ Contributions are welcome! Please ensure:
 
 ### Development Setup
 ```bash
-# Install development dependencies
+# Create and activate venv (recommended)
+py -m venv .venv && .venv\\Scripts\\Activate.ps1  # Windows
+# python3 -m venv .venv && source .venv/bin/activate  # macOS/Linux
+
+# Install dependencies
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 # Run tests
-python test_calculators.py
+pytest -q
 
-# Start development server
+# Start development server (auto-reload on save)
 streamlit run streamlit_app.py --server.runOnSave true
 ```
 

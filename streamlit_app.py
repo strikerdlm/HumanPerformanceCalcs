@@ -236,7 +236,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         )
         st.plotly_chart(fig, use_container_width=True)
         
-        st.markdown('<div class="info-box">Calculations up to 11 km assume a linear temperature lapse rate; above this an isothermal layer is assumed.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="info-box">Calculations up to 11 km assume a linear temperature lapse rate; 11–20 km is treated as isothermal, and 20–32 km uses a warming layer per ISA.</div>', unsafe_allow_html=True)
     
     elif calc_type == "Alveolar Oxygen Pressure":
         st.markdown("### 🫁 Alveolar Oxygen Pressure (PAO₂)")
@@ -698,13 +698,13 @@ elif calculator_category == "🔬 Environmental Monitoring":
                 wet_bulb = st.number_input("Wet Bulb Temperature (°C)", -10.0, 60.0, 20.0, step=0.1)
                 globe_temp = st.number_input("Globe Temperature (°C)", -10.0, 80.0, 30.0, step=0.1)
                 
-                wbgt = wbgt_indoor(wet_bulb, globe_temp, dry_bulb)
+                wbgt = wbgt_indoor(wet_bulb, globe_temp, T_db=dry_bulb)
             else:
                 dry_bulb = st.number_input("Dry Bulb Temperature (°C)", -10.0, 60.0, 25.0, step=0.1)
                 wet_bulb = st.number_input("Wet Bulb Temperature (°C)", -10.0, 60.0, 20.0, step=0.1)
                 globe_temp = st.number_input("Globe Temperature (°C)", -10.0, 80.0, 35.0, step=0.1)
                 
-                wbgt = wbgt_outdoor(wet_bulb, globe_temp, dry_bulb)
+                wbgt = wbgt_outdoor(wet_bulb, globe_temp, T_db=dry_bulb)
         
         with col2:
             st.markdown("#### Results")
@@ -737,11 +737,15 @@ elif calculator_category == "🔬 Environmental Monitoring":
             st.markdown("#### Results")
             
             if standard == "OSHA":
-                dose = noise_dose_osha(noise_level, exposure_time)
-                perm_time = permissible_duration(noise_level, "OSHA")
+                dose = noise_dose_osha([noise_level], [exposure_time])
+                perm_time = permissible_duration(
+                    noise_level, criterion_level=90.0, exchange_rate=5.0
+                )
             else:
-                dose = noise_dose_niosh(noise_level, exposure_time)
-                perm_time = permissible_duration(noise_level, "NIOSH")
+                dose = noise_dose_niosh([noise_level], [exposure_time])
+                perm_time = permissible_duration(
+                    noise_level, criterion_level=85.0, exchange_rate=3.0
+                )
             
             st.metric("Noise Dose", f"{dose:.1f}%", "Should be ≤ 100%")
             st.metric("Permissible Duration", f"{perm_time:.1f} hours")
@@ -755,8 +759,14 @@ elif calculator_category == "🔬 Environmental Monitoring":
         
         # Comparison chart
         levels = np.arange(80, 120, 5)
-        osha_times = [permissible_duration(level, "OSHA") for level in levels]
-        niosh_times = [permissible_duration(level, "NIOSH") for level in levels]
+        osha_times = [
+            permissible_duration(level, criterion_level=90.0, exchange_rate=5.0)
+            for level in levels
+        ]
+        niosh_times = [
+            permissible_duration(level, criterion_level=85.0, exchange_rate=3.0)
+            for level in levels
+        ]
         
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=levels, y=osha_times, mode='lines+markers', name='OSHA', line=dict(color='blue')))
