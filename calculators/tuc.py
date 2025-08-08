@@ -29,14 +29,31 @@ _TIME_TABLE = [
 ]
 
 
-def estimate_tuc(altitude_ft: float | int) -> float:
-    """Estimate Time of Useful Consciousness (seconds) for given altitude."""
+def estimate_tuc(
+    altitude_ft: float | int,
+    *,
+    return_bands: bool = False,
+    p25_factor: float = 0.7,
+    p75_factor: float = 1.3,
+) -> float | dict:
+    """Estimate Time of Useful Consciousness (seconds) for given altitude.
+
+    If ``return_bands`` is True, returns a dict with median and percentile
+    bands (coarse inter-individual variability factors applied).
+    """
     altitude_ft = float(altitude_ft)
 
     alts, times = zip(*_TIME_TABLE)
     if altitude_ft <= alts[0]:
-        return times[0]
-    if altitude_ft >= alts[-1]:
-        return times[-1]
+        median = times[0]
+    elif altitude_ft >= alts[-1]:
+        median = times[-1]
+    else:
+        median = float(np.interp(altitude_ft, alts, times))
 
-    return float(np.interp(altitude_ft, alts, times))
+    if not return_bands:
+        return median
+
+    p25 = max(0.0, p25_factor * median)
+    p75 = max(0.0, p75_factor * median)
+    return {"median_s": median, "p25_s": p25, "p75_s": p75}

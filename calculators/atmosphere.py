@@ -3,7 +3,8 @@ Atmospheric Properties Calculator (ISA Model)
 Author: Diego Malpica
 
 Usage:
-    Provides functions to compute standard atmospheric properties (temperature, pressure, density, pO2) and alveolar oxygen pressure at a given altitude.
+    Provides functions to compute standard atmospheric properties (temperature,
+    pressure, density, pO2) and alveolar oxygen pressure at a given altitude.
     For educational and research use in aerospace medicine and physiology.
 
 Scientific Source:
@@ -15,10 +16,10 @@ import math
 # Physical constants
 T0 = 288.15  # Sea-level standard temperature (K)
 P0 = 101_325  # Sea-level standard pressure (Pa)
-L  = 0.0065   # Temperature lapse rate in the troposphere (K/m)
-R  = 8.31447  # Universal gas constant (J/(mol·K))
-g  = 9.80665  # Acceleration due to gravity (m/s²)
-M  = 0.0289644  # Molar mass of dry air (kg/mol)
+L = 0.0065  # Temperature lapse rate in the troposphere (K/m)
+R = 8.31447  # Universal gas constant (J/(mol·K))
+g = 9.80665  # Acceleration due to gravity (m/s²)
+M = 0.0289644  # Molar mass of dry air (kg/mol)
 FIO2_STANDARD = 0.2095  # Fraction of oxygen in dry air
 
 
@@ -30,31 +31,34 @@ def _to_meters(altitude_ft: float) -> float:
 def standard_atmosphere(altitude_m: float | int) -> dict:
     """Return ISA properties up to ~32 km altitude.
 
-    Parameters
-    ----------
-    altitude_m : float | int
-        Geometric height above sea level in metres.
-
-    Returns
-    -------
-    dict
-        temperature_C : Ambient temperature in °C
-        pressure_Pa   : Ambient pressure in pascals
-        density_kg_m3 : Air density in kg/m³
-        pO2_Pa        : Partial pressure of oxygen in pascals
+    Segments implemented:
+      - 0–11 km: Troposphere, lapse rate L = 0.0065 K/m
+      - 11–20 km: Isothermal at T = 216.65 K
+      - 20–32 km: Stratosphere, lapse rate L_s = -0.001 K/m (warming)
     """
-    altitude_m = max(0.0, float(altitude_m))
+    h = max(0.0, float(altitude_m))
 
-    # Troposphere (0–11 km): linear temperature lapse rate
-    if altitude_m <= 11_000:
-        T = T0 - L * altitude_m
+    # Segment 0–11 km
+    if h <= 11_000.0:
+        T = T0 - L * h
         P = P0 * (T / T0) ** (g * M / (R * L))
     else:
-        # Lower stratosphere isothermal layer (11–20 km)
-        T11 = T0 - L * 11_000
+        # Precompute values at 11 km
+        T11 = T0 - L * 11_000.0
         P11 = P0 * (T11 / T0) ** (g * M / (R * L))
-        P = P11 * math.exp(-g * M * (altitude_m - 11_000) / (R * T11))
-        T = T11  # remains constant in this layer
+        if h <= 20_000.0:
+            # 11–20 km: isothermal
+            T = T11
+            P = P11 * math.exp(-g * M * (h - 11_000.0) / (R * T11))
+        else:
+            # 20–32 km: warming layer (L_s negative for increasing T with height)
+            L_s = -0.001  # K/m
+            # Conditions at 20 km
+            T20 = T11
+            P20 = P11 * math.exp(-g * M * (20_000.0 - 11_000.0) / (R * T11))
+            # Temperature increases with altitude: T = T20 - L_s * (h - 20 km)
+            T = T20 - L_s * (h - 20_000.0)
+            P = P20 * (T / T20) ** (g * M / (R * L_s))
 
     rho = P * M / (R * T)
     pO2 = FIO2_STANDARD * P

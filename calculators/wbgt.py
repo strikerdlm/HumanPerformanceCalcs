@@ -35,6 +35,7 @@ Scientific Basis:
 from __future__ import annotations
 
 import math
+from typing import Dict, Any
 
 __all__ = [
     "psychrometric_wet_bulb",
@@ -46,7 +47,8 @@ __all__ = [
 # Helper – Estimate natural/psychrometric wet-bulb temperature (°C)
 # -----------------------------------------------------------------------------
 
-def psychrometric_wet_bulb(T_db: float, RH: float) -> float:
+
+def psychrometric_wet_bulb(T_db: float, RH: float, *, strict: bool = False) -> float:
     """Estimate the psychrometric wet-bulb temperature (°C).
 
     Parameters
@@ -66,8 +68,18 @@ def psychrometric_wet_bulb(T_db: float, RH: float) -> float:
     Valid for 0 ≤ T_db ≤ 50 °C and 5 ≤ RH ≤ 99 %. Accuracy ±0.3 °C under typical
     conditions.
     """
-    RH = max(0.0, min(float(RH), 100.0))
+    RH = float(RH)
     T_db = float(T_db)
+
+    # Validity per Stull (2011)
+    if strict:
+        if not (0.0 <= T_db <= 50.0):
+            raise ValueError("Stull wet-bulb valid for 0–50 °C dry-bulb only")
+        if not (5.0 <= RH <= 99.0):
+            raise ValueError("Stull wet-bulb valid for 5–99 % RH only")
+
+    # Clamp to physical range when not strict
+    RH = max(0.0, min(RH, 100.0))
 
     # Convert RH to a fraction for the equation
     rh_frac = RH / 100.0
@@ -88,8 +100,15 @@ def psychrometric_wet_bulb(T_db: float, RH: float) -> float:
 # WBGT Calculations
 # -----------------------------------------------------------------------------
 
-def wbgt_indoor(T_nwb: float | None = None, T_g: float | None = None, *,
-                T_db: float | None = None, RH: float | None = None) -> float:
+def wbgt_indoor(
+    T_nwb: float | None = None,
+    T_g: float | None = None,
+    *,
+    T_db: float | None = None,
+    RH: float | None = None,
+    strict: bool = False,
+    return_details: bool = False,
+) -> float | Dict[str, Any]:
     """Compute indoor WBGT (no solar load).
 
     Supply measured natural wet-bulb temperature (`T_nwb`) and globe
@@ -116,23 +135,44 @@ def wbgt_indoor(T_nwb: float | None = None, T_g: float | None = None, *,
         WBGT in degrees Celsius.
     """
     # Derive T_nwb if absent and possible
+    estimated = False
+    notes: list[str] = []
+
     if T_nwb is None:
         if T_db is None or RH is None:
             raise ValueError("T_nwb missing – provide T_db and RH for estimation.")
-        T_nwb = psychrometric_wet_bulb(T_db, RH)
+        T_nwb = psychrometric_wet_bulb(T_db, RH, strict=strict)
+        estimated = True
+        notes.append("T_nwb estimated via Stull (2011)")
 
     # Handle missing globe temperature
     if T_g is None:
         if T_db is None:
             raise ValueError("T_g missing – provide T_db as conservative proxy.")
         T_g = T_db  # Conservative assumption (ISO 7243 guidance)
+        notes.append("T_g proxied by T_db (conservative)")
 
     wbgt = 0.7 * T_nwb + 0.3 * T_g
+    if return_details:
+        return {
+            "wbgt_C": wbgt,
+            "used_T_nwb": T_nwb,
+            "used_T_g": T_g,
+            "estimated_T_nwb": estimated,
+            "notes": notes,
+        }
     return wbgt
 
 
-def wbgt_outdoor(T_nwb: float | None = None, T_g: float | None = None, *,
-                 T_db: float, RH: float | None = None) -> float:
+def wbgt_outdoor(
+    T_nwb: float | None = None,
+    T_g: float | None = None,
+    *,
+    T_db: float,
+    RH: float | None = None,
+    strict: bool = False,
+    return_details: bool = False,
+) -> float | Dict[str, Any]:
     """Compute outdoor WBGT (solar load).
 
     Same logic as :pyfunc:`wbgt_indoor`, but includes dry-bulb temperature term.
@@ -153,13 +193,27 @@ def wbgt_outdoor(T_nwb: float | None = None, T_g: float | None = None, *,
     float
         WBGT in degrees Celsius.
     """
+    estimated = False
+    notes: list[str] = []
+
     if T_nwb is None:
         if RH is None:
             raise ValueError("T_nwb missing – provide RH for estimation.")
-        T_nwb = psychrometric_wet_bulb(T_db, RH)
+        T_nwb = psychrometric_wet_bulb(T_db, RH, strict=strict)
+        estimated = True
+        notes.append("T_nwb estimated via Stull (2011)")
 
     if T_g is None:
         T_g = T_db  # Conservative fallback
+        notes.append("T_g proxied by T_db (conservative)")
 
     wbgt = 0.7 * T_nwb + 0.2 * T_g + 0.1 * T_db
+    if return_details:
+        return {
+            "wbgt_C": wbgt,
+            "used_T_nwb": T_nwb,
+            "used_T_g": T_g,
+            "estimated_T_nwb": estimated,
+            "notes": notes,
+        }
     return wbgt
