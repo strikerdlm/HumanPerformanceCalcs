@@ -137,7 +137,7 @@ calculator_category = st.sidebar.selectbox(
     [
         "🏠 Home",
         "🌍 Atmospheric & Physiological",
-        "⚠️ Occupational Health & Safety",
+        "Occupational Health & Safety",
         "🔬 Environmental Monitoring",
         "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
@@ -147,8 +147,8 @@ calculator_category = st.sidebar.selectbox(
 # Disclaimer
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
-<div class="warning-box">
-<strong>⚠️ Important Disclaimer</strong><br>
+<div class="info-box">
+<strong>Important Disclaimer</strong><br>
 These calculators are for educational and research purposes only. 
 Do not use for operational decision-making without professional validation.
 </div>
@@ -171,7 +171,7 @@ if calculator_category == "🏠 Home":
         - G-force tolerance assessment
         - Cosmic radiation dose calculations
         
-        **⚠️ Occupational Health & Safety:**
+        **Occupational Health & Safety:**
         - ACGIH TLV/BEI exposure assessments
         - Time-weighted average calculations
         - Mixed chemical exposure indices
@@ -200,7 +200,7 @@ if calculator_category == "🏠 Home":
         
         st.markdown("### 🎯 Featured Calculator")
         if st.button("🧪 Aerospace Chemical Exposure Assessment", type="primary"):
-            st.sidebar.selectbox("Select Calculator Category", ["⚠️ Occupational Health & Safety"], key="nav_override")
+            st.sidebar.selectbox("Select Calculator Category", ["Occupational Health & Safety"], key="nav_override")
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
     st.markdown('<div class="section-header">Atmospheric & Physiological Calculators</div>', unsafe_allow_html=True)
@@ -271,11 +271,11 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             
             # Risk assessment
             if p_ao2 < 60:
-                st.markdown('<div class="danger-box"><strong>⚠️ Critical:</strong> Severe hypoxemia risk</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> PAO₂ in low range</div>', unsafe_allow_html=True)
             elif p_ao2 < 80:
-                st.markdown('<div class="warning-box"><strong>⚠️ Warning:</strong> Moderate hypoxemia risk</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> PAO₂ in borderline range</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="success-box"><strong>✅ Normal:</strong> Adequate oxygenation</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> PAO₂ within typical range</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box"><strong>Formula:</strong> PAO₂ = FiO₂·(Pb − PH₂O) − PaCO₂/R</div>', unsafe_allow_html=True)
     
@@ -292,17 +292,17 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         with col2:
             st.markdown("#### Results")
             if tuc_sec == 0:
-                st.markdown('<div class="danger-box"><strong>⚠️ CRITICAL:</strong> Instantaneous loss of consciousness expected</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Note:</strong> Estimated TUC is 0 seconds at this altitude.</div>', unsafe_allow_html=True)
             else:
                 minutes = tuc_sec / 60
                 st.metric("Estimated TUC", f"{tuc_sec:.0f} seconds", f"~{minutes:.1f} minutes")
                 
                 if minutes < 1:
-                    st.markdown('<div class="danger-box"><strong>⚠️ CRITICAL:</strong> Less than 1 minute</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Estimated TUC less than 1 minute</div>', unsafe_allow_html=True)
                 elif minutes < 5:
-                    st.markdown('<div class="warning-box"><strong>⚠️ WARNING:</strong> Very limited time</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Very limited time available</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="info-box"><strong>ℹ️ INFO:</strong> Sufficient time for emergency procedures</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Sufficient time for emergency procedures (estimate)</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">Interpolated from published USAF reference values; individual tolerance varies significantly.</div>', unsafe_allow_html=True)
     
@@ -319,16 +319,16 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         with col2:
             st.markdown("#### Results")
             if tol == float("inf"):
-                st.markdown('<div class="success-box"><strong>✅ SAFE:</strong> Below ~5g most healthy subjects tolerate indefinitely</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Note:</strong> Below ~5g, many subjects tolerate indefinitely (literature)</div>', unsafe_allow_html=True)
             else:
                 st.metric("Estimated Tolerance Time", f"{tol:.0f} seconds")
                 
                 if tol < 15:
-                    st.markdown('<div class="danger-box"><strong>⚠️ CRITICAL:</strong> Very short tolerance time</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Very short estimated tolerance time</div>', unsafe_allow_html=True)
                 elif tol < 60:
-                    st.markdown('<div class="warning-box"><strong>⚠️ WARNING:</strong> Limited tolerance time</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Limited estimated tolerance time</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="info-box"><strong>ℹ️ INFO:</strong> Reasonable tolerance time</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Reasonable estimated tolerance time</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">Simplified Stoll curve approximation; assumes seated posture and no countermeasures.</div>', unsafe_allow_html=True)
     
@@ -354,13 +354,13 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             
             # Risk assessment
             if annual_dose > 1000:  # 1 mSv/year for public
-                st.markdown('<div class="warning-box"><strong>⚠️ WARNING:</strong> Exceeds public dose limit</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Above public dose guideline</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="success-box"><strong>✅ ACCEPTABLE:</strong> Within public dose limits</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Within public dose guideline</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">Highly simplified linear model for educational purposes only; real-world exposure depends on solar activity, latitude, and flight duration.</div>', unsafe_allow_html=True)
 
-elif calculator_category == "⚠️ Occupational Health & Safety":
+elif calculator_category == "Occupational Health & Safety":
     st.markdown('<div class="section-header">Occupational Health & Safety Calculators</div>', unsafe_allow_html=True)
     
     calc_type = st.selectbox(
@@ -411,28 +411,19 @@ elif calculator_category == "⚠️ Occupational Health & Safety":
                 st.markdown("#### Assessment Results")
                 
                 # Risk level with color coding
-                risk_color = {
-                    "Low": "success-box",
-                    "Moderate": "warning-box", 
-                    "High": "danger-box",
-                    "Very High": "danger-box"
-                }
-                
-                st.markdown(f'<div class="{risk_color[assessment["risk_level"]]}"><strong>Risk Level: {assessment["risk_level"]}</strong></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-box"><strong>Risk Level:</strong> {assessment["risk_level"]}</div>', unsafe_allow_html=True)
                 
                 st.metric("TLV Ratio", f"{assessment['tlv_ratio']:.2f}", "Should be ≤ 1.0")
                 st.metric("8-hr TWA Exposure", f"{assessment['twa_exposure']:.4f} {assessment['units']}")
                 st.metric("TLV-TWA", f"{assessment['tlv_twa']:.4f} {assessment['units']}")
                 
-                # Additional warnings
+                # Additional information (neutral tone)
                 if assessment['carcinogen']:
-                    st.markdown('<div class="danger-box">⚠️ <strong>CARCINOGEN</strong> - Minimize exposure to lowest feasible level</div>', unsafe_allow_html=True)
-                
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Carcinogen classification applies</div>', unsafe_allow_html=True)
                 if assessment['skin_notation']:
-                    st.markdown('<div class="warning-box">👤 <strong>SKIN NOTATION</strong> - Prevent skin contact</div>', unsafe_allow_html=True)
-                
+                    st.markdown('<div class="info-box"><strong>Note:</strong> Skin notation present (avoid dermal contact)</div>', unsafe_allow_html=True)
                 if assessment['stel_exceeded']:
-                    st.markdown('<div class="danger-box">🚨 <strong>STEL EXCEEDED</strong> - Short-term exposure limit violated</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Note:</strong> STEL exceeded</div>', unsafe_allow_html=True)
             
             # Detailed information
             st.markdown("#### Detailed Information")
@@ -533,9 +524,9 @@ elif calculator_category == "⚠️ Occupational Health & Safety":
                 st.metric("Mixed Exposure Index", f"{mixed_index:.3f}", "Should be ≤ 1.0")
                 
                 if mixed_index <= 1.0:
-                    st.markdown('<div class="success-box">✅ <strong>ACCEPTABLE:</strong> Mixed exposure within limits</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Assessment:</strong> Mixed exposure within guideline</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown('<div class="danger-box">❌ <strong>EXCEEDS LIMITS:</strong> Immediate action required</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-box"><strong>Assessment:</strong> Mixed exposure exceeds guideline</div>', unsafe_allow_html=True)
                 
                 # Individual contributions
                 st.markdown("**Individual Contributions:**")
@@ -576,9 +567,9 @@ elif calculator_category == "⚠️ Occupational Health & Safety":
             st.metric("Adjustment Factor", f"{adjustment_factor:.3f}")
             
             if adjustment_factor < 1.0:
-                st.markdown('<div class="warning-box">⚠️ <strong>REDUCED LIMIT:</strong> More restrictive than standard TLV</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Adjusted TLV:</strong> More restrictive than standard</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="info-box">ℹ️ <strong>INCREASED LIMIT:</strong> Less restrictive than standard TLV</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Adjusted TLV:</strong> Less restrictive than standard</div>', unsafe_allow_html=True)
     
     elif calc_type == "Biological Exposure Index":
         st.markdown("### 🩸 Biological Exposure Index (BEI) Assessment")
@@ -621,9 +612,9 @@ elif calculator_category == "⚠️ Occupational Health & Safety":
                         st.metric("BEI Value", f"{bei_assessment['bei_value']} {bei_assessment['bei_units']}")
                         
                         if bei_assessment['bei_ratio'] <= 1.0:
-                            st.markdown('<div class="success-box">✅ <strong>WITHIN GUIDELINE:</strong> BEI not exceeded</div>', unsafe_allow_html=True)
+                            st.markdown('<div class="info-box"><strong>Assessment:</strong> BEI not exceeded</div>', unsafe_allow_html=True)
                         else:
-                            st.markdown('<div class="warning-box">⚠️ <strong>EXCEEDS GUIDELINE:</strong> Investigation recommended</div>', unsafe_allow_html=True)
+                            st.markdown('<div class="info-box"><strong>Assessment:</strong> BEI exceeded</div>', unsafe_allow_html=True)
                         
                         st.markdown(f"**Recommended Action:** {bei_assessment['recommended_action']}")
                     else:
@@ -725,13 +716,13 @@ elif calculator_category == "🔬 Environmental Monitoring":
             
             # Risk assessment based on ACGIH guidelines
             if wbgt < 28:
-                st.markdown('<div class="success-box">✅ <strong>LOW RISK:</strong> Most workers can perform work safely</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Risk Category:</strong> Low</div>', unsafe_allow_html=True)
             elif wbgt < 30:
-                st.markdown('<div class="warning-box">⚠️ <strong>MODERATE RISK:</strong> Caution for unacclimatized workers</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Risk Category:</strong> Moderate</div>', unsafe_allow_html=True)
             elif wbgt < 32:
-                st.markdown('<div class="warning-box">⚠️ <strong>HIGH RISK:</strong> Work/rest cycles recommended</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Risk Category:</strong> High</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="danger-box">🚨 <strong>EXTREME RISK:</strong> Limit exposure time significantly</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Risk Category:</strong> Extreme</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">WBGT values are based on ISO 7243:2017 standards for heat stress assessment.</div>', unsafe_allow_html=True)
     
@@ -764,11 +755,11 @@ elif calculator_category == "🔬 Environmental Monitoring":
             st.metric("Permissible Duration", f"{perm_time:.1f} hours")
             
             if dose <= 50:
-                st.markdown('<div class="success-box">✅ <strong>LOW RISK:</strong> Well below action level</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Below action level</div>', unsafe_allow_html=True)
             elif dose <= 100:
-                st.markdown('<div class="warning-box">⚠️ <strong>ACTION LEVEL:</strong> Implement hearing conservation</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Near action level</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="danger-box">🚨 <strong>OVEREXPOSURE:</strong> Exceeds permissible limit</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Exceeds permissible limit</div>', unsafe_allow_html=True)
         
         # Comparison chart
         levels = np.arange(80, 120, 5)
