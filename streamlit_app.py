@@ -4,6 +4,7 @@ import plotly.graph_objects as go  # type: ignore
 import plotly.express as px  # type: ignore
 from datetime import datetime
 import numpy as np
+import io
 
 from calculators import (
     standard_atmosphere,
@@ -36,81 +37,79 @@ st.set_page_config(
 # Custom CSS for professional styling
 st.markdown("""
 <style>
+    :root {
+        --color-primary: #2563eb; /* indigo-600 */
+        --color-accent: #7c3aed;  /* violet-600 */
+        --color-sky: #0ea5e9;     /* sky-500 */
+        --color-success: #22c55e; /* green-500 */
+        --color-warning: #f59e0b; /* amber-500 */
+        --color-danger: #ef4444;  /* red-500 */
+        --color-text: #111827;    /* gray-900 */
+        --color-muted: #6b7280;   /* gray-500 */
+        --surface: #ffffff;
+        --surface-2: #f8fafc;     /* slate-50 */
+        --border: #e5e7eb;        /* gray-200 */
+    }
+
     .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1f4e79;
+        font-size: 2.6rem;
+        font-weight: 800;
+        color: var(--color-text);
         text-align: center;
         margin-bottom: 2rem;
-        padding: 1rem;
-        background: linear-gradient(90deg, #f0f8ff, #e6f3ff);
-        border-radius: 10px;
-        border-left: 5px solid #1f4e79;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, rgba(14,165,233,0.08), rgba(99,102,241,0.08));
+        border-radius: 14px;
+        border: 1px solid var(--border);
     }
-    
+
     .section-header {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #2c5aa0;
-        margin: 1.5rem 0 1rem 0;
-        padding: 0.5rem 0;
-        border-bottom: 2px solid #e1ecf4;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin: 1.2rem 0 0.8rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border);
     }
-    
-    .info-box {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #17a2b8;
-        margin: 1rem 0;
+
+    .info-box, .warning-box, .danger-box, .success-box {
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
     }
-    
-    .warning-box {
-        background-color: #fff3cd;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #ffc107;
-        margin: 1rem 0;
-    }
-    
-    .danger-box {
-        background-color: #f8d7da;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #dc3545;
-        margin: 1rem 0;
-    }
-    
-    .success-box {
-        background-color: #d4edda;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #28a745;
-        margin: 1rem 0;
-    }
-    
+
+    .info-box { border-left: 5px solid var(--color-sky); }
+    .warning-box { border-left: 5px solid var(--color-warning); }
+    .danger-box { border-left: 5px solid var(--color-danger); }
+    .success-box { border-left: 5px solid var(--color-success); }
+
     .metric-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: 1px solid #e1ecf4;
+        background: var(--surface);
+        padding: 1.2rem 1.3rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
         margin: 0.5rem 0;
     }
-    
+
     .stButton > button {
-        background-color: #1f4e79;
+        background: linear-gradient(135deg, var(--color-sky), var(--color-accent));
         color: white;
-        border-radius: 8px;
+        border-radius: 10px;
         border: none;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.3s;
+        padding: 0.6rem 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+        box-shadow: 0 8px 20px rgba(99,102,241,0.25);
     }
-    
-    .stButton > button:hover {
-        background-color: #2c5aa0;
-        transform: translateY(-2px);
+
+    .stButton > button:hover { transform: translateY(-1px); filter: brightness(1.02); }
+
+    .stSelectbox label, .stSlider label, .stRadio label, .stNumberInput label {
+        font-weight: 600; color: var(--color-text);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -127,6 +126,7 @@ calculator_category = st.sidebar.selectbox(
         "🌍 Atmospheric & Physiological",
         "⚠️ Occupational Health & Safety",
         "🔬 Environmental Monitoring",
+        "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
     ]
 )
@@ -778,6 +778,203 @@ elif calculator_category == "🔬 Environmental Monitoring":
             yaxis_type="log"
         )
         st.plotly_chart(fig, use_container_width=True)
+
+elif calculator_category == "📈 Visualization Studio":
+    st.markdown('<div class="section-header">Visualization Studio</div>', unsafe_allow_html=True)
+
+    def style_fig(fig, title: str):
+        fig.update_layout(
+            title=title,
+            template="plotly_white",
+            font=dict(family="Inter, system-ui, sans-serif", size=14, color="#111827"),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            colorway=["#4361EE", "#3A0CA3", "#4CC9F0", "#F72585", "#7209B7", "#4895EF", "#560BAD"],
+            margin=dict(l=60, r=30, t=60, b=60),
+        )
+        return fig
+
+    vis_type = st.selectbox(
+        "Choose Visualization",
+        [
+            "PAO₂ vs Altitude & FiO₂",
+            "WBGT (Outdoor) vs Dry-Bulb & RH",
+            "Noise Permissible Duration vs Level & Exchange Rate",
+            "Mixed Chemical Index (2 chemicals)"
+        ]
+    )
+
+    plot_mode = st.radio("Plot Type", ["2D", "3D"], horizontal=True)
+
+    export_format = st.selectbox("Export format", ["png", "svg", "pdf"], index=0)
+    export_scale = st.slider("Export scale (higher = higher DPI)", 1, 4, 2)
+
+    if vis_type == "PAO₂ vs Altitude & FiO₂":
+        col1, col2 = st.columns(2)
+        with col1:
+            alt_range_ft = st.slider("Altitude range (ft)", 0, 40000, (0, 30000), step=1000)
+            fio2_min, fio2_max = st.slider("FiO₂ range", 0.10, 1.00, (0.21, 1.00), step=0.01)
+            paco2 = st.slider("PaCO₂ (mmHg)", 20.0, 60.0, 40.0, step=1.0)
+            rq = st.slider("Respiratory Quotient (R)", 0.6, 1.2, 0.8, step=0.05)
+        with col2:
+            if plot_mode == "2D":
+                fixed_fio2 = st.slider("Fixed FiO₂", fio2_min, fio2_max, 0.21, step=0.01)
+                altitudes_ft = np.linspace(alt_range_ft[0], alt_range_ft[1], 120)
+                altitudes_m = altitudes_ft * 0.3048
+                values = [alveolar_PO2(a, fixed_fio2, paco2, rq) for a in altitudes_m]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=altitudes_ft, y=values, mode="lines", name=f"FiO₂={fixed_fio2:.2f}"))
+                style_fig(fig, "Alveolar Oxygen Pressure vs Altitude")
+                fig.update_xaxes(title_text="Altitude (ft)")
+                fig.update_yaxes(title_text="PAO₂ (mmHg)")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                altitudes_ft = np.linspace(alt_range_ft[0], alt_range_ft[1], 80)
+                fio2_vals = np.linspace(fio2_min, fio2_max, 60)
+                A, F = np.meshgrid(altitudes_ft, fio2_vals)
+                Z = np.zeros_like(A)
+                for i in range(F.shape[0]):
+                    for j in range(A.shape[1]):
+                        Z[i, j] = alveolar_PO2(A[i, j] * 0.3048, F[i, j], paco2, rq)
+                fig = go.Figure(data=[go.Surface(x=A, y=F, z=Z, colorscale="Viridis")])
+                style_fig(fig, "PAO₂ Surface: Altitude × FiO₂")
+                fig.update_scenes(xaxis_title_text="Altitude (ft)", yaxis_title_text="FiO₂", zaxis_title_text="PAO₂ (mmHg)")
+                fig.update_layout(scene=dict(
+                    xaxis_title="Altitude (ft)", yaxis_title="FiO₂", zaxis_title="PAO₂ (mmHg)"
+                ))
+                st.plotly_chart(fig, use_container_width=True)
+
+        fig_to_save = fig if 'fig' in locals() else None
+
+    elif vis_type == "WBGT (Outdoor) vs Dry-Bulb & RH":
+        col1, col2 = st.columns(2)
+        with col1:
+            tdb_range = st.slider("Dry-bulb (°C)", -10.0, 60.0, (15.0, 40.0), step=0.5)
+            rh_min, rh_max = st.slider("Relative Humidity (%)", 0.0, 100.0, (20.0, 90.0), step=1.0)
+            tg = st.slider("Globe temperature (°C)", -10.0, 80.0, 35.0, step=0.5)
+        with col2:
+            if plot_mode == "2D":
+                fixed_rh = st.slider("Fixed RH (%)", rh_min, rh_max, 50.0, step=1.0)
+                tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 140)
+                wbgt_vals = [wbgt_outdoor(T_nwb=None, T_g=tg, T_db=tdb, RH=fixed_rh) for tdb in tdb_vals]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=tdb_vals, y=wbgt_vals, mode="lines", name=f"RH={fixed_rh:.0f}%"))
+                style_fig(fig, "WBGT (Outdoor) vs Dry-bulb")
+                fig.update_xaxes(title_text="Dry-bulb (°C)")
+                fig.update_yaxes(title_text="WBGT (°C)")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 80)
+                rh_vals = np.linspace(rh_min, rh_max, 60)
+                T, H = np.meshgrid(tdb_vals, rh_vals)
+                Z = np.zeros_like(T)
+                for i in range(H.shape[0]):
+                    for j in range(T.shape[1]):
+                        Z[i, j] = wbgt_outdoor(T_nwb=None, T_g=tg, T_db=T[i, j], RH=H[i, j])
+                fig = go.Figure(data=[go.Surface(x=T, y=H, z=Z, colorscale="Turbo")])
+                style_fig(fig, "WBGT (Outdoor) Surface: T_db × RH")
+                fig.update_layout(scene=dict(
+                    xaxis_title="Dry-bulb (°C)", yaxis_title="RH (%)", zaxis_title="WBGT (°C)"
+                ))
+                st.plotly_chart(fig, use_container_width=True)
+
+        fig_to_save = fig if 'fig' in locals() else None
+
+    elif vis_type == "Noise Permissible Duration vs Level & Exchange Rate":
+        col1, col2 = st.columns(2)
+        with col1:
+            level_range = st.slider("Noise level (dBA)", 80.0, 120.0, (85.0, 110.0), step=1.0)
+            exch_min, exch_max = st.slider("Exchange rate (dB)", 2.0, 6.0, (3.0, 5.0), step=0.5)
+            criterion = st.slider("Criterion level (dBA)", 80.0, 95.0, 85.0, step=1.0)
+        with col2:
+            if plot_mode == "2D":
+                fixed_exch = st.slider("Fixed exchange rate (dB)", exch_min, exch_max, 3.0, step=0.5)
+                levels = np.linspace(level_range[0], level_range[1], 120)
+                times = [permissible_duration(l, criterion_level=criterion, exchange_rate=fixed_exch) for l in levels]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=levels, y=times, mode="lines", name=f"Exchange={fixed_exch} dB"))
+                style_fig(fig, "Permissible Duration vs Noise Level")
+                fig.update_yaxes(type="log")
+                fig.update_xaxes(title_text="Noise level (dBA)")
+                fig.update_yaxes(title_text="Permissible time (hours)")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                levels = np.linspace(level_range[0], level_range[1], 80)
+                exch = np.linspace(exch_min, exch_max, 60)
+                L, E = np.meshgrid(levels, exch)
+                Z = np.zeros_like(L)
+                for i in range(E.shape[0]):
+                    for j in range(L.shape[1]):
+                        Z[i, j] = permissible_duration(L[i, j], criterion_level=criterion, exchange_rate=E[i, j])
+                fig = go.Figure(data=[go.Surface(x=L, y=E, z=Z, colorscale="Cividis")])
+                style_fig(fig, "Permissible Duration Surface: Level × Exchange Rate")
+                fig.update_layout(scene=dict(
+                    xaxis_title="Noise level (dBA)", yaxis_title="Exchange rate (dB)", zaxis_title="Time (hours)",
+                    zaxis_type="log"
+                ))
+                st.plotly_chart(fig, use_container_width=True)
+
+        fig_to_save = fig if 'fig' in locals() else None
+
+    elif vis_type == "Mixed Chemical Index (2 chemicals)":
+        st.markdown("Select two chemicals and explore mixed exposure index (sum of fractions)")
+        available = list(AEROSPACE_CHEMICALS.keys())
+        colc1, colc2 = st.columns(2)
+        with colc1:
+            chem_a = st.selectbox("Chemical A", available, format_func=lambda x: AEROSPACE_CHEMICALS[x].name)
+        with colc2:
+            chem_b = st.selectbox("Chemical B", [k for k in available if k != chem_a], format_func=lambda x: AEROSPACE_CHEMICALS[x].name)
+
+        tlv_a = AEROSPACE_CHEMICALS[chem_a].tlv_twa
+        tlv_b = AEROSPACE_CHEMICALS[chem_b].tlv_twa
+        units_a = AEROSPACE_CHEMICALS[chem_a].units
+        units_b = AEROSPACE_CHEMICALS[chem_b].units
+
+        col1, col2 = st.columns(2)
+        with col1:
+            xa_max = st.number_input(f"Max concentration for {AEROSPACE_CHEMICALS[chem_a].name} ({units_a})", min_value=0.0, value=float(tlv_a * 2), step=0.1)
+            xb_max = st.number_input(f"Max concentration for {AEROSPACE_CHEMICALS[chem_b].name} ({units_b})", min_value=0.0, value=float(tlv_b * 2), step=0.1)
+        with col2:
+            pass
+
+        if plot_mode == "2D":
+            x_a = np.linspace(0, xa_max, 140)
+            x_b_fixed = st.slider(f"Fixed {AEROSPACE_CHEMICALS[chem_b].name} concentration ({units_b})", 0.0, xb_max, 0.0, step=max(xb_max/100, 0.01))
+            index_vals = x_a / tlv_a + x_b_fixed / tlv_b
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=x_a, y=index_vals, mode="lines", name="Mixed Index"))
+            style_fig(fig, "Mixed Chemical Exposure Index vs Concentration A")
+            fig.update_xaxes(title_text=f"{AEROSPACE_CHEMICALS[chem_a].name} concentration ({units_a})")
+            fig.update_yaxes(title_text="Mixed Index (sum of fractions)")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            x_a = np.linspace(0, xa_max, 80)
+            x_b = np.linspace(0, xb_max, 60)
+            A, B = np.meshgrid(x_a, x_b)
+            Z = A / tlv_a + B / tlv_b
+            fig = go.Figure(data=[go.Surface(x=A, y=B, z=Z, colorscale="Plasma")])
+            style_fig(fig, "Mixed Chemical Index Surface")
+            fig.update_layout(scene=dict(
+                xaxis_title=f"{AEROSPACE_CHEMICALS[chem_a].name} ({units_a})",
+                yaxis_title=f"{AEROSPACE_CHEMICALS[chem_b].name} ({units_b})",
+                zaxis_title="Mixed Index"
+            ))
+            st.plotly_chart(fig, use_container_width=True)
+
+        fig_to_save = fig if 'fig' in locals() else None
+
+    # Export controls
+    if 'fig_to_save' in locals() and fig_to_save is not None:
+        try:
+            img_bytes = fig_to_save.to_image(format=export_format, scale=export_scale, engine="kaleido")
+            st.download_button(
+                label=f"Download figure ({export_format.upper()})",
+                data=img_bytes,
+                file_name=f"visualization.{export_format}",
+                mime="image/png" if export_format == "png" else ("image/svg+xml" if export_format == "svg" else "application/pdf")
+            )
+        except Exception as e:
+            st.info("For static image export, the 'kaleido' package is required. It has been added to requirements; ensure your environment is updated.")
 
 elif calculator_category == "📊 Risk Assessment Tools":
     st.markdown('<div class="section-header">Risk Assessment Tools</div>', unsafe_allow_html=True)
