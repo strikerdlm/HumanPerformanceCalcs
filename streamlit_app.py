@@ -795,16 +795,65 @@ elif calculator_category == "🔬 Environmental Monitoring":
 elif calculator_category == "📈 Visualization Studio":
     st.markdown('<div class="section-header">Visualization Studio</div>', unsafe_allow_html=True)
 
+    # Display controls
+    with st.container():
+        col_theme, col_palette, col_height = st.columns([1, 1, 1])
+
+        # Theme selection with auto detection from Streamlit theme
+        theme_base = st.get_option("theme.base") or "light"
+        theme_default = "plotly_dark" if theme_base == "dark" else "plotly_white"
+        theme_choice = col_theme.selectbox(
+            "Plot Theme",
+            ["Auto", "Light", "Dark", "Seaborn", "Simple White", "GGPlot2", "Presentation"],
+            help="Choose a visual theme. 'Auto' follows the app's light/dark mode."
+        )
+        theme_template = {
+            "Auto": theme_default,
+            "Light": "plotly_white",
+            "Dark": "plotly_dark",
+            "Seaborn": "seaborn",
+            "Simple White": "simple_white",
+            "GGPlot2": "ggplot2",
+            "Presentation": "presentation",
+        }[theme_choice]
+
+        # Palette selection
+        palette_options = {
+            "Auto": None,
+            "Plotly": px.colors.qualitative.Plotly,
+            "D3": px.colors.qualitative.D3,
+            "Bold": px.colors.qualitative.Bold,
+            "Pastel": px.colors.qualitative.Pastel,
+            "Set2": px.colors.qualitative.Set2,
+            "Dark24": px.colors.qualitative.Dark24,
+            "Vivid": px.colors.qualitative.Vivid,
+        }
+        palette_name = col_palette.selectbox("Color Palette", list(palette_options.keys()), index=0)
+        colorway_selected = palette_options[palette_name]
+
+        # Resizable height
+        plot_height = col_height.slider("Plot Height", min_value=420, max_value=900, value=640, step=20)
+
+        col_style1, col_style2, col_style3 = st.columns([1, 1, 1])
+        show_legend = col_style1.toggle("Show Legend", value=True)
+        show_grid = col_style2.toggle("Show Grid", value=True)
+        hover_unified = col_style3.toggle("Unified Hover", value=True, help="Show a single tooltip for all traces aligned on x-axis")
+
+    # Helper to style figures consistently
     def style_fig(fig, title: str):
         fig.update_layout(
             title=title,
-            template="plotly_white",
-            font=dict(family="Inter, system-ui, sans-serif", size=14, color="#111827"),
-            paper_bgcolor="#ffffff",
-            plot_bgcolor="#ffffff",
-            colorway=["#4361EE", "#3A0CA3", "#4CC9F0", "#F72585", "#7209B7", "#4895EF", "#560BAD"],
-            margin=dict(l=60, r=30, t=60, b=60),
+            template=theme_template,
+            font=dict(family="Inter, system-ui, sans-serif", size=14),
+            height=plot_height,
+            colorway=colorway_selected if colorway_selected else None,
+            margin=dict(l=50, r=30, t=60, b=50),
+            showlegend=show_legend,
         )
+        fig.update_xaxes(showgrid=show_grid)
+        fig.update_yaxes(showgrid=show_grid)
+        if hover_unified:
+            fig.update_layout(hovermode="x unified")
         return fig
 
     vis_type = st.selectbox(
@@ -819,8 +868,13 @@ elif calculator_category == "📈 Visualization Studio":
 
     plot_mode = st.radio("Plot Type", ["2D", "3D"], horizontal=True)
 
-    export_format = st.selectbox("Export format", ["png", "svg", "pdf"], index=0)
-    export_scale = st.slider("Export scale (higher = higher DPI)", 1, 4, 2)
+    # Trace style for 2D plots
+    trace_style = st.radio("Trace Style (2D)", ["Lines", "Lines + Markers", "Markers", "Area"], horizontal=True)
+    smooth_lines = st.toggle("Smooth Lines", value=False)
+
+    with st.expander("Export Options", expanded=False):
+        export_format = st.selectbox("Export format", ["png", "svg", "pdf"], index=0)
+        export_scale = st.slider("Export scale (higher = higher DPI)", 1, 4, 2)
 
     if vis_type == "PAO₂ vs Altitude & FiO₂":
         col1, col2 = st.columns(2)
@@ -836,11 +890,25 @@ elif calculator_category == "📈 Visualization Studio":
                 altitudes_m = altitudes_ft * 0.3048
                 values = [alveolar_PO2(a, fixed_fio2, paco2, rq) for a in altitudes_m]
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=altitudes_ft, y=values, mode="lines", name=f"FiO₂={fixed_fio2:.2f}"))
+                mode_map = {
+                    "Lines": "lines",
+                    "Lines + Markers": "lines+markers",
+                    "Markers": "markers",
+                    "Area": "lines",
+                }
+                fig.add_trace(go.Scatter(
+                    x=altitudes_ft,
+                    y=values,
+                    mode=mode_map[trace_style],
+                    name=f"FiO₂={fixed_fio2:.2f}",
+                    fill="tozeroy" if trace_style == "Area" else None,
+                ))
                 style_fig(fig, "Alveolar Oxygen Pressure vs Altitude")
                 fig.update_xaxes(title_text="Altitude (ft)")
                 fig.update_yaxes(title_text="PAO₂ (mmHg)")
-                st.plotly_chart(fig, use_container_width=True)
+                if smooth_lines:
+                    fig.update_traces(line_shape="spline")
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 altitudes_ft = np.linspace(alt_range_ft[0], alt_range_ft[1], 80)
                 fio2_vals = np.linspace(fio2_min, fio2_max, 60)
@@ -855,7 +923,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Altitude (ft)", yaxis_title="FiO₂", zaxis_title="PAO₂ (mmHg)"
                 ))
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -871,11 +939,25 @@ elif calculator_category == "📈 Visualization Studio":
                 tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 140)
                 wbgt_vals = [wbgt_outdoor(T_nwb=None, T_g=tg, T_db=tdb, RH=fixed_rh) for tdb in tdb_vals]
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=tdb_vals, y=wbgt_vals, mode="lines", name=f"RH={fixed_rh:.0f}%"))
+                mode_map = {
+                    "Lines": "lines",
+                    "Lines + Markers": "lines+markers",
+                    "Markers": "markers",
+                    "Area": "lines",
+                }
+                fig.add_trace(go.Scatter(
+                    x=tdb_vals,
+                    y=wbgt_vals,
+                    mode=mode_map[trace_style],
+                    name=f"RH={fixed_rh:.0f}%",
+                    fill="tozeroy" if trace_style == "Area" else None,
+                ))
                 style_fig(fig, "WBGT (Outdoor) vs Dry-bulb")
                 fig.update_xaxes(title_text="Dry-bulb (°C)")
                 fig.update_yaxes(title_text="WBGT (°C)")
-                st.plotly_chart(fig, use_container_width=True)
+                if smooth_lines:
+                    fig.update_traces(line_shape="spline")
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 80)
                 rh_vals = np.linspace(rh_min, rh_max, 60)
@@ -889,7 +971,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Dry-bulb (°C)", yaxis_title="RH (%)", zaxis_title="WBGT (°C)"
                 ))
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -905,12 +987,26 @@ elif calculator_category == "📈 Visualization Studio":
                 levels = np.linspace(level_range[0], level_range[1], 120)
                 times = [permissible_duration(l, criterion_level=criterion, exchange_rate=fixed_exch) for l in levels]
                 fig = go.Figure()
-                fig.add_trace(go.Scatter(x=levels, y=times, mode="lines", name=f"Exchange={fixed_exch} dB"))
+                mode_map = {
+                    "Lines": "lines",
+                    "Lines + Markers": "lines+markers",
+                    "Markers": "markers",
+                    "Area": "lines",
+                }
+                fig.add_trace(go.Scatter(
+                    x=levels,
+                    y=times,
+                    mode=mode_map[trace_style],
+                    name=f"Exchange={fixed_exch} dB",
+                    fill="tozeroy" if trace_style == "Area" else None,
+                ))
                 style_fig(fig, "Permissible Duration vs Noise Level")
                 fig.update_yaxes(type="log")
                 fig.update_xaxes(title_text="Noise level (dBA)")
                 fig.update_yaxes(title_text="Permissible time (hours)")
-                st.plotly_chart(fig, use_container_width=True)
+                if smooth_lines:
+                    fig.update_traces(line_shape="spline")
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 levels = np.linspace(level_range[0], level_range[1], 80)
                 exch = np.linspace(exch_min, exch_max, 60)
@@ -925,7 +1021,7 @@ elif calculator_category == "📈 Visualization Studio":
                     xaxis_title="Noise level (dBA)", yaxis_title="Exchange rate (dB)", zaxis_title="Time (hours)",
                     zaxis_type="log"
                 ))
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -955,11 +1051,19 @@ elif calculator_category == "📈 Visualization Studio":
             x_b_fixed = st.slider(f"Fixed {AEROSPACE_CHEMICALS[chem_b].name} concentration ({units_b})", 0.0, xb_max, 0.0, step=max(xb_max/100, 0.01))
             index_vals = x_a / tlv_a + x_b_fixed / tlv_b
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=x_a, y=index_vals, mode="lines", name="Mixed Index"))
+            mode_map = {
+                "Lines": "lines",
+                "Lines + Markers": "lines+markers",
+                "Markers": "markers",
+                "Area": "lines",
+            }
+            fig.add_trace(go.Scatter(x=x_a, y=index_vals, mode=mode_map[trace_style], name="Mixed Index", fill="tozeroy" if trace_style == "Area" else None))
             style_fig(fig, "Mixed Chemical Exposure Index vs Concentration A")
             fig.update_xaxes(title_text=f"{AEROSPACE_CHEMICALS[chem_a].name} concentration ({units_a})")
             fig.update_yaxes(title_text="Mixed Index (sum of fractions)")
-            st.plotly_chart(fig, use_container_width=True)
+            if smooth_lines:
+                fig.update_traces(line_shape="spline")
+            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         else:
             x_a = np.linspace(0, xa_max, 80)
             x_b = np.linspace(0, xb_max, 60)
@@ -972,7 +1076,7 @@ elif calculator_category == "📈 Visualization Studio":
                 yaxis_title=f"{AEROSPACE_CHEMICALS[chem_b].name} ({units_b})",
                 zaxis_title="Mixed Index"
             ))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
