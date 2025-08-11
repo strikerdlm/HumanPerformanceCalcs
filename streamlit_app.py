@@ -34,7 +34,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional styling
+# Custom CSS for professional styling with light/dark support
 st.markdown("""
 <style>
     :root {
@@ -44,11 +44,23 @@ st.markdown("""
         --color-success: #22c55e; /* green-500 */
         --color-warning: #f59e0b; /* amber-500 */
         --color-danger: #ef4444;  /* red-500 */
+        /* Light theme defaults */
         --color-text: #111827;    /* gray-900 */
         --color-muted: #6b7280;   /* gray-500 */
         --surface: #ffffff;
         --surface-2: #f8fafc;     /* slate-50 */
         --border: #e5e7eb;        /* gray-200 */
+    }
+
+    /* Override variables automatically when user prefers dark scheme */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text: #e5e7eb;    /* slate-200 */
+        --color-muted: #9ca3af;   /* gray-400 */
+        --surface: #0f172a;       /* slate-900 */
+        --surface-2: #111827;     /* gray-900 */
+        --border: #334155;        /* slate-600 */
+      }
     }
 
     .main-header {
@@ -58,7 +70,7 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
         padding: 1.2rem;
-        background: linear-gradient(135deg, rgba(14,165,233,0.08), rgba(99,102,241,0.08));
+        background: linear-gradient(135deg, rgba(14,165,233,0.12), rgba(99,102,241,0.12));
         border-radius: 14px;
         border: 1px solid var(--border);
     }
@@ -77,6 +89,7 @@ st.markdown("""
         border-radius: 12px;
         border: 1px solid var(--border);
         background: var(--surface);
+        color: var(--color-text);          /* ensure readable text in both themes */
         box-shadow: 0 5px 18px rgba(2,6,23,0.06);
     }
 
@@ -965,16 +978,35 @@ elif calculator_category == "📈 Visualization Studio":
 
     # Export controls
     if 'fig_to_save' in locals() and fig_to_save is not None:
-        try:
-            img_bytes = fig_to_save.to_image(format=export_format, scale=export_scale, engine="kaleido")
+        col_export1, col_export2 = st.columns([1, 1])
+        
+        with col_export1:
+            # Try static image export
+            try:
+                img_bytes = fig_to_save.to_image(format=export_format, scale=export_scale)
+                st.download_button(
+                    label=f"Download Static Image ({export_format.upper()})",
+                    data=img_bytes,
+                    file_name=f"visualization.{export_format}",
+                    mime="image/png" if export_format == "png" else ("image/svg+xml" if export_format == "svg" else "application/pdf")
+                )
+            except Exception as e:
+                error_msg = str(e)
+                if "Chrome" in error_msg or "kaleido" in error_msg.lower():
+                    st.error("**Static Export Unavailable**")
+                    st.info("Install Chrome or use HTML export →")
+                else:
+                    st.warning("Static export failed - use HTML export →")
+        
+        with col_export2:
+            # Fallback: HTML export (always works)
+            html_str = fig_to_save.to_html(include_plotlyjs='cdn')
             st.download_button(
-                label=f"Download figure ({export_format.upper()})",
-                data=img_bytes,
-                file_name=f"visualization.{export_format}",
-                mime="image/png" if export_format == "png" else ("image/svg+xml" if export_format == "svg" else "application/pdf")
+                label="Download Interactive HTML",
+                data=html_str,
+                file_name="visualization.html",
+                mime="text/html"
             )
-        except Exception as e:
-            st.info("For static image export, the 'kaleido' package is required. It has been added to requirements; ensure your environment is updated.")
 
 elif calculator_category == "📊 Risk Assessment Tools":
     st.markdown('<div class="section-header">Risk Assessment Tools</div>', unsafe_allow_html=True)
@@ -1063,7 +1095,6 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; font-size: 0.9em;">
     <p><strong>Aerospace Physiology & Occupational Health Calculators</strong></p>
-    <p>Based on ACGIH TLVs and BEIs (2024), NIOSH Criteria, and International Standards</p>
     <p>For educational and research purposes only • Consult qualified professionals for operational use</p>
 </div>
 """, unsafe_allow_html=True)
