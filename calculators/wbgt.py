@@ -41,6 +41,7 @@ __all__ = [
     "psychrometric_wet_bulb",
     "wbgt_indoor",
     "wbgt_outdoor",
+    "heat_stress_index",
 ]
 
 # -----------------------------------------------------------------------------
@@ -218,3 +219,65 @@ def wbgt_outdoor(
             "notes": notes,
         }
     return wbgt
+
+
+# -----------------------------------------------------------------------------
+# Heat Stress Index (HSI)
+# -----------------------------------------------------------------------------
+
+def _sat_vapor_pressure_kPa(T_C: float) -> float:
+    """Saturation vapor pressure (kPa) via Tetens formula."""
+    return 0.61078 * math.exp(17.27 * T_C / (T_C + 237.3))
+
+
+def heat_stress_index(
+    M_W_m2: float,
+    T_db_C: float,
+    RH_percent: float,
+    air_speed_m_s: float,
+    Wext_W_m2: float = 0.0,
+    T_g_C: float | None = None,
+) -> float:
+    """Compute Heat Stress Index (HSI) as percentage.
+
+    HSI = (Required Evaporation / Maximum Evaporation) × 100
+    Required Evaporation ≈ max(0, M - W - (C + R))
+    Maximum Evaporation ≈ h_e · (p_sat(T_skin) − p_air)
+
+    Simplified heat balance with typical assumptions for educational use.
+    """
+    # Assumptions
+    T_skin_C = 35.0
+    emissivity = 0.95
+    sigma = 5.670374419e-8
+    T_r_C = T_g_C if T_g_C is not None else T_db_C
+
+    # Convert to Kelvin
+    TskK = T_skin_C + 273.15
+    TrK = T_r_C + 273.15
+
+    # Heat transfer coefficients
+    v = max(0.0, float(air_speed_m_s))
+    hc = max(2.5, 8.3 * (v ** 0.6))  # W/m²/K
+    # Radiative coefficient around mean temp
+    TmK = (TskK + TrK) / 2.0
+    hr = 4.0 * emissivity * sigma * (TmK ** 3)  # W/m²/K
+
+    # Convective and radiative heat exchange (positive = loss)
+    C = hc * (T_skin_C - T_db_C)
+    R = hr * (T_skin_C - T_r_C)
+
+    # Required evaporation to balance
+    M = float(M_W_m2)
+    W = float(Wext_W_m2)
+    E_req = max(0.0, M - W - (C + R))
+
+    # Maximum evaporative capacity
+    he = 16.5 * hc  # W/m²/kPa
+    p_sk = _sat_vapor_pressure_kPa(T_skin_C)
+    p_air = max(0.0, min(100.0, float(RH_percent))) / 100.0 * _sat_vapor_pressure_kPa(T_db_C)
+    delta_p = max(0.0, p_sk - p_air)
+    E_max = max(1e-6, he * delta_p)
+
+    HSI = (E_req / E_max) * 100.0
+    return HSI
