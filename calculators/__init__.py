@@ -1,8 +1,17 @@
-from .atmosphere import standard_atmosphere, alveolar_PO2  # type: ignore
+from .atmosphere import (  # type: ignore
+    standard_atmosphere,
+    alveolar_PO2,
+    spo2_unacclimatized,
+    spo2_acclimatized,
+    pao2_at_altitude,
+    ams_probability,
+    inspired_PO2,
+    oxygen_content,
+)  
 from .tuc import estimate_tuc  # type: ignore
 from .g_force import g_loc_time  # type: ignore
 from .radiation import dose_rate  # type: ignore
-from .wbgt import wbgt_indoor, wbgt_outdoor  # type: ignore
+from .wbgt import wbgt_indoor, wbgt_outdoor, heat_stress_index  # type: ignore
 from .noise_exposure import permissible_duration, noise_dose_osha, noise_dose_niosh  # type: ignore
 from .occupational_health import (  # type: ignore
     calculate_twa_exposure,
@@ -14,15 +23,31 @@ from .occupational_health import (  # type: ignore
     calculate_biological_exposure_index,
     AEROSPACE_CHEMICALS
 )
+from .circadian import (  # type: ignore
+    mitler_performance,
+    homeostatic_waking,
+    homeostatic_sleep,
+    circadian_component,
+    jet_lag_days_to_adjust,
+)
+from .cold import peak_shivering_intensity  # type: ignore
+from .decompression import tissue_ratio, interpret_tr  # type: ignore
 
 __all__ = [
     "standard_atmosphere",
     "alveolar_PO2",
+    "spo2_unacclimatized",
+    "spo2_acclimatized",
+    "pao2_at_altitude",
+    "ams_probability",
+    "inspired_PO2",
+    "oxygen_content",
     "estimate_tuc",
     "g_loc_time",
     "dose_rate",
     "wbgt_indoor",
     "wbgt_outdoor",
+    "heat_stress_index",
     "permissible_duration",
     "noise_dose_osha",
     "noise_dose_niosh",
@@ -34,4 +59,12 @@ __all__ = [
     "generate_exposure_report",
     "calculate_biological_exposure_index",
     "AEROSPACE_CHEMICALS",
+    "mitler_performance",
+    "homeostatic_waking",
+    "homeostatic_sleep",
+    "circadian_component",
+    "jet_lag_days_to_adjust",
+    "peak_shivering_intensity",
+    "tissue_ratio",
+    "interpret_tr",
 ]

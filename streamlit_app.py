@@ -9,11 +9,20 @@ import io
 from calculators import (
     standard_atmosphere,
     alveolar_PO2,
+    spo2_unacclimatized,
+    spo2_acclimatized,
+    pao2_at_altitude,
+    ams_probability,
+    inspired_PO2,
+    oxygen_content,
+    tissue_ratio,
+    interpret_tr,
     estimate_tuc,
     g_loc_time,
     dose_rate,
     wbgt_indoor,
     wbgt_outdoor,
+    heat_stress_index,
     noise_dose_osha,
     noise_dose_niosh,
     permissible_duration,
@@ -23,6 +32,12 @@ from calculators import (
     calculate_mixed_exposure_index,
     generate_exposure_report,
     calculate_biological_exposure_index,
+    mitler_performance,
+    homeostatic_waking,
+    homeostatic_sleep,
+    circadian_component,
+    jet_lag_days_to_adjust,
+    peak_shivering_intensity,
     AEROSPACE_CHEMICALS
 )
 
@@ -139,6 +154,7 @@ calculator_category = st.sidebar.selectbox(
         "🌍 Atmospheric & Physiological",
         "Occupational Health & Safety",
         "🔬 Environmental Monitoring",
+        "🧠 Fatigue & Circadian",
         "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
     ]
@@ -210,6 +226,10 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         [
             "Standard Atmosphere Properties",
             "Alveolar Oxygen Pressure", 
+            "Altitude & Hypoxia Predictions",
+            "Acute Mountain Sickness Risk",
+            "Oxygen Cascade",
+            "Decompression Tissue Ratio (TR)",
             "Time of Useful Consciousness",
             "G-Force Tolerance",
             "Cosmic Radiation Dose"
@@ -359,6 +379,123 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                 st.markdown('<div class="info-box"><strong>Assessment:</strong> Within public dose guideline</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">Highly simplified linear model for educational purposes only; real-world exposure depends on solar activity, latitude, and flight duration.</div>', unsafe_allow_html=True)
+
+    elif calc_type == "Altitude & Hypoxia Predictions":
+        st.markdown("### 🏔️ Altitude & Hypoxia Predictions")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            alt_ft = st.slider("Altitude (ft)", 0, 30000, 10000, step=1000)
+            alt_m = alt_ft * 0.3048
+            accl = st.radio("Acclimatization", ["Unacclimatized", "Acclimatized"], horizontal=True)
+            spo2_u = spo2_unacclimatized(alt_m)
+            spo2_a = spo2_acclimatized(alt_m)
+        with col2:
+            st.markdown("#### Oxygen Saturation")
+            st.metric("SpO₂ (unacclimatized)", f"{spo2_u:.1f} %")
+            st.metric("SpO₂ (acclimatized)", f"{spo2_a:.1f} %")
+        # Mini-plot
+        alts = np.linspace(0, 6000, 120)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=alts, y=[spo2_unacclimatized(a) for a in alts], name="Unacclimatized"))
+        fig.add_trace(go.Scatter(x=alts, y=[spo2_acclimatized(a) for a in alts], name="Acclimatized"))
+        fig.update_layout(title="SpO₂ vs Altitude", xaxis_title="Altitude (m)", yaxis_title="SpO₂ (%)", height=360)
+        st.plotly_chart(fig, use_container_width=True)
+
+        with st.expander("Arterial Oxygen at Altitude (PaO₂) Estimator", expanded=False):
+            colp1, colp2, colp3 = st.columns(3)
+            with colp1:
+                pa02_ground = st.number_input("PaO₂ at ground (mmHg)", 40.0, 120.0, 90.0, step=1.0)
+            with colp2:
+                fev1_pct = st.number_input("FEV₁ (%)", 20.0, 120.0, 100.0, step=1.0)
+            with colp3:
+                st.write("")
+                st.write("")
+                pa02_alt = pao2_at_altitude(pa02_ground, fev1_pct)
+                st.metric("Predicted PaO₂ at altitude", f"{pa02_alt:.1f} mmHg")
+
+    elif calc_type == "Acute Mountain Sickness Risk":
+        st.markdown("### 🩺 Acute Mountain Sickness (AMS) Risk")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            aae = st.number_input("Accumulated Altitude Exposure (km·days)", min_value=0.0, value=1.0, step=0.1)
+        prob = ams_probability(aae)
+        with col2:
+            st.markdown("#### Results")
+            st.metric("AMS Probability", f"{prob*100:.1f} %")
+            if prob < 0.2:
+                st.markdown('<div class="info-box"><strong>Risk:</strong> Low</div>', unsafe_allow_html=True)
+            elif prob < 0.5:
+                st.markdown('<div class="info-box"><strong>Risk:</strong> Moderate</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="info-box"><strong>Risk:</strong> Elevated</div>', unsafe_allow_html=True)
+        # Simple curve
+        aae_vals = np.linspace(0, 6, 120)
+        probs = [ams_probability(x) for x in aae_vals]
+        fig = go.Figure(data=[go.Scatter(x=aae_vals, y=[p*100 for p in probs], mode="lines")])
+        fig.update_layout(title="AMS Probability vs AAE", xaxis_title="AAE (km·days)", yaxis_title="Probability (%)", height=360)
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif calc_type == "Oxygen Cascade":
+        st.markdown("### 🧪 Oxygen Cascade")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            alt_ft = st.slider("Altitude (ft)", 0, 30000, 0, step=1000)
+            alt_m = alt_ft * 0.3048
+            fio2 = st.number_input("FiO₂", 0.0, 1.0, 0.21, step=0.01)
+            paco2 = st.number_input("PaCO₂ (mmHg)", 20.0, 60.0, 40.0, step=1.0)
+            rq = st.number_input("Respiratory Quotient (R)", 0.5, 1.2, 0.8, step=0.05)
+            hb = st.number_input("Hemoglobin (g/dL)", 5.0, 20.0, 15.0, step=0.1)
+            aagrad = st.number_input("A–a gradient (mmHg)", 0.0, 30.0, 5.0, step=1.0)
+        with col2:
+            pio2 = inspired_PO2(alt_m, fio2)
+            pao2 = alveolar_PO2(alt_m, fio2, paco2, rq)
+            pao2_art = max(0.0, pao2 - aagrad)
+            # Estimate SaO2 via Hill (same as AltitudeCalculator)
+            def estimate_sao2(pao2_mmHg: float, P50: float = 26.8, n: float = 2.7) -> float:
+                if pao2_mmHg <= 0:
+                    return 0.0
+                ratio = (pao2_mmHg ** n) / (pao2_mmHg ** n + P50 ** n)
+                return max(0.0, min(100.0, 100.0 * ratio))
+            sao2_pct = estimate_sao2(pao2_art)
+            cao2 = oxygen_content(hb, sao2_pct, pao2_art)
+            st.markdown("#### Results")
+            st.metric("PiO₂", f"{pio2:.1f} mmHg")
+            st.metric("PAO₂", f"{pao2:.1f} mmHg")
+            st.metric("PaO₂ (est)", f"{pao2_art:.1f} mmHg")
+            st.metric("SaO₂ (est)", f"{sao2_pct:.0f} %")
+            st.metric("CaO₂", f"{cao2:.2f} mL/dL")
+        # Quick viz CaO2 vs altitude
+        alts = np.linspace(0, 10000, 120)
+        pao2s = [alveolar_PO2(a, fio2, paco2, rq) - aagrad for a in alts]
+        sao2s = [estimate_sao2(p) for p in pao2s]
+        cao2s = [oxygen_content(hb, s, max(0.0, p)) for s, p in zip(sao2s, pao2s)]
+        fig = go.Figure(data=[go.Scatter(x=alts/0.3048, y=cao2s, mode="lines", name="CaO₂")])
+        fig.update_layout(title="CaO₂ vs Altitude", xaxis_title="Altitude (ft)", yaxis_title="CaO₂ (mL/dL)", height=360)
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif calc_type == "Decompression Tissue Ratio (TR)":
+        st.markdown("### 🫧 Decompression Tissue Ratio (TR)")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            alt_ft = st.slider("Altitude (ft)", 0, 40000, 0, step=1000)
+            alt_m = alt_ft * 0.3048
+            p_amb = standard_atmosphere(alt_m)["pressure_Pa"] / 133.322
+            # Assume tissues saturated at sea-level N2 by default
+            default_ptissue = 0.78 * (101325 / 133.322)
+            ptissue = st.number_input("Tissue N₂ partial pressure (mmHg)", 0.0, 800.0, float(default_ptissue), step=1.0)
+        with col2:
+            tr = tissue_ratio(ptissue, p_amb)
+            st.markdown("#### Results")
+            st.metric("Ambient Pressure", f"{p_amb:.1f} mmHg")
+            st.metric("TR", f"{tr:.2f}")
+            st.markdown(f"<div class='info-box'><strong>Assessment:</strong> {interpret_tr(tr)}</div>", unsafe_allow_html=True)
+        # Viz: TR vs altitude
+        alts_ft = np.linspace(0, 40000, 160)
+        p_ambs = [standard_atmosphere(a*0.3048)["pressure_Pa"]/133.322 for a in alts_ft]
+        trs = [tissue_ratio(ptissue, p) for p in p_ambs]
+        fig = go.Figure(data=[go.Scatter(x=alts_ft, y=trs, mode="lines")])
+        fig.update_layout(title="TR vs Altitude (fixed tissue N₂)", xaxis_title="Altitude (ft)", yaxis_title="TR", height=360)
+        st.plotly_chart(fig, use_container_width=True)
 
 elif calculator_category == "Occupational Health & Safety":
     st.markdown('<div class="section-header">Occupational Health & Safety Calculators</div>', unsafe_allow_html=True)
@@ -685,6 +822,8 @@ elif calculator_category == "🔬 Environmental Monitoring":
         "Choose Calculator",
         [
             "Heat Stress Index (WBGT)",
+            "Heat Stress Index (HSI)",
+            "Cold Exposure: Peak Shivering",
             "Noise Exposure Assessment"
         ]
     )
@@ -725,6 +864,42 @@ elif calculator_category == "🔬 Environmental Monitoring":
                 st.markdown('<div class="info-box"><strong>Risk Category:</strong> Extreme</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box">WBGT values are based on ISO 7243:2017 standards for heat stress assessment.</div>', unsafe_allow_html=True)
+    
+    elif calc_type == "Heat Stress Index (HSI)":
+        st.markdown("### 🔥 Heat Stress Index (HSI)")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            M = st.number_input("Metabolic rate (W/m²)", 0.0, 800.0, 300.0, step=10.0)
+            Tdb = st.number_input("Dry-bulb (°C)", -10.0, 60.0, 30.0, step=0.1)
+            RH = st.number_input("Relative Humidity (%)", 0.0, 100.0, 50.0, step=1.0)
+            v = st.number_input("Air speed (m/s)", 0.0, 5.0, 0.5, step=0.1)
+            Wext = st.number_input("External work (W/m²)", 0.0, 400.0, 0.0, step=10.0)
+            Tg = st.number_input("Globe temperature (°C, optional)", -10.0, 80.0, Tdb, step=0.1)
+        with col2:
+            hsi = heat_stress_index(M, Tdb, RH, v, Wext, Tg)
+            st.markdown("#### Results")
+            st.metric("HSI", f"{hsi:.1f} %")
+            if hsi < 20:
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Acceptable</div>', unsafe_allow_html=True)
+            elif hsi < 40:
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Caution</div>', unsafe_allow_html=True)
+            elif hsi < 100:
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> High strain</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="info-box"><strong>Assessment:</strong> Uncompensable heat stress</div>', unsafe_allow_html=True)
+    
+    elif calc_type == "Cold Exposure: Peak Shivering":
+        st.markdown("### 🥶 Peak Shivering Intensity")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            vo2max = st.number_input("VO₂max (ml·kg⁻¹·min⁻¹)", 15.0, 90.0, 45.0, step=1.0)
+            bmi = st.number_input("BMI (kg/m²)", 15.0, 40.0, 24.0, step=0.1)
+            age = st.number_input("Age (years)", 16, 80, 30, step=1)
+        shiv = peak_shivering_intensity(vo2max, bmi, age)
+        with col2:
+            st.markdown("#### Results")
+            st.metric("Shivering peak", f"{shiv:.1f} ml·kg⁻¹·min⁻¹")
+            st.markdown(f"<div class='info-box'>Represents ~{shiv/3.5:.1f}× resting metabolism</div>", unsafe_allow_html=True)
     
     elif calc_type == "Noise Exposure Assessment":
         st.markdown("### 🔊 Noise Exposure Assessment")
@@ -851,6 +1026,9 @@ elif calculator_category == "📈 Visualization Studio":
         "Choose Visualization",
         [
             "PAO₂ vs Altitude & FiO₂",
+            "SpO₂ vs Altitude (Acclimatized vs Unacclimatized)",
+            "AMS Probability vs AAE",
+            "CaO₂ vs PaO₂ & Hb",
             "WBGT (Outdoor) vs Dry-Bulb & RH",
             "Noise Permissible Duration vs Level & Exchange Rate",
             "Mixed Chemical Index (2 chemicals)"
@@ -862,6 +1040,12 @@ elif calculator_category == "📈 Visualization Studio":
     # Trace style for 2D plots
     trace_style = st.radio("Trace Style (2D)", ["Lines", "Lines + Markers", "Markers", "Area"], horizontal=True)
     smooth_lines = st.toggle("Smooth Lines", value=False)
+    mode_map = {
+        "Lines": "lines",
+        "Lines + Markers": "lines+markers",
+        "Markers": "markers",
+        "Area": "lines",
+    }
 
     with st.expander("Export Options", expanded=False):
         export_format = st.selectbox("Export format", ["png", "svg", "pdf"], index=0)
@@ -1071,6 +1255,59 @@ elif calculator_category == "📈 Visualization Studio":
 
         fig_to_save = fig if 'fig' in locals() else None
 
+    elif vis_type == "SpO₂ vs Altitude (Acclimatized vs Unacclimatized)":
+        col1, col2 = st.columns(2)
+        with col1:
+            alt_range_m = st.slider("Altitude range (m)", 0, 6000, (0, 5000), step=100)
+        with col2:
+            pass
+        alts = np.linspace(alt_range_m[0], alt_range_m[1], 160)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=alts, y=[spo2_unacclimatized(a) for a in alts], name="Unacclimatized"))
+        fig.add_trace(go.Scatter(x=alts, y=[spo2_acclimatized(a) for a in alts], name="Acclimatized"))
+        style_fig(fig, "SpO₂ vs Altitude")
+        fig.update_xaxes(title_text="Altitude (m)")
+        fig.update_yaxes(title_text="SpO₂ (%)")
+        if smooth_lines:
+            fig.update_traces(line_shape="spline")
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        fig_to_save = fig
+
+    elif vis_type == "AMS Probability vs AAE":
+        aae_vals = np.linspace(0, 6, 140)
+        probs = [ams_probability(x)*100 for x in aae_vals]
+        fig = go.Figure(data=[go.Scatter(x=aae_vals, y=probs, mode=mode_map.get(trace_style, "lines"))])
+        style_fig(fig, "AMS Probability vs AAE")
+        fig.update_xaxes(title_text="AAE (km·days)")
+        fig.update_yaxes(title_text="Probability (%)")
+        if smooth_lines:
+            fig.update_traces(line_shape="spline")
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        fig_to_save = fig
+
+    elif vis_type == "CaO₂ vs PaO₂ & Hb":
+        col1, col2 = st.columns(2)
+        with col1:
+            pao2_min, pao2_max = st.slider("PaO₂ range (mmHg)", 30.0, 120.0, (60.0, 100.0), step=1.0)
+            hb = st.slider("Hemoglobin (g/dL)", 8.0, 18.0, 15.0, step=0.1)
+        pa_vals = np.linspace(pao2_min, pao2_max, 140)
+        # Hill estimate for SaO2
+        def est_sao2(p: float) -> float:
+            if p <= 0:
+                return 0.0
+            P50, n = 26.8, 2.7
+            ratio = (p ** n) / (p ** n + P50 ** n)
+            return 100.0 * ratio
+        cao2_vals = [oxygen_content(hb, est_sao2(p), p) for p in pa_vals]
+        fig = go.Figure(data=[go.Scatter(x=pa_vals, y=cao2_vals, mode=mode_map.get(trace_style, "lines"))])
+        style_fig(fig, "CaO₂ vs PaO₂ (Hb fixed)")
+        fig.update_xaxes(title_text="PaO₂ (mmHg)")
+        fig.update_yaxes(title_text="CaO₂ (mL/dL)")
+        if smooth_lines:
+            fig.update_traces(line_shape="spline")
+        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        fig_to_save = fig
+
     # Export controls
     if 'fig_to_save' in locals() and fig_to_save is not None:
         col_export1, col_export2 = st.columns([1, 1])
@@ -1185,10 +1422,72 @@ elif calculator_category == "📊 Risk Assessment Tools":
     )
     st.plotly_chart(fig, use_container_width=True)
 
+elif calculator_category == "🧠 Fatigue & Circadian":
+    st.markdown('<div class="section-header">Fatigue & Circadian Calculators</div>', unsafe_allow_html=True)
+
+    calc_type = st.selectbox(
+        "Choose Calculator",
+        [
+            "Circadian Performance (Mitler)",
+            "Two-Process Model (S & C)",
+            "Jet Lag Recovery",
+        ]
+    )
+
+    if calc_type == "Circadian Performance (Mitler)":
+        st.markdown("### 🧠 Circadian Performance (Mitler)")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            t = st.slider("Time (hours)", 0.0, 24.0, 12.0, step=0.5)
+            phi = st.slider("Phase (φ, hours)", -12.0, 12.0, 0.0, step=0.5)
+            SD = st.slider("Sleep debt parameter (SD)", 0.5, 5.0, 2.0, step=0.1)
+            K = st.slider("Scaling (K)", 0.5, 5.0, 2.0, step=0.1)
+        perf = mitler_performance(t, phi, SD, K)
+        with col2:
+            st.markdown("#### Result")
+            st.metric("Performance (unitless)", f"{perf:.3f}")
+        # Viz over 24h
+        ts = np.linspace(0, 24, 180)
+        ps = [mitler_performance(x, phi, SD, K) for x in ts]
+        fig = go.Figure(data=[go.Scatter(x=ts, y=ps, mode="lines")])
+        fig.update_layout(title="Mitler Performance over 24h", xaxis_title="Time (h)", yaxis_title="Performance", height=360)
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif calc_type == "Two-Process Model (S & C)":
+        st.markdown("### ⏳ Two-Process Model Components")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            Sa = st.slider("Sa (upper bound)", 0.0, 1.0, 1.0, step=0.01)
+            L = st.slider("L (lower bound)", 0.0, 1.0, 0.2, step=0.01)
+            U = st.slider("U (upper equilibrium)", 0.0, 1.0, 1.0, step=0.01)
+            Sr = st.slider("Sr (recovery baseline)", 0.0, 1.0, 0.3, step=0.01)
+            tS = st.slider("Time t (hours)", 0.0, 16.0, 8.0, step=0.5)
+            M = st.slider("Circadian amplitude (M)", 0.0, 1.5, 1.0, step=0.05)
+            p = st.slider("Phase p (hours)", 0.0, 24.0, 18.0, step=0.5)
+        S_wake = homeostatic_waking(Sa, L, tS)
+        S_sleep = homeostatic_sleep(U, Sr, tS)
+        C_val = circadian_component(M, tS, p)
+        with col2:
+            st.markdown("#### Results")
+            st.metric("S (waking)", f"{S_wake:.3f}")
+            st.metric("S' (sleep)", f"{S_sleep:.3f}")
+            st.metric("C (circadian)", f"{C_val:.3f}")
+
+    elif calc_type == "Jet Lag Recovery":
+        st.markdown("### ✈️ Jet Lag Recovery Time")
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            tz = st.slider("Time zones crossed", 0, 12, 6, step=1)
+            direction = st.radio("Direction", ["Eastward", "Westward"], horizontal=True)
+        days = jet_lag_days_to_adjust(tz, direction)
+        with col2:
+            st.markdown("#### Result")
+            st.metric("Estimated days to adjust", f"{days:.1f} days")
+
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #666; font-size: 0.9em;">
+<div style=\"text-align: center; color: #666; font-size: 0.9em;\">
     <p><strong>Aerospace Physiology & Occupational Health Calculators</strong></p>
     <p>For educational and research purposes only • Consult qualified professionals for operational use</p>
 </div>
