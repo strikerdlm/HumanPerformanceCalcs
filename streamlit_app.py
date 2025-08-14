@@ -1332,7 +1332,7 @@ elif calculator_category == "📈 Visualization Studio":
         
         with col_export2:
             # Fallback: HTML export (always works)
-            html_str = fig_to_save.to_html(include_plotlyjs='cdn')
+            html_str = fig_to_save.to_html(include_plotlyjs=True)
             st.download_button(
                 label="Download Interactive HTML",
                 data=html_str,

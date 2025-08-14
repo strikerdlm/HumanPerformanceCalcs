@@ -3,7 +3,6 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B.svg)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/License-Academic-green.svg)](#license)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.placeholder-blue.svg)](https://zenodo.org/)
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](#installation)
 [![Code Quality](https://img.shields.io/badge/Code%20Quality-A-brightgreen.svg)](#technical-specifications)
 
@@ -21,9 +20,8 @@
 
 *Expert in operational physiology, extreme environment medicine, and human performance optimization*
 
-[![ORCID](https://img.shields.io/badge/ORCID-0000--0000--0000--0000-green.svg)](https://orcid.org/)
+[![GitHub](https://img.shields.io/badge/GitHub-strikerdlm-181717.svg)](https://github.com/strikerdlm)
 [![ResearchGate](https://img.shields.io/badge/ResearchGate-Diego_Malpica-00CCBB.svg)](https://www.researchgate.net/)
-[![Google Scholar](https://img.shields.io/badge/Google_Scholar-Citations-4285F4.svg)](https://scholar.google.com/)
 
 </div>
 
@@ -43,92 +41,60 @@ This suite provides **validated computational tools** for aerospace medicine pro
 
 ---
 
-## 📚 **Scientific Foundation & Citations**
+## 🚀 **Quick Start Guide**
 
-This work builds upon decades of aerospace medicine research and established physiological models:
-
-### **Core References**
-
-1. **Altitude Physiology & Hypoxia**
-   - West, J.B. (2016). *Respiratory Physiology: The Essentials* (10th ed.). Wolters Kluwer. ISBN: 978-1496310187
-   - Hackett, P.H. & Roach, R.C. (2001). High-altitude illness. *New England Journal of Medicine*, 345(2), 107-114. DOI: [10.1056/NEJM200107123450206](https://doi.org/10.1056/NEJM200107123450206)
-
-2. **Decompression Sickness Models**
-   - Bühlmann, A.A. (1984). *Decompression-Decompression Sickness*. Springer-Verlag. ISBN: 978-3540133087
-   - Vann, R.D., et al. (2011). Decompression illness. *The Lancet*, 377(9760), 153-164. DOI: [10.1016/S0140-6736(10)61085-9](https://doi.org/10.1016/S0140-6736(10)61085-9)
-
-3. **Heat Stress & Thermal Physiology**
-   - Parsons, K. (2014). *Human Thermal Environments* (3rd ed.). CRC Press. ISBN: 978-1466595618
-   - Périard, J.D., et al. (2015). Adaptations and mechanisms of human heat acclimation. *Scandinavian Journal of Medicine & Science in Sports*, 25(S1), 20-38. DOI: [10.1111/sms.12408](https://doi.org/10.1111/sms.12408)
-
-4. **Fatigue & Performance Models**
-   - Mallis, M.M., et al. (2004). Summary of the key features of seven biomathematical models of human fatigue and performance. *Aviation, Space, and Environmental Medicine*, 75(3), A4-A14.
-   - Hursh, S.R., et al. (2004). Fatigue models for applied research in warfighting. *Aviation, Space, and Environmental Medicine*, 75(3), A44-A53.
-
-5. **Occupational Health Standards**
-   - ACGIH. (2023). *TLVs and BEIs: Threshold Limit Values for Chemical Substances and Physical Agents*. American Conference of Governmental Industrial Hygienists.
-   - NIOSH. (2016). *Criteria for a Recommended Standard: Occupational Exposure to Heat and Hot Environments*. DHHS (NIOSH) Publication No. 2016-106.
-
----
-
-## 🏗️ **System Architecture**
-
-```mermaid
-graph TB
-    A[User Interface<br/>Streamlit Dashboard] --> B[Calculator Engine]
-    B --> C[Aerospace Medicine Modules]
-    B --> D[Sports Performance Modules]
-    B --> E[Occupational Health Modules]
-    
-    C --> C1[Altitude Physiology]
-    C --> C2[Decompression Models]
-    C --> C3[G-Force Tolerance]
-    C --> C4[Hypoxia Assessment]
-    
-    D --> D1[VO2 Max Calculations]
-    D --> D2[Power Performance]
-    D --> D3[Training Zones]
-    D --> D4[Recovery Metrics]
-    
-    E --> E1[Heat Stress Index]
-    E --> E2[Noise Exposure]
-    E --> E3[Chemical Exposure]
-    E --> E4[Ergonomic Assessment]
-    
-    F[Visualization Engine] --> G[Interactive Charts]
-    F --> H[Scientific Reports]
-    F --> I[Export Functions]
-```
-
----
-
-## 🔧 **Installation & Setup**
-
-### **Prerequisites**
+### **Step 1: Prerequisites**
+Ensure you have the following installed:
 - Python 3.8+ 🐍
+- Git
 - 4GB RAM minimum (8GB recommended)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
-### **Quick Start** ⚡
-
+### **Step 2: Clone the Repository**
 ```bash
-# Clone the repository
-git clone https://github.com/username/aerospace-medicine-calculator.git
-cd aerospace-medicine-calculator
-
-# Create virtual environment (recommended)
-python -m venv aerospace_env
-source aerospace_env/bin/activate  # On Windows: aerospace_env\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Launch the application
-streamlit run streamlit_app.py
+git clone https://github.com/strikerdlm/HumanPerformanceCalcs.git
+cd HumanPerformanceCalcs
 ```
 
-### **Docker Deployment** 🐳
+### **Step 3: Set Up Python Environment**
+```bash
+# Create virtual environment (recommended)
+python -m venv textappv2
+```
 
+**On Windows:**
+```bash
+textappv2\Scripts\activate
+```
+
+**On macOS/Linux:**
+```bash
+source textappv2/bin/activate
+```
+
+### **Step 4: Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+### **Step 5: Launch the Application**
+```bash
+streamlit run streamlit_app.py --server.port 9876 --server.address 127.0.0.1
+```
+
+### **Step 6: Access the Application**
+Open your web browser and navigate to:
+```
+http://127.0.0.1:9876
+```
+
+> **Note**: If port 9876 is unavailable, try alternative ports like 8502, 8503, or 9877.
+
+---
+
+## 🔧 **Alternative Installation Methods**
+
+### **Docker Deployment** 🐳
 ```bash
 # Build the container
 docker build -t aerospace-medicine-calc .
@@ -138,7 +104,6 @@ docker run -p 8501:8501 aerospace-medicine-calc
 ```
 
 ### **Production Deployment**
-
 For production environments, consider using:
 - **Streamlit Cloud**: Direct deployment from GitHub
 - **Heroku**: Web application hosting
@@ -146,10 +111,77 @@ For production environments, consider using:
 
 ---
 
+## 📚 **Scientific Foundation & Calculator References**
+
+All calculators in this suite are based on peer-reviewed scientific literature and established standards. Each calculator includes its specific reference source:
+
+### **🌍 Atmospheric & Physiological Calculators**
+
+#### **1. International Standard Atmosphere (ISA) Model**
+- **Reference**: ISO. (1975). *International Standard Atmosphere*. ISO Standard 2533:1975. International Organization for Standardization.
+- **Application**: Calculates atmospheric properties (pressure, temperature, density) at various altitudes
+
+#### **2. Alveolar Oxygen Pressure (PAO₂) Calculation**
+- **Reference**: West, J. B. (2011). *Respiratory Physiology: The Essentials* (9th ed.). Lippincott Williams & Wilkins.
+- **Application**: Determines alveolar oxygen partial pressure using the alveolar gas equation
+
+#### **3. Oxygen Saturation Curves (Acclimatized vs. Unacclimatized)**
+- **Reference**: West, J. B., & Schoene, R. B. (2001). *High Altitude Medicine and Physiology* (3rd ed.). Arnold.
+- **Application**: Predicts oxygen saturation levels at altitude for different acclimatization states
+
+#### **4. Acute Mountain Sickness (AMS) Probability Models**
+- **Reference**: Roach, R. C., Bartsch, P., Hackett, P. H., & Oelz, O. (1993). The Lake Louise acute mountain sickness scoring system. In Sutton, J. R., Coates, G., & Houston, C. S. (Eds.), *Hypoxia and Molecular Medicine* (pp. 272–274). Queen City Printers.
+- **Application**: Estimates probability of developing AMS based on altitude exposure
+
+#### **5. Time of Useful Consciousness (TUC)**
+- **Reference**: Ernsting, J., & Nicholson, A. N. (2016). *Aviation Medicine* (4th ed.). CRC Press.
+- **Application**: Predicts consciousness duration during rapid decompression events
+
+#### **6. G-Force Tolerance and G-LOC Prediction**
+- **Reference**: Whinnery, J. E., & Forster, E. M. (2006). G-induced loss of consciousness: definition, history, current status. *Aviation, Space, and Environmental Medicine*, 77(6), 603–612.
+- **Application**: Estimates G-force tolerance and G-LOC onset times
+
+#### **7. Cosmic Radiation Dose Calculations**
+- **Reference**: Friedberg, W., Copeland, K., Duke, F. E., O'Brien, K., & Darden, E. B. Jr. (1992). Radiation exposure of air carrier crewmembers II. *Radiation Protection Dosimetry*, 45(1-4), 145–148.
+- **Application**: Calculates cosmic radiation exposure for aviation personnel
+
+### **🔬 Environmental Monitoring Calculators**
+
+#### **8. Wet Bulb Globe Temperature (WBGT)**
+- **Reference**: Budd, G. M. (2008). Wet-bulb globe temperature (WBGT)—its history and its limitations. *Journal of Science and Medicine in Sport*, 11(1), 20–32.
+- **Application**: Assesses heat stress risk in indoor and outdoor environments
+
+#### **9. Heat Stress Index (HSI)**
+- **Reference**: Belding, H. S., & Hatch, T. F. (1955). Index for evaluating heat stress in terms of resulting physiological strains. *Heating, Piping and Air Conditioning*, 27(8), 129–136.
+- **Application**: Evaluates heat stress based on metabolic rate and environmental conditions
+
+#### **10. Noise Exposure Assessment**
+- **References**: 
+  - National Institute for Occupational Safety and Health (NIOSH). (1998). *Criteria for a Recommended Standard: Occupational Noise Exposure* (DHHS Publication No. 98–126).
+  - Occupational Safety and Health Administration (OSHA). (2008). *Occupational Noise Exposure: Standard 29 CFR 1910.95*.
+- **Application**: Calculates noise dose and permissible exposure times per OSHA/NIOSH standards
+
+### **🧠 Fatigue & Circadian Calculators**
+
+#### **11. Circadian Performance Models**
+- **Reference**: Mallis, M. M., et al. (2004). Summary of the key features of seven biomathematical models of human fatigue and performance. *Aviation, Space, and Environmental Medicine*, 75(3), A4-A14.
+- **Application**: Predicts performance degradation based on circadian rhythms and sleep debt
+
+#### **12. Two-Process Sleep Model**
+- **Reference**: Hursh, S. R., et al. (2004). Fatigue models for applied research in warfighting. *Aviation, Space, and Environmental Medicine*, 75(3), A44-A53.
+- **Application**: Models homeostatic and circadian components of sleep-wake regulation
+
+### **🏭 Occupational Health Calculators**
+
+#### **13. Chemical Exposure Assessment (TLV/BEI)**
+- **Reference**: ACGIH. (2023). *TLVs and BEIs: Threshold Limit Values for Chemical Substances and Physical Agents*. American Conference of Governmental Industrial Hygienists.
+- **Application**: Evaluates chemical exposure risks using current ACGIH standards
+
+---
+
 ## 💻 **Usage Examples**
 
 ### **Altitude Physiology Assessment**
-
 ```python
 from calculators import standard_atmosphere, spo2_unacclimatized
 
@@ -163,7 +195,6 @@ print(f"SpO2 at {altitude_ft} ft: {spo2:.1f}%")
 ```
 
 ### **Heat Stress Evaluation**
-
 ```python
 from calculators import wbgt_outdoor, heat_stress_index
 
@@ -178,7 +209,6 @@ print(f"WBGT: {wbgt:.1f}°C - Risk Level: {risk_level}")
 ```
 
 ### **Decompression Risk Assessment**
-
 ```python
 from calculators import tissue_ratio, interpret_tr
 
@@ -194,103 +224,43 @@ print(f"Tissue Ratio: {tr:.3f} - {risk_assessment}")
 
 ---
 
-## 📊 **Module Catalog**
+## 📊 **Available Calculator Categories**
 
-<details>
-<summary><strong>🚀 Aerospace Medicine Modules</strong></summary>
+### **🌍 Atmospheric & Physiological**
+- Standard Atmosphere Properties
+- Alveolar Oxygen Pressure
+- Altitude & Hypoxia Predictions
+- Acute Mountain Sickness Risk
+- Oxygen Cascade Analysis
+- Decompression Tissue Ratio (TR)
+- Time of Useful Consciousness
+- G-Force Tolerance
+- Cosmic Radiation Dose
 
-### **Altitude Physiology**
-- Standard Atmosphere Model (ISA)
-- Alveolar Gas Equation
-- Oxygen Saturation Curves
-- Acute Mountain Sickness Probability
-- Time of Useful Consciousness (TUC)
+### **🏭 Occupational Health & Safety**
+- Chemical Exposure Assessment
+- Time-Weighted Average Calculator
+- Mixed Chemical Exposure
+- Unusual Work Schedule TLV
+- Biological Exposure Index
+- Comprehensive Exposure Report
 
-### **Decompression Medicine**
-- Tissue Compartment Models
-- Bühlmann Algorithm Implementation
-- Decompression Sickness Risk Assessment
-- Rapid Decompression Analysis
+### **🔬 Environmental Monitoring**
+- Heat Stress Index (WBGT)
+- Heat Stress Index (HSI)
+- Cold Exposure: Peak Shivering
+- Noise Exposure Assessment
 
-### **G-Force & Acceleration**
-- G-LOC (G-induced Loss of Consciousness) Prediction
-- Acceleration Tolerance Curves
-- Anti-G Suit Effectiveness
+### **🧠 Fatigue & Circadian**
+- Circadian Performance (Mitler)
+- Two-Process Model (S & C)
+- Jet Lag Recovery
 
-### **Environmental Stressors**
-- Hypoxia Tolerance Assessment
-- Hyperoxia Toxicity Models
-- Cabin Pressure Calculations
-
-</details>
-
-<details>
-<summary><strong>🏃‍♂️ Sports Performance Modules</strong></summary>
-
-### **Aerobic Performance**
-- VO₂ Max (Laboratory & Field Tests)
-- Cardiac Output Calculations
-- Lactate Threshold Determination
-- Running Economy Assessment
-
-### **Anaerobic Performance**
-- Wingate Test Analysis
-- Critical Power Models
-- Anaerobic Capacity Assessment
-- Power-to-Weight Ratios
-
-### **Training Optimization**
-- Heart Rate Zone Calculations
-- Training Stress Score (TSS)
-- Recovery Metrics
-- Performance Prediction Models
-
-</details>
-
-<details>
-<summary><strong>🏭 Occupational Health Modules</strong></summary>
-
-### **Heat Stress Assessment**
-- WBGT Calculations (Indoor/Outdoor)
-- Heat Stress Index
-- Physiological Strain Index
-- Sweat Rate Predictions
-
-### **Noise Exposure**
-- OSHA & NIOSH Dose Calculations
-- Time-Weighted Average (TWA)
-- Permissible Exposure Limits
-
-### **Chemical Exposure**
-- Threshold Limit Value (TLV) Assessment
-- Mixed Exposure Indices
-- Biological Exposure Indices (BEI)
-- Risk Characterization
-
-### **Fatigue Management**
-- Circadian Rhythm Models
-- Sleep Debt Calculations
-- Performance Degradation Prediction
-- Jet Lag Recovery Time
-
-</details>
-
----
-
-## 🎨 **Visualization Gallery**
-
-| Visualization | Description | Application |
-|---------------|-------------|-------------|
-| ![VO2 Max](vo2_max_visualization.png) | **VO₂ Max Analysis** | Aerobic capacity assessment across fitness levels |
-| ![Power Dashboard](power_performance_dashboard.png) | **Power Performance** | Comprehensive anaerobic power analysis |
-| ![Training Zones](training_zones_visualization.png) | **Training Zones** | Heart rate-based training optimization |
-| ![Metabolic](metabolic_infographic.png) | **Metabolic Pathways** | Energy system utilization patterns |
-
-### **Interactive Features** 🎮
-- **Real-time Calculations**: Instant results as parameters change
-- **Export Capabilities**: PDF reports, CSV data, high-res images
-- **Comparative Analysis**: Side-by-side parameter comparison
-- **Sensitivity Analysis**: Parameter impact visualization
+### **📈 Visualization Studio**
+- Interactive 2D/3D plotting
+- Multiple visualization themes
+- Export capabilities (PNG, SVG, PDF, HTML)
+- Real-time parameter adjustment
 
 ---
 
@@ -339,13 +309,13 @@ If you use this software in your research or professional work, please cite:
   title = {Aerospace Medicine \& Human Performance Calculator Suite},
   year = {2024},
   institution = {Universidad Nacional de Colombia},
-  url = {https://github.com/username/aerospace-medicine-calculator},
+  url = {https://github.com/strikerdlm/HumanPerformanceCalcs},
   note = {Computational framework for aerospace medicine and human performance assessment}
 }
 ```
 
 **APA Style:**
-Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [Computer software]. Universidad Nacional de Colombia. https://github.com/username/aerospace-medicine-calculator
+Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [Computer software]. Universidad Nacional de Colombia. https://github.com/strikerdlm/HumanPerformanceCalcs
 
 ---
 
@@ -358,9 +328,9 @@ Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [C
 🔬 Department of Aerospace Medicine  
 
 ### **Technical Support**
-- 📋 **Issues**: [GitHub Issues](https://github.com/username/aerospace-medicine-calculator/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/username/aerospace-medicine-calculator/discussions)
-- 📖 **Documentation**: [Wiki](https://github.com/username/aerospace-medicine-calculator/wiki)
+- 📋 **Issues**: [GitHub Issues](https://github.com/strikerdlm/HumanPerformanceCalcs/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/strikerdlm/HumanPerformanceCalcs/discussions)
+- 📖 **Documentation**: [Project Wiki](https://github.com/strikerdlm/HumanPerformanceCalcs/wiki)
 
 ---
 
@@ -385,9 +355,9 @@ This project is licensed under the **Academic Use License** - see the [LICENSE](
 
 ## 📈 **Project Statistics**
 
-![GitHub stars](https://img.shields.io/github/stars/username/aerospace-medicine-calculator?style=social)
-![GitHub forks](https://img.shields.io/github/forks/username/aerospace-medicine-calculator?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/username/aerospace-medicine-calculator?style=social)
+![GitHub stars](https://img.shields.io/github/stars/strikerdlm/HumanPerformanceCalcs?style=social)
+![GitHub forks](https://img.shields.io/github/forks/strikerdlm/HumanPerformanceCalcs?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/strikerdlm/HumanPerformanceCalcs?style=social)
 
 **Development Metrics:**
 - 📁 **Lines of Code**: 15,000+
@@ -408,6 +378,6 @@ This project is licensed under the **Academic Use License** - see the [LICENSE](
 
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 [![Made with Streamlit](https://img.shields.io/badge/Made%20with-Streamlit-FF4B4B.svg)](https://streamlit.io/)
-[![Built with Science](https://img.shields.io/badge/Built%20with-Science-brightgreen.svg)](#scientific-foundation--citations)
+[![Built with Science](https://img.shields.io/badge/Built%20with-Science-brightgreen.svg)](#scientific-foundation--calculator-references)
 
 </div>
