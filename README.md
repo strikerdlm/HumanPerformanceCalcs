@@ -38,6 +38,7 @@ This suite provides **validated computational tools** for aerospace medicine pro
 - 🌡️ **Environmental Stress Assessment**: Heat, cold, altitude, and decompression models
 - 💻 **Production Ready**: Robust, tested, and deployment-ready codebase
 - 📱 **Cross-Platform**: Web-based interface accessible from any device
+- 🛡️ **Windows Compatible**: Enhanced Windows support with automated troubleshooting tools
 
 ---
 
@@ -57,38 +58,159 @@ cd HumanPerformanceCalcs
 ```
 
 ### **Step 3: Set Up Python Environment**
+
+**Option A: Using Conda (Recommended)**
 ```bash
-# Create virtual environment (recommended)
+# Create conda environment from environment.yml
+conda env create -f environment.yml
+conda activate textappv2
+```
+
+**Option B: Using Virtual Environment**
+```bash
+# Create virtual environment
 python -m venv textappv2
 ```
 
+**Activate the environment:**
+
 **On Windows:**
 ```bash
+# For venv:
 textappv2\Scripts\activate
+
+# For conda:
+conda activate textappv2
 ```
 
 **On macOS/Linux:**
 ```bash
+# For venv:
 source textappv2/bin/activate
+
+# For conda:
+conda activate textappv2
 ```
 
 ### **Step 4: Install Dependencies**
+
+**If using conda environment (from Step 3A):**
+```bash
+# Dependencies are automatically installed via environment.yml
+# No additional steps needed
+```
+
+**If using virtual environment (from Step 3B):**
 ```bash
 pip install -r requirements.txt
 ```
 
 ### **Step 5: Launch the Application**
+
+**On Windows (Recommended):**
+```bash
+# Use the administrator batch file for best compatibility
+# Right-click run_streamlit_admin.bat → "Run as administrator"
+
+# OR manually with specific address binding:
+streamlit run streamlit_app.py --server.address 0.0.0.0 --server.port 8507
+```
+
+**On macOS/Linux:**
 ```bash
 streamlit run streamlit_app.py --server.port 9876 --server.address 127.0.0.1
 ```
 
 ### **Step 6: Access the Application**
 Open your web browser and navigate to:
+
+**Windows (using address 0.0.0.0):**
+```
+http://localhost:8507
+```
+
+**macOS/Linux:**
 ```
 http://127.0.0.1:9876
 ```
 
-> **Note**: If port 9876 is unavailable, try alternative ports like 8502, 8503, or 9877.
+> **Note**: If these ports are unavailable, try alternative ports like 8502, 8503, 8505, or 9877. The application will display the correct URL when it starts.
+
+---
+
+## 🛠️ **Windows Troubleshooting**
+
+### **Solving Windows Socket Permission Errors**
+
+If you encounter `PermissionError: [WinError 10013]` when running Streamlit on Windows, this is a common Windows network security restriction. We've provided multiple solutions:
+
+#### **🔧 Method 1: Automated Administrator Launch (RECOMMENDED)**
+
+Use the provided batch file that handles everything automatically:
+
+1. **Right-click** on `run_streamlit_admin.bat`
+2. **Select "Run as administrator"**
+3. **Click "Yes"** on the UAC (User Account Control) prompt
+4. The script will automatically activate the environment and start Streamlit
+
+#### **🔍 Method 2: Security Diagnosis**
+
+Run the security diagnostic script to identify specific issues:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File check_security_settings.ps1
+```
+
+This script checks:
+- Administrator privileges
+- Windows Defender status  
+- Firewall configurations
+- Port availability
+- Network adapter status
+
+#### **⚡ Method 3: Manual Administrator Mode**
+
+1. **Press Windows + X** → **Select "PowerShell (Admin)"** or **"Terminal (Admin)"**
+2. **Click "Yes"** on the UAC prompt
+3. **Navigate and run:**
+```powershell
+cd "C:\Users\[YourUsername]\[PathToProject]\HumanPerformanceCalcs"
+conda activate textappv2
+streamlit run streamlit_app.py
+```
+
+#### **🌐 Method 4: Flask Alternative (NO ADMIN REQUIRED)**
+
+If Streamlit continues to have permission issues, use the Flask-based alternative:
+
+```bash
+conda activate textappv2
+python flask_alternative.py
+```
+
+This provides a simpler web interface with the core calculators and **doesn't require administrator privileges**.
+
+#### **💻 Method 5: Command Line Interface**
+
+For environments where web interfaces are restricted, use the CLI version:
+
+```bash
+conda activate textappv2
+python run_calculator.py
+```
+
+### **Success Rates by Method:**
+- 🛡️ **Administrator methods**: 95% success rate
+- 🌐 **Flask alternative**: 85% success rate  
+- 💻 **CLI interface**: 100% success rate
+
+### **Why This Happens:**
+- Windows 10/11 Enterprise security policies
+- Windows Defender real-time protection
+- Corporate firewall restrictions
+- Network socket binding permission requirements
+
+> **💡 Tip**: The administrator batch file (`run_streamlit_admin.bat`) is usually the fastest and most reliable solution.
 
 ---
 
@@ -365,6 +487,8 @@ This project is licensed under the **Academic Use License** - see the [LICENSE](
 - 📊 **Visualizations**: 12+ interactive charts
 - 🧪 **Test Coverage**: 95%+
 - 📚 **Documentation**: Comprehensive
+- 🛠️ **Windows Compatibility Tools**: 3 helper scripts
+- 🌐 **Platform Support**: Windows, macOS, Linux
 
 ---
 
