@@ -32,6 +32,19 @@ from .circadian import (  # type: ignore
 )
 from .cold import peak_shivering_intensity  # type: ignore
 from .decompression import tissue_ratio, interpret_tr  # type: ignore
+from .clinical import (  # type: ignore
+    bmr_mifflin_st_jeor,
+    bsa_boyd,
+    bsa_dubois,
+    bsa_haycock,
+    bsa_mosteller,
+    compute_all_bsa,
+    egfr_ckd_epi_2009,
+    pf_ratio,
+    oxygen_index,
+    six_minute_walk_distance,
+    EGFRResult,
+)
 
 __all__ = [
     "standard_atmosphere",
@@ -67,4 +80,16 @@ __all__ = [
     "peak_shivering_intensity",
     "tissue_ratio",
     "interpret_tr",
+    # Clinical calculators
+    "bmr_mifflin_st_jeor",
+    "bsa_boyd",
+    "bsa_dubois",
+    "bsa_haycock",
+    "bsa_mosteller",
+    "compute_all_bsa",
+    "egfr_ckd_epi_2009",
+    "pf_ratio",
+    "oxygen_index",
+    "six_minute_walk_distance",
+    "EGFRResult",
 ]
