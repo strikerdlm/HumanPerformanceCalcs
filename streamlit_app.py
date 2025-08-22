@@ -40,6 +40,20 @@ from calculators import (
     peak_shivering_intensity,
     AEROSPACE_CHEMICALS
 )
+from calculators import (
+    bmr_mifflin_st_jeor,
+    compute_all_bsa,
+    egfr_ckd_epi_2009,
+    pf_ratio,
+    oxygen_index,
+    six_minute_walk_distance,
+)
+
+try:
+    from streamlit_echarts import st_echarts  # type: ignore
+    ECHARTS_AVAILABLE = True
+except Exception:
+    ECHARTS_AVAILABLE = False
 
 # Page configuration
 st.set_page_config(
@@ -152,6 +166,7 @@ calculator_category = st.sidebar.selectbox(
     [
         "🏠 Home",
         "🌍 Atmospheric & Physiological",
+        "🩺 Clinical Calculators",
         "Occupational Health & Safety",
         "🔬 Environmental Monitoring",
         "🧠 Fatigue & Circadian",
@@ -496,6 +511,191 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         fig = go.Figure(data=[go.Scatter(x=alts_ft, y=trs, mode="lines")])
         fig.update_layout(title="TR vs Altitude (fixed tissue N₂)", xaxis_title="Altitude (ft)", yaxis_title="TR", height=360)
         st.plotly_chart(fig, use_container_width=True)
+
+elif calculator_category == "🩺 Clinical Calculators":
+    st.markdown('<div class="section-header">Clinical Calculators</div>', unsafe_allow_html=True)
+    use_echarts = st.toggle("Use ECharts for plots", value=ECHARTS_AVAILABLE, help="Enhance plots with ECharts if available")
+
+    tool = st.selectbox(
+        "Choose Tool",
+        [
+            "Basal Metabolic Rate (Mifflin–St Jeor)",
+            "Body Surface Area (4 formulas)",
+            "eGFR (CKD‑EPI 2009)",
+            "PaO₂/FiO₂ Ratio (P/F)",
+            "Oxygen Index (OI)",
+            "6‑Minute Walk Distance"
+        ]
+    )
+
+    if tool == "Basal Metabolic Rate (Mifflin–St Jeor)":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            sex = st.radio("Sex", ["Male", "Female"], horizontal=True)
+            weight = st.slider("Weight (kg)", 30.0, 200.0, 75.0, step=0.5)
+            height = st.slider("Height (cm)", 140.0, 210.0, 175.0, step=0.5)
+            age = st.slider("Age (yr)", 15, 90, 35)
+        bmr = bmr_mifflin_st_jeor(weight, height, age, sex)
+        with col2:
+            st.metric("BMR", f"{bmr:.0f} kcal/day")
+        vary = st.radio("Vary parameter", ["Weight", "Age", "Height"], horizontal=True)
+        if vary == "Weight":
+            xs = np.linspace(max(30.0, weight-20), min(200.0, weight+20), 60)
+            ys = [bmr_mifflin_st_jeor(x, height, age, sex) for x in xs]
+            xlab = "Weight (kg)"
+        elif vary == "Age":
+            xs = np.linspace(15, 90, 60)
+            ys = [bmr_mifflin_st_jeor(weight, height, x, sex) for x in xs]
+            xlab = "Age (yr)"
+        else:
+            xs = np.linspace(140, 210, 60)
+            ys = [bmr_mifflin_st_jeor(weight, x, age, sex) for x in xs]
+            xlab = "Height (cm)"
+        if use_echarts:
+            opts = {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "value", "name": xlab},
+                "yAxis": {"type": "value", "name": "BMR (kcal/day)"},
+                "series": [{"type": "line", "smooth": True, "data": [[float(x), float(y)] for x,y in zip(xs, ys)], "areaStyle": {}}],
+            }
+            st_echarts(opts, height=420)
+        else:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=xs, y=ys, mode='lines', fill='tozeroy', name='BMR'))
+            fig.update_layout(title=f"BMR vs {vary}", xaxis_title=xlab, yaxis_title="BMR (kcal/day)")
+            st.plotly_chart(fig, use_container_width=True)
+
+    elif tool == "Body Surface Area (4 formulas)":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            weight = st.slider("Weight (kg)", 10.0, 200.0, 70.0, step=0.5)
+            height = st.slider("Height (cm)", 50.0, 210.0, 170.0, step=0.5)
+        values = compute_all_bsa(height, weight)
+        with col2:
+            st.metric("Mosteller", f"{values['Mosteller']:.3f} m²")
+            st.metric("DuBois", f"{values['DuBois']:.3f} m²")
+            st.metric("Haycock", f"{values['Haycock']:.3f} m²")
+            st.metric("Boyd", f"{values['Boyd']:.3f} m²")
+        if use_echarts:
+            opts = {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "category", "data": list(values.keys())},
+                "yAxis": {"type": "value", "name": "BSA (m²)"},
+                "series": [{"type": "bar", "data": [float(v) for v in values.values()], "itemStyle": {"borderRadius": [6,6,0,0]}}],
+            }
+            st_echarts(opts, height=360)
+        else:
+            fig = px.bar(x=list(values.keys()), y=list(values.values()), labels={"x": "Formula", "y": "BSA (m²)"})
+            st.plotly_chart(fig, use_container_width=True)
+
+    elif tool == "eGFR (CKD‑EPI 2009)":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            sex = st.radio("Sex", ["Male", "Female"], horizontal=True)
+            age = st.slider("Age (yr)", 18, 90, 50)
+            scr = st.number_input("Serum Creatinine (mg/dL)", 0.1, 20.0, 1.0, step=0.1)
+            race_black = st.checkbox("Apply race factor (Black)", value=False)
+        res = egfr_ckd_epi_2009(scr, age, sex, is_black=race_black)
+        with col2:
+            st.metric("eGFR", f"{res.value_ml_min_1_73m2:.0f} mL/min/1.73m²")
+        scrs = np.linspace(0.4, 5.0, 100)
+        y = [egfr_ckd_epi_2009(v, age, sex, race_black).value_ml_min_1_73m2 for v in scrs]
+        if use_echarts:
+            opts = {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "value", "name": "Scr (mg/dL)"},
+                "yAxis": {"type": "value", "name": "eGFR (mL/min/1.73m²)"},
+                "series": [{"type": "line", "smooth": True, "data": [[float(a), float(b)] for a,b in zip(scrs, y)]}],
+                "markLine": {"data": [{"xAxis": float(scr), "label": {"formatter": "Current Scr"}}]},
+            }
+            st_echarts(opts, height=420)
+        else:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=scrs, y=y, mode='lines', name='eGFR'))
+            fig.add_vline(x=float(scr), line_dash='dash', line_color='red')
+            fig.update_layout(title="eGFR vs Creatinine", xaxis_title="Scr (mg/dL)", yaxis_title="eGFR (mL/min/1.73m²)")
+            st.plotly_chart(fig, use_container_width=True)
+
+    elif tool == "PaO₂/FiO₂ Ratio (P/F)":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            pao2 = st.number_input("PaO₂ (mmHg)", 30.0, 600.0, 90.0, step=1.0)
+            fio2 = st.slider("FiO₂", 0.21, 1.0, 0.21, step=0.01)
+        ratio = pf_ratio(pao2, fio2)
+        with col2:
+            st.metric("P/F Ratio", f"{ratio:.0f}")
+        if use_echarts:
+            opts = {
+                "tooltip": {"show": True},
+                "xAxis": {"type": "category", "data": ["Ratio"]},
+                "yAxis": {"type": "value", "name": "mmHg"},
+                "series": [{"type": "bar", "data": [float(ratio)], "itemStyle": {"color": "#0ea5e9", "borderRadius": [6,6,0,0]}}],
+                "markLine": {"data": [
+                    {"yAxis": 300, "lineStyle": {"type": "dashed"}},
+                    {"yAxis": 200, "lineStyle": {"type": "dashed"}},
+                    {"yAxis": 100, "lineStyle": {"type": "dashed"}},
+                ]}
+            }
+            st_echarts(opts, height=320)
+        else:
+            fig = px.bar(x=["Ratio"], y=[ratio], labels={"x": "", "y": "mmHg"})
+            fig.add_hline(y=300, line_dash="dash")
+            fig.add_hline(y=200, line_dash="dash")
+            fig.add_hline(y=100, line_dash="dash")
+            st.plotly_chart(fig, use_container_width=True)
+
+    elif tool == "Oxygen Index (OI)":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            pao2 = st.number_input("PaO₂ (mmHg)", 30.0, 600.0, 90.0, step=1.0)
+            fio2 = st.slider("FiO₂", 0.21, 1.0, 0.5, step=0.01)
+            map_cm = st.slider("Mean Airway Pressure (cmH₂O)", 0.0, 40.0, 12.0, step=0.5)
+        oi = oxygen_index(pao2, fio2, map_cm)
+        with col2:
+            st.metric("Oxygen Index", f"{oi:.1f}")
+        if use_echarts:
+            opts = {
+                "series": [{
+                    "type": "gauge",
+                    "min": 0, "max": 40,
+                    "axisLine": {"lineStyle": {"width": 10}},
+                    "detail": {"formatter": "{value}"},
+                    "data": [{"value": float(oi), "name": "OI"}]
+                }]
+            }
+            st_echarts(opts, height=300)
+        else:
+            fig = go.Figure(go.Indicator(mode="gauge+number", value=oi, gauge={'axis': {'range': [0, 40]}}))
+            st.plotly_chart(fig, use_container_width=True)
+
+    elif tool == "6‑Minute Walk Distance":
+        col1, col2 = st.columns([1,1])
+        with col1:
+            sex = st.radio("Sex", ["Male", "Female"], horizontal=True)
+            height = st.slider("Height (cm)", 140.0, 200.0, 170.0, step=0.5)
+            weight = st.slider("Weight (kg)", 35.0, 160.0, 70.0, step=0.5)
+            age = st.slider("Age (yr)", 20, 90, 50)
+        res = six_minute_walk_distance(height, weight, age, sex)
+        with col2:
+            st.metric("Predicted 6MWD", f"{res.predicted_m:.0f} m")
+            st.metric("LLN", f"{res.lower_limit_normal_m:.0f} m")
+        ages = np.linspace(20, 90, 70)
+        curve = [six_minute_walk_distance(height, weight, a, sex).predicted_m for a in ages]
+        if use_echarts:
+            opts = {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "value", "name": "Age (yr)"},
+                "yAxis": {"type": "value", "name": "6MWD (m)"},
+                "series": [{"type": "line", "smooth": True, "data": [[float(a), float(b)] for a,b in zip(ages, curve)], "areaStyle": {}}],
+                "markLine": {"data": [{"xAxis": float(age), "label": {"formatter": "Age"}}]},
+            }
+            st_echarts(opts, height=420)
+        else:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=ages, y=curve, mode='lines', fill='tozeroy'))
+            fig.update_layout(title="6MWD vs Age", xaxis_title="Age (yr)", yaxis_title="6MWD (m)")
+            st.plotly_chart(fig, use_container_width=True)
+
 
 elif calculator_category == "Occupational Health & Safety":
     st.markdown('<div class="section-header">Occupational Health & Safety Calculators</div>', unsafe_allow_html=True)
