@@ -257,7 +257,8 @@ All calculators in this suite are based on peer-reviewed scientific literature a
 
 #### **5. Time of Useful Consciousness (TUC)**
 - **Reference**: Ernsting, J., & Nicholson, A. N. (2016). *Aviation Medicine* (4th ed.). CRC Press.
-- **Application**: Predicts consciousness duration during rapid decompression events
+- **Application**: Predicts the remaining time to effectively correct hypoxia by donning an oxygen mask after a rapid decompression event
+- **Disclaimer**: This was calculated during hypobaric chamber training and not during a real event
 
 #### **6. G-Force Tolerance and G-LOC Prediction**
 - **Reference**: Whinnery, J. E., & Forster, E. M. (2006). G-induced loss of consciousness: definition, history, current status. *Aviation, Space, and Environmental Medicine*, 77(6), 603–612.
