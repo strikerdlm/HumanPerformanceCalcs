@@ -7,6 +7,8 @@ from .atmosphere import (  # type: ignore
     ams_probability,
     inspired_PO2,
     oxygen_content,
+    hape_risk_suona2023,
+    HAPERiskResult,
 )  
 from .tuc import estimate_tuc  # type: ignore
 from .g_force import g_loc_time  # type: ignore
@@ -55,6 +57,8 @@ __all__ = [
     "ams_probability",
     "inspired_PO2",
     "oxygen_content",
+    "hape_risk_suona2023",
+    "HAPERiskResult",
     "estimate_tuc",
     "g_loc_time",
     "dose_rate",

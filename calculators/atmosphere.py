@@ -12,6 +12,8 @@ Scientific Source:
     - Alveolar Gas Equation: West, J.B. (2012). Respiratory Physiology: The Essentials. 9th Edition.
 """
 import math
+from dataclasses import dataclass
+from typing import Literal
 
 # Physical constants
 T0 = 288.15  # Sea-level standard temperature (K)
@@ -141,6 +143,186 @@ def ams_probability(AAE_km_days: float) -> float:
     logit = 2.188 - 0.5335 * float(AAE_km_days)
     p = 1.0 / (1.0 + math.exp(-logit))
     return max(0.0, min(1.0, p))
+
+
+# --- HAPE risk model (Suona et al., BMJ Open 2023;13:e074161) -----------------
+#
+# This implementation uses the **point-based nomogram** approach, digitized
+# directly from Figure 2A of the paper. Each predictor contributes a number of
+# points; the total is converted to probability via a logistic function
+# calibrated to match the nomogram's "Total Points → Risk" scale.
+#
+# Point values (digitized from Figure 2A):
+#   Age:  <25 → 12 pts;  25–34 → 20 pts;  34–46 → 0 pts;  >46 → 10 pts
+#   Transport:  Airplane → 0 pts;  Vehicle → 40 pts;  Train → 70 pts
+#   Fatigue:  No → 0 pts;  Yes → 10 pts
+#   Cough:  No → 0 pts;  Yes → 20 pts
+#   Expectoration (sputum):  No → 0 pts;  Yes → 18 pts
+#   SpO₂:  points = (100 − SpO₂%) × 1.185   (calibrated so 73% → 32 pts)
+#
+# Total Points → Risk conversion (logistic):
+#   logit = −1.85 + 0.0675 × TotalPoints
+#   probability = 1 / (1 + exp(−logit))
+#
+# Paper's worked example: 27 yo, plane, fatigue+, cough+, sputum−, SpO₂=73%
+#   → 12 + 0 + 10 + 20 + 0 + 32 = 74 pts … but paper states 54 pts.  The paper
+#   text appears to omit cough points (states "cough (0 points)" despite patient
+#   having cough).  Using the paper's explicit total of 54 pts → ~90% risk.
+
+TransportMode = Literal["plane", "train", "vehicle"]
+
+
+@dataclass(slots=True, frozen=True)
+class HAPERiskResult:
+    """Result of the Suona 2023 HAPE risk model (model 1 with SpO₂).
+
+    Attributes
+    ----------
+    probability:
+        Predicted probability of HAPE (0–1).
+    total_points:
+        Nomogram total points before conversion to probability.
+    model_used:
+        Identifier of the underlying model implementation.
+    """
+
+    probability: float
+    total_points: float
+    model_used: Literal["with_spo2"]
+
+
+# --- Point assignments digitized from Figure 2A ---
+
+_AGE_POINTS = {
+    "<25": 12.0,
+    "25-34": 20.0,
+    "34-46": 0.0,
+    ">46": 10.0,
+}
+
+_TRANSPORT_POINTS = {
+    "plane": 0.0,
+    "vehicle": 40.0,
+    "train": 70.0,
+}
+
+_FATIGUE_POINTS = {False: 0.0, True: 10.0}
+_COUGH_POINTS = {False: 0.0, True: 20.0}
+_SPUTUM_POINTS = {False: 0.0, True: 18.0}
+
+# SpO₂ scale factor calibrated so that 73% → 32 pts (from paper example)
+_SPO2_SCALE = 32.0 / (100.0 - 73.0)  # ≈ 1.185
+
+
+def _spo2_to_points(spo2_percent: float) -> float:
+    """Convert SpO₂ percentage to nomogram points."""
+    return max(0.0, (100.0 - spo2_percent) * _SPO2_SCALE)
+
+
+def _age_to_category(age_years: float) -> str:
+    """Map age in years to the nomogram category."""
+    if age_years < 25:
+        return "<25"
+    elif age_years < 34:
+        return "25-34"
+    elif age_years <= 46:
+        return "34-46"
+    else:
+        return ">46"
+
+
+# Logistic conversion from Total Points to probability
+# Calibrated from Figure 2A bottom scale:
+#   ~40 pts → 0.7 risk,  ~60 pts → 0.9 risk
+#   logit(0.7) ≈ 0.847,  logit(0.9) ≈ 2.197
+#   slope = (2.197 − 0.847) / 20 = 0.0675
+#   intercept = 0.847 − 0.0675×40 = −1.85
+
+_LOGIT_INTERCEPT = -1.85
+_LOGIT_SLOPE = 0.0675
+
+
+def _points_to_probability(total_points: float) -> float:
+    """Convert nomogram total points to HAPE probability."""
+    logit = _LOGIT_INTERCEPT + _LOGIT_SLOPE * total_points
+    return 1.0 / (1.0 + math.exp(-logit))
+
+
+def hape_risk_suona2023(
+    age_years: float,
+    spo2_percent: float,
+    transport_mode: TransportMode,
+    fatigue: bool,
+    cough: bool,
+    sputum: bool,
+) -> HAPERiskResult:
+    """Estimate HAPE risk using Suona et al. 2023 nomogram (with SpO₂).
+
+    Parameters
+    ----------
+    age_years:
+        Age in years (study population ≥14 years).
+    spo2_percent:
+        Peripheral oxygen saturation (SpO₂) in percent at altitude.
+    transport_mode:
+        Mode of travel to high altitude: "plane", "train" or "vehicle".
+    fatigue:
+        True if the patient reports fatigue.
+    cough:
+        True if the patient reports cough of any kind.
+    sputum:
+        True if the patient reports coughing sputum (white or pink, foamy).
+
+    Returns
+    -------
+    HAPERiskResult
+        Dataclass with probability in [0, 1], total nomogram points, and
+        model identifier.
+
+    Notes
+    -----
+    - Point values are digitized from Figure 2A of Suona et al. (BMJ Open
+      2023;13:e074161).
+    - The Total Points → probability conversion is calibrated to match the
+      nomogram's risk scale.
+    - This implementation is intended for educational and research use and
+      should not be used for clinical decision-making without independent
+      validation.
+    """
+
+    if age_years < 14.0:
+        raise ValueError("age_years must be ≥ 14 (study inclusion criterion)")
+
+    if not (0.0 < spo2_percent <= 100.0):
+        raise ValueError("spo2_percent must be in the range (0, 100]")
+
+    mode_norm = transport_mode.strip().lower()
+    if mode_norm not in {"plane", "train", "vehicle"}:
+        raise ValueError("transport_mode must be 'plane', 'train', or 'vehicle'")
+
+    # If sputum is present, cough is implicitly present as well.
+    if sputum and not cough:
+        cough = True
+
+    # Calculate points for each predictor
+    age_cat = _age_to_category(age_years)
+    pts_age = _AGE_POINTS[age_cat]
+    pts_transport = _TRANSPORT_POINTS[mode_norm]
+    pts_fatigue = _FATIGUE_POINTS[fatigue]
+    pts_cough = _COUGH_POINTS[cough]
+    pts_sputum = _SPUTUM_POINTS[sputum]
+    pts_spo2 = _spo2_to_points(spo2_percent)
+
+    total_points = (
+        pts_age + pts_transport + pts_fatigue + pts_cough + pts_sputum + pts_spo2
+    )
+
+    prob = _points_to_probability(total_points)
+    prob = max(0.0, min(1.0, prob))
+
+    return HAPERiskResult(
+        probability=prob, total_points=total_points, model_used="with_spo2"
+    )
 
 
 def ambient_pressure_mmHg_at_altitude(altitude_m: float) -> float:
