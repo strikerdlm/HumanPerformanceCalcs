@@ -13,6 +13,7 @@ from calculators import (
     spo2_acclimatized,
     pao2_at_altitude,
     ams_probability,
+    hape_risk_suona2023,
     inspired_PO2,
     oxygen_content,
     tissue_ratio,
@@ -243,6 +244,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "Alveolar Oxygen Pressure", 
             "Altitude & Hypoxia Predictions",
             "Acute Mountain Sickness Risk",
+            "HAPE Risk (Suona 2023 Nomogram)",
             "Oxygen Cascade",
             "Decompression Tissue Ratio (TR)",
             "Time of Useful Consciousness",
@@ -449,6 +451,115 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         fig = go.Figure(data=[go.Scatter(x=aae_vals, y=[p*100 for p in probs], mode="lines")])
         fig.update_layout(title="AMS Probability vs AAE", xaxis_title="AAE (km·days)", yaxis_title="Probability (%)", height=360)
         st.plotly_chart(fig, use_container_width=True)
+
+    elif calc_type == "HAPE Risk (Suona 2023 Nomogram)":
+        st.markdown("### 🫁 High-Altitude Pulmonary Edema (HAPE) Risk")
+        st.markdown(
+            "This calculator implements the published HAPE risk prediction "
+            "nomogram (**model 1 with SpO₂**) from Suona et al., *BMJ Open* "
+            "2023;13:e074161, using age, mode of transport, symptoms, and "
+            "oxygen saturation measured at altitude."
+        )
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            age_years = st.number_input("Age (years)", min_value=14, max_value=80, value=30, step=1)
+            transport_label = st.selectbox(
+                "Mode of travel to high altitude",
+                [
+                    "Aeroplane",
+                    "Train",
+                    "Vehicle / Other",
+                ],
+            )
+            fatigue = st.checkbox("Fatigue", value=True)
+            cough = st.checkbox("Cough", value=True)
+            sputum = st.checkbox("Coughing sputum (white or pink, foamy)", value=False)
+            spo2 = st.slider("SpO₂ at altitude (%)", min_value=50, max_value=100, value=78, step=1)
+
+        # Normalise transport mode for the model
+        transport_mode: str
+        if "train" in transport_label.lower():
+            transport_mode = "train"
+        elif "plane" in transport_label.lower():
+            transport_mode = "plane"
+        else:
+            transport_mode = "vehicle"
+
+        # Ensure logical consistency between cough and sputum
+        if sputum and not cough:
+            cough = True
+
+        result = hape_risk_suona2023(
+            age_years=float(age_years),
+            spo2_percent=float(spo2),
+            transport_mode=transport_mode,
+            fatigue=bool(fatigue),
+            cough=bool(cough),
+            sputum=bool(sputum),
+        )
+
+        with col2:
+            st.markdown("#### Results")
+            st.metric("Predicted HAPE Risk", f"{result.probability * 100:.1f} %")
+            st.metric("Nomogram Total Points", f"{result.total_points:.1f}")
+            if result.probability < 0.1:
+                assessment = "Low estimated risk (within this model)"
+            elif result.probability < 0.5:
+                assessment = "Moderate estimated risk (within this model)"
+            else:
+                assessment = "High estimated risk (within this model)"
+            st.markdown(
+                f"<div class=\"info-box\"><strong>Assessment:</strong> {assessment}</div>",
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                "<div class=\"info-box\">"
+                "Based on the HAPE risk prediction nomogram (model 1 with SpO₂) from "
+                "<a href=\"https://doi.org/10.1136/bmjopen-2023-074161\" target=\"_blank\">"
+                "Suona et al., BMJ Open 2023;13:e074161</a>. "
+                "Implementation details and validation for this app are documented in "
+                "<a href=\"https://github.com/strikerdlm/HumanPerformanceCalcs/blob/main/docs/HAPE.md\" target=\"_blank\">docs/HAPE.md</a>. "
+                "Educational and research use only; not for clinical decision-making."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+            with st.expander("Scientific rationale, model details & references"):
+                st.markdown(
+                    """
+                    **Scientific rationale**
+
+                    - High-altitude pulmonary edema (HAPE) is a non-cardiogenic pulmonary edema
+                      triggered by hypobaric hypoxia, typically within the first 2–5 days after
+                      ascent to high altitude.
+                    - Clinical risk correlates with the degree of hypoxaemia (low SpO₂), speed
+                      of ascent and early respiratory symptoms such as fatigue, cough and
+                      frothy sputum.
+
+                    **Model used in this calculator**
+
+                    - Suona et al. developed and internally validated a multivariable logistic
+                      regression model for HAPE among travellers to the Qinghai–Tibet plateau,
+                      then presented it as a nomogram (Figure 2A).
+                    - Predictors: age, mode of transport (aeroplane / train / vehicle),
+                      fatigue, cough, expectoration, and SpO₂ at altitude (model 1 with SpO₂).
+                    - This app reproduces that nomogram by assigning points to each predictor
+                      (digitised from Figure 2A), summing them to a total score, and converting
+                      that score to probability using a logistic curve calibrated to the
+                      nomogram's \"Total Points → Risk\" scale.
+                    - Implementation details, assumptions and unit tests are documented in
+                      `docs/HAPE.md` in the HumanPerformanceCalcs repository.
+
+                    **Key references**
+
+                    - Suona Y, et al. *Predictive model for estimating the risk of high-altitude
+                      pulmonary edema: a single-centre retrospective outcome-reporting study*.
+                      BMJ Open. 2023;13:e074161. doi:10.1136/bmjopen-2023-074161.
+                    - App-specific documentation:
+                      https://github.com/strikerdlm/HumanPerformanceCalcs/blob/main/docs/HAPE.md
+                    """
+                )
 
     elif calc_type == "Oxygen Cascade":
         st.markdown("### 🧪 Oxygen Cascade")
