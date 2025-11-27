@@ -105,6 +105,8 @@ conda activate textappv2
 pip install -r requirements.txt
 ```
 
+> **✅ Installation Verified**: See [INSTALLATION_VERIFICATION.md](INSTALLATION_VERIFICATION.md) for a complete verification report confirming all requirements are met and the application works correctly.
+
 ### **Step 5: Launch the Application**
 
 **On Windows (Recommended):**
