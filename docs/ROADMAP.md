@@ -634,7 +634,7 @@ Based on literature review, the following domains have significant potential for
 
 | Version | Date          | Changes                  |
 | ------- | ------------- | ------------------------ |
-| 1.0     | December 2024 | Initial roadmap creation |
+| 1.1     | December 2025 | Initial roadmap creation |
 
 ---
 
