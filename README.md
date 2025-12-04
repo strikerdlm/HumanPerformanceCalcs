@@ -459,6 +459,35 @@ Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [C
 
 ---
 
+## 🗺️ **Development Roadmap**
+
+We maintain a comprehensive development roadmap based on scientific literature research. The roadmap outlines planned enhancements across multiple phases:
+
+### Phase 1 (High Priority)
+- **Predicted Heat Strain (PHS) Model** — ISO 7933:2023 standard
+- **Universal Thermal Climate Index (UTCI)** — Outdoor thermal comfort
+- **Cold Water Immersion Survival Time** — Hayward-Tikuisis models
+- **Bühlmann ZH-L16 Decompression Algorithm** — Industry-standard DCS prediction
+- **Anti-G Straining Maneuver (AGSM) Effectiveness** — G-tolerance enhancement
+- **Spatial Disorientation Risk Assessment** — Vestibular conflict modeling
+
+### Phase 2 (Medium Priority)
+- SAFTE/FAST fatigue prediction model
+- Night Vision Goggle (NVG) performance calculator
+- Whole-body vibration exposure (ISO 2631)
+- Crew duty time limit calculators (FAA/EASA)
+- Visual acuity at altitude prediction
+
+### Phase 3 (Advanced Features)
+- Complete space medicine module
+- Motion sickness integration (MSSQ)
+- Psychomotor vigilance task (PVT) prediction
+- Clinical scoring systems (Wells, qSOFA)
+
+📖 **See the full roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
+
+---
+
 ## 📜 **License**
 
 This project is licensed under the **Academic Use License** - see the [LICENSE](LICENSE) file for details.
