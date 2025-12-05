@@ -448,7 +448,7 @@ Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [C
 
 ### **Principal Investigator**
 **Dr. Diego Malpica**  
-📧 Email: [dmalpica@unal.edu.co](mailto:dmalpica@unal.edu.co)  
+📧 Email: [dlmalpicah@unal.edu.co](mailto:dmalpica@unal.edu.co)  
 🏛️ Universidad Nacional de Colombia  
 🔬 Department of Aerospace Medicine  
 
@@ -501,7 +501,6 @@ This project is licensed under the **Academic Use License** - see the [LICENSE](
 ## 🙏 **Acknowledgments**
 
 - **Universidad Nacional de Colombia** - Institutional support and resources
-- **International Association of Aviation and Space Medicine (AsMA)** - Professional guidance
 - **Aerospace Medical Association** - Scientific consultation
 - **Open Source Community** - Development tools and libraries
 
