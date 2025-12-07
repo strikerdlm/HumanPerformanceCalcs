@@ -39,7 +39,9 @@ from calculators import (
     circadian_component,
     jet_lag_days_to_adjust,
     peak_shivering_intensity,
-    AEROSPACE_CHEMICALS
+    AEROSPACE_CHEMICALS,
+    predicted_heat_strain,
+    PredictedHeatStrainResult,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -80,6 +82,86 @@ st.markdown("""
         --surface: #ffffff;
         --surface-2: #f8fafc;     /* slate-50 */
         --border: #e5e7eb;        /* gray-200 */
+    }
+
+    body, .stApp {
+        background: radial-gradient(circle at top, rgba(59,130,246,0.22), transparent 55%),
+                    radial-gradient(circle at 20% 20%, rgba(14,165,233,0.28), transparent 40%),
+                    linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+        color: var(--color-text);
+    }
+
+    .hero-panel {
+        padding: 2.4rem;
+        border-radius: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.4);
+        background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.08));
+        box-shadow: 0 30px 60px rgba(15,23,42,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-panel:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 40% 0%, rgba(255,255,255,0.35), transparent 60%);
+        pointer-events: none;
+    }
+
+    .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin: 1rem 0 1.25rem 0;
+    }
+
+    .hero-badge {
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.85);
+        color: #0f172a;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .glass-panel {
+        padding: 1.2rem;
+        border-radius: 1rem;
+        background: rgba(255,255,255,0.75);
+        border: 1px solid rgba(148,163,184,0.35);
+        box-shadow: 0 20px 40px rgba(15,23,42,0.12);
+        backdrop-filter: blur(16px);
+    }
+
+    .roadmap-chip {
+        padding: 0.65rem 1rem;
+        border-radius: 12px;
+        background: rgba(37,99,235,0.08);
+        border: 1px solid rgba(37,99,235,0.2);
+        margin-bottom: 0.8rem;
+    }
+
+    .roadmap-chip strong {
+        display: block;
+        font-size: 0.95rem;
+    }
+
+    .status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.45rem;
+    }
+
+    .stat-card {
+        padding: 1rem 1.2rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(226,232,240,0.6);
+        background: rgba(248,250,252,0.85);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
     }
 
     /* Override variables automatically when user prefers dark scheme */
@@ -157,6 +239,27 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+ROADMAP_PHASE_ONE = [
+    {
+        "name": "ISO 7933 Predicted Heat Strain",
+        "status": "Live",
+        "description": "Core temperature + hydration guardrails",
+        "tone": "#22c55e",
+    },
+    {
+        "name": "Universal Thermal Climate Index",
+        "status": "Next",
+        "description": "Outdoor thermal comfort envelope",
+        "tone": "#f97316",
+    },
+    {
+        "name": "Cold Water Immersion Survival",
+        "status": "Planned",
+        "description": "Hayward–Tikuisis survival curves",
+        "tone": "#0ea5e9",
+    },
+]
+
 # Main header
 st.markdown('<div class="main-header">🚀 Aerospace Physiology & Occupational Health Calculators</div>', unsafe_allow_html=True)
 
@@ -187,52 +290,97 @@ Do not use for operational decision-making without professional validation.
 """, unsafe_allow_html=True)
 
 if calculator_category == "🏠 Home":
-    # Home page with overview
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown('<div class="section-header">Welcome to Professional Aerospace Calculators</div>', unsafe_allow_html=True)
-        
-        st.markdown("""
-        This comprehensive suite of calculators provides accurate, scientifically-based tools for:
-        
-        **🌍 Atmospheric & Physiological Calculations:**
-        - International Standard Atmosphere (ISA) properties
-        - Alveolar oxygen pressure calculations
-        - Time of Useful Consciousness (TUC) estimation
-        - G-force tolerance assessment
-        - Cosmic radiation dose calculations
-        
-        **Occupational Health & Safety:**
-        - ACGIH TLV/BEI exposure assessments
-        - Time-weighted average calculations
-        - Mixed chemical exposure indices
-        - Aerospace-specific chemical hazard evaluation
-        - Biological exposure monitoring
-        
-        **🔬 Environmental Monitoring:**
-        - Heat stress indices (WBGT)
-        - Noise exposure assessment
-        - Air quality monitoring
-        
-        **📊 Risk Assessment Tools:**
-        - Comprehensive exposure reports
-        - Risk stratification
-        - Regulatory compliance checking
-        """)
-        
-        st.markdown('<div class="info-box"><strong>New Features:</strong><br>• Aerospace industry-specific occupational health calculations<br>• ACGIH TLV and BEI standards integration<br>• Professional reporting capabilities<br>• Enhanced risk assessment tools</div>', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="section-header">Quick Stats</div>', unsafe_allow_html=True)
-        
-        st.metric("Available Calculators", "25+", "5 new")
-        st.metric("Chemical Database", f"{len(AEROSPACE_CHEMICALS)}", "aerospace-specific")
-        st.metric("Standards Compliance", "ACGIH 2024", "latest")
-        
-        st.markdown("### 🎯 Featured Calculator")
-        if st.button("🧪 Aerospace Chemical Exposure Assessment", type="primary"):
-            st.sidebar.selectbox("Select Calculator Category", ["Occupational Health & Safety"], key="nav_override")
+    hero_left, hero_right = st.columns([2.2, 1.2])
+
+    with hero_left:
+        st.markdown(
+            """
+            <div class="hero-panel">
+                <p style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 0.75rem; opacity: 0.8;">
+                    Aerospace Medicine Ops Suite
+                </p>
+                <h1 style="font-size: 2.6rem; margin: 0.35rem 0 1rem 0;">
+                    Modern, elegant calculators for extreme environments
+                </h1>
+                <p style="font-size: 1.05rem; max-width: 640px;">
+                    Run atmospheric physiology, occupational exposure, circadian, and risk assessment workflows inside a cohesive
+                    mission UI. Every model is referenced, vetted, and tuned for aerospace realities.
+                </p>
+                <div class="hero-badges">
+                    <span class="hero-badge">New · ISO 7933 Predicted Heat Strain</span>
+                    <span class="hero-badge">ACGIH TLV® + BEI 2024</span>
+                    <span class="hero-badge">Plotly + ECharts visual lab</span>
+                </div>
+                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0;">
+                    Roadmap momentum → Phase 1 item \"Predicted Heat Strain\" is now live in-app.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with hero_right:
+        st.markdown(
+            f"""
+            <div class="glass-panel">
+                <p style="font-weight:700; margin-bottom:0.8rem;">Mission-ready snapshot</p>
+                <div class="stat-card" style="margin-bottom:0.8rem;">
+                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Calculators</div>
+                    <div style="font-size:1.8rem; font-weight:700;">29+</div>
+                    <small>Heat, hypoxia, circadian, clinical, exposure</small>
+                </div>
+                <div class="stat-card" style="margin-bottom:0.8rem;">
+                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Chemical DB</div>
+                    <div style="font-size:1.8rem; font-weight:700;">{len(AEROSPACE_CHEMICALS)}</div>
+                    <small>Aerospace-specific TLV®/BEI references</small>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Compliance</div>
+                    <div style="font-size:1.4rem; font-weight:700;">ACGIH 2024</div>
+                    <small>Noise · heat · chemicals · biological monitoring</small>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="section-header">Mission-ready focus areas</div>', unsafe_allow_html=True)
+    mission_cols = st.columns(3)
+    mission_descriptions = [
+        ("🌍 Physiology & Atmosphere", ["ISA layers & hypoxia cascade", "TUC + decompression guardrails", "Cosmic radiation planning"]),
+        ("🛡️ Occupational & Risk", ["ACGIH TLV® / BEI workflows", "Mixed exposure + TLV scheduling", "Automated reporting exports"]),
+        ("🧠 Fatigue & Performance", ["Circadian performance envelopes", "Two-process sleep modelling", "Jet lag + Mitler vigilance"]),
+    ]
+    for col, (title, bullets) in zip(mission_cols, mission_descriptions):
+        bullet_html = "".join(f"<li>{b}</li>" for b in bullets)
+        col.markdown(
+            f"""
+            <div class="glass-panel">
+                <h4 style="margin-bottom:0.4rem;">{title}</h4>
+                <ul style="padding-left:1.1rem; margin-bottom:0;">{bullet_html}</ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="section-header">Roadmap momentum</div>', unsafe_allow_html=True)
+    roadmap_cols = st.columns(len(ROADMAP_PHASE_ONE))
+    for info, col in zip(ROADMAP_PHASE_ONE, roadmap_cols):
+        col.markdown(
+            f"""
+            <div class="roadmap-chip">
+                <span class="status-dot" style="background:{info['tone']};"></span>
+                <strong>{info['name']}</strong>
+                <small>{info['status']} · {info['description']}</small>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        '<div class="info-box">Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots.</div>',
+        unsafe_allow_html=True,
+    )
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
     st.markdown('<div class="section-header">Atmospheric & Physiological Calculators</div>', unsafe_allow_html=True)
@@ -1134,6 +1282,7 @@ elif calculator_category == "🔬 Environmental Monitoring":
         [
             "Heat Stress Index (WBGT)",
             "Heat Stress Index (HSI)",
+            "Predicted Heat Strain (ISO 7933)",
             "Cold Exposure: Peak Shivering",
             "Noise Exposure Assessment"
         ]
@@ -1198,6 +1347,122 @@ elif calculator_category == "🔬 Environmental Monitoring":
                 st.markdown('<div class="info-box"><strong>Assessment:</strong> High strain</div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="info-box"><strong>Assessment:</strong> Uncompensable heat stress</div>', unsafe_allow_html=True)
+    
+    elif calc_type == "Predicted Heat Strain (ISO 7933)":
+        st.markdown("### ♨️ Predicted Heat Strain (ISO 7933 inspired)")
+        input_col1, input_col2 = st.columns(2)
+        with input_col1:
+            metabolic_rate = st.slider("Metabolic rate (W/m²)", 150.0, 650.0, 380.0, step=10.0)
+            clothing = st.slider("Clothing insulation (clo)", 0.3, 1.6, 0.9, step=0.1)
+            air_velocity = st.slider("Air speed (m/s)", 0.1, 3.0, 0.6, step=0.1)
+        with input_col2:
+            air_temp = st.slider("Air temperature (°C)", 20.0, 50.0, 32.0, step=0.5)
+            mean_radiant = st.slider("Mean radiant / globe (°C)", 20.0, 60.0, 38.0, step=0.5)
+            rh = st.slider("Relative humidity (%)", 10.0, 100.0, 55.0, step=1.0)
+            exposure = st.slider("Exposure duration (min)", 15.0, 240.0, 90.0, step=5.0)
+
+        with st.expander("Advanced physiology assumptions", expanded=False):
+            mechanical_power = st.slider("External mechanical power (W/m²)", 0.0, 80.0, 0.0, step=5.0)
+            body_mass = st.slider("Body mass (kg)", 55.0, 110.0, 75.0, step=1.0)
+            body_surface_area = st.slider("Body surface area (m²)", 1.4, 2.4, 1.9, step=0.05)
+            baseline_core = st.slider("Baseline core temperature (°C)", 36.5, 37.5, 37.0, step=0.1)
+            core_limit = st.slider("Core temperature limit (°C)", 37.5, 39.5, 38.5, step=0.1)
+            dehydration_limit = st.slider("Dehydration limit (% body mass)", 2.0, 7.0, 5.0, step=0.5)
+
+        phs_result = predicted_heat_strain(
+            metabolic_rate_w_m2=float(metabolic_rate),
+            air_temperature_C=float(air_temp),
+            mean_radiant_temperature_C=float(mean_radiant),
+            relative_humidity_percent=float(rh),
+            air_velocity_m_s=float(air_velocity),
+            clothing_insulation_clo=float(clothing),
+            exposure_minutes=float(exposure),
+            mechanical_power_w_m2=float(mechanical_power),
+            body_mass_kg=float(body_mass),
+            body_surface_area_m2=float(body_surface_area),
+            baseline_core_temp_C=float(baseline_core),
+            core_temp_limit_C=float(core_limit),
+            dehydration_limit_percent=float(dehydration_limit),
+        )
+
+        stats_col1, stats_col2, stats_col3 = st.columns(3)
+        delta_core = phs_result.predicted_core_temperature_C - baseline_core
+        with stats_col1:
+            st.metric(
+                "Predicted core temperature",
+                f"{phs_result.predicted_core_temperature_C:.2f} °C",
+                f"{delta_core:+.2f} °C vs baseline",
+            )
+        with stats_col2:
+            st.metric(
+                "Sweat rate (req / max)",
+                f"{phs_result.required_sweat_rate_L_per_h:.2f} / {phs_result.max_sustainable_sweat_rate_L_per_h:.2f} L/h",
+            )
+            st.caption(f"Effective evaporation uses {phs_result.actual_sweat_rate_L_per_h:.2f} L/h")
+        with stats_col3:
+            st.metric(
+                "Allowable exposure",
+                f"{phs_result.allowable_exposure_minutes:.0f} min",
+                phs_result.limiting_factor,
+            )
+
+        hydration_message = (
+            "Monitor hydration closely; dehydration is the limiting factor."
+            if phs_result.limiting_factor == "Dehydration limit"
+            else "Core temperature guardrail is currently most restrictive."
+        )
+        st.markdown(
+            f"""
+            <div class="info-box">
+                <strong>Hydration load:</strong> {phs_result.predicted_water_loss_L:.2f} L ({phs_result.dehydration_percent_body_mass:.1f}% body mass).
+                {hydration_message}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # Core temperature profile visual
+        try:
+            max_time = float(exposure)
+            timeline = np.linspace(5.0, max_time, max(2, int(max_time // 5)))
+            temps = [
+                predicted_heat_strain(
+                    metabolic_rate_w_m2=float(metabolic_rate),
+                    air_temperature_C=float(air_temp),
+                    mean_radiant_temperature_C=float(mean_radiant),
+                    relative_humidity_percent=float(rh),
+                    air_velocity_m_s=float(air_velocity),
+                    clothing_insulation_clo=float(clothing),
+                    exposure_minutes=float(t),
+                    mechanical_power_w_m2=float(mechanical_power),
+                    body_mass_kg=float(body_mass),
+                    body_surface_area_m2=float(body_surface_area),
+                    baseline_core_temp_C=float(baseline_core),
+                    core_temp_limit_C=float(core_limit),
+                    dehydration_limit_percent=float(dehydration_limit),
+                ).predicted_core_temperature_C
+                for t in timeline
+            ]
+            fig = go.Figure()
+            fig.add_trace(
+                go.Scatter(
+                    x=timeline,
+                    y=temps,
+                    mode="lines",
+                    line=dict(color="#2563eb"),
+                    name="Core temp",
+                )
+            )
+            fig.add_hline(y=core_limit, line_dash="dash", line_color="#ef4444", annotation_text="Core limit")
+            fig.update_layout(
+                title="Predicted core temperature trajectory",
+                xaxis_title="Exposure time (minutes)",
+                yaxis_title="Core temperature (°C)",
+                height=380,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        except ValueError:
+            st.warning("Unable to render profile for the current inputs.")
     
     elif calc_type == "Cold Exposure: Peak Shivering":
         st.markdown("### 🥶 Peak Shivering Intensity")

@@ -35,10 +35,15 @@ This suite provides **validated computational tools** for aerospace medicine pro
 - 🔬 **Scientifically Validated**: All formulas based on peer-reviewed research
 - 🚀 **Aerospace Medicine Focus**: Specialized tools for aviation and space medicine
 - 📊 **Interactive Dashboards**: Real-time calculations with professional visualizations
-- 🌡️ **Environmental Stress Assessment**: Heat, cold, altitude, and decompression models
+- 🌡️ **Environmental Stress Assessment**: Heat, cold, altitude, decompression, and hydration models
 - 💻 **Production Ready**: Robust, tested, and deployment-ready codebase
 - 📱 **Cross-Platform**: Web-based interface accessible from any device
 - 🛡️ **Windows Compatible**: Enhanced Windows support with automated troubleshooting tools
+
+### ✨ **December 2025 Update**
+- **ISO 7933 Predicted Heat Strain (PHS)** calculator delivers core-temperature, sweat-rate, and hydration guardrails aligned with the Phase 1 roadmap.
+- **Modern glassmorphic UI** for the Streamlit home page with hero panel, mission cards, and roadmap chips highlighting live and upcoming features.
+- **Thermal stress studio refresh** with interactive plots that visualize core temperature trajectories and highlight the most restrictive limit (core temperature vs. dehydration).
 
 ---
 
@@ -280,7 +285,13 @@ All calculators in this suite are based on peer-reviewed scientific literature a
 - **Reference**: Belding, H. S., & Hatch, T. F. (1955). Index for evaluating heat stress in terms of resulting physiological strains. *Heating, Piping and Air Conditioning*, 27(8), 129–136.
 - **Application**: Evaluates heat stress based on metabolic rate and environmental conditions
 
-#### **10. Noise Exposure Assessment**
+#### **10. Predicted Heat Strain (ISO 7933)**
+- **References**: 
+  - ISO 7933:2023. *Ergonomics of the thermal environment — Analytical determination and interpretation of heat stress using calculation of the predicted heat strain.*
+  - Malchaire, J., et al. (2001). Development and validation of the predicted heat strain model. *Annals of Occupational Hygiene*, 45(2), 123–135.
+- **Application**: Provides core temperature, sweat rate, and dehydration guardrails for work/rest planning in extreme heat.
+
+#### **11. Noise Exposure Assessment**
 - **References**: 
   - National Institute for Occupational Safety and Health (NIOSH). (1998). *Criteria for a Recommended Standard: Occupational Noise Exposure* (DHHS Publication No. 98–126).
   - Occupational Safety and Health Administration (OSHA). (2008). *Occupational Noise Exposure: Standard 29 CFR 1910.95*.
@@ -321,16 +332,30 @@ print(f"SpO2 at {altitude_ft} ft: {spo2:.1f}%")
 
 ### **Heat Stress Evaluation**
 ```python
-from calculators import wbgt_outdoor, heat_stress_index
+from calculators import wbgt_outdoor, heat_stress_index, predicted_heat_strain
 
 # Calculate WBGT for outdoor work environment
 dry_bulb = 35.0  # °C
 wet_bulb = 28.0  # °C
 globe_temp = 45.0  # °C
-
 wbgt = wbgt_outdoor(dry_bulb, wet_bulb, globe_temp)
-risk_level = heat_stress_index(wbgt)
-print(f"WBGT: {wbgt:.1f}°C - Risk Level: {risk_level}")
+print(f"WBGT: {wbgt:.1f}°C")
+
+# Predict heat strain per ISO 7933 guidance
+phs = predicted_heat_strain(
+    metabolic_rate_w_m2=420.0,
+    air_temperature_C=32.0,
+    mean_radiant_temperature_C=38.0,
+    relative_humidity_percent=55.0,
+    air_velocity_m_s=0.6,
+    clothing_insulation_clo=0.9,
+    exposure_minutes=90.0,
+)
+print(
+    f"Core temp: {phs.predicted_core_temperature_C:.2f}°C | "
+    f"Sweat req: {phs.required_sweat_rate_L_per_h:.2f} L/h | "
+    f"Safe exposure: {phs.allowable_exposure_minutes:.0f} min ({phs.limiting_factor})"
+)
 ```
 
 ### **Decompression Risk Assessment**
@@ -373,6 +398,7 @@ print(f"Tissue Ratio: {tr:.3f} - {risk_assessment}")
 ### **🔬 Environmental Monitoring**
 - Heat Stress Index (WBGT)
 - Heat Stress Index (HSI)
+- Predicted Heat Strain (ISO 7933 inspired)
 - Cold Exposure: Peak Shivering
 - Noise Exposure Assessment
 
