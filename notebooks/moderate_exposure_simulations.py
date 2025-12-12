@@ -1,11 +1,11 @@
 # %% [markdown]
-"""
+r"""
 # Human Performance Calculations – Multiple Exposure Scenarios
 
 This notebook-style script (
 [Jupytext](https://jupytext.readthedocs.io/) compatible – each `# %%` denotes a cell) extends
 our prior *moderate-exposure* walkthrough.  We now explore **three distinct scenarios**
-(\_mild\_, \_moderate\_ and \_high\_ exposure) for each aerospace-medicine calculator and
+(*mild*, *moderate* and *high* exposure) for each aerospace-medicine calculator and
 summarise the outputs.
 
 > **Disclaimer** — Research & education use only.  Do **not** apply to operational or
@@ -25,7 +25,8 @@ if str(root) not in sys.path:
     sys.path.insert(0, str(root))
 
 plt.style.use("seaborn-v0_8")
-%matplotlib inline
+# NOTE: Jupyter/IPython magic removed so this file is valid Python when run via
+# standard tooling (linters, `python -m compileall`, CI).
 
 subject = {
     "age": 34,
@@ -237,7 +238,11 @@ Simplified 24 h simulation with varying sleep quantity.
 """
 
 # %%
-from FatigueCalcVerAlfa2 import simulate_cognitive_performance
+try:
+    # Legacy notebook dependency; keep optional so this script remains importable.
+    from FatigueCalcVerAlfa2 import simulate_cognitive_performance  # type: ignore
+except Exception:  # pragma: no cover - optional notebook dependency
+    simulate_cognitive_performance = None
 
 fatigue_rows = []
 for label, sleep_hours in {
@@ -245,6 +250,8 @@ for label, sleep_hours in {
     "Moderate": 6,
     "High": 4,
 }.items():
+    if simulate_cognitive_performance is None:
+        continue
     sleep_history = [
         (23, 23 + sleep_hours % 24, 0.8, sleep_hours, 2, sleep_hours - 2, 0),
         (23, 23 + sleep_hours % 24, 0.8, sleep_hours, 2, sleep_hours - 2, 0),

@@ -29,16 +29,22 @@
 
 ## 🌟 **Project Overview**
 
-This suite provides **validated computational tools** for aerospace medicine professionals, occupational health specialists, and researchers working in extreme environments. The platform integrates **29+ evidence-based formulas** with modern visualization capabilities and interactive dashboards.
+This suite provides **research-grade computational tools** for aerospace medicine professionals, occupational health specialists, and researchers working in extreme environments. The platform integrates **29+ referenced formulas/models** with modern visualization capabilities and interactive dashboards.
 
 ### 🎯 **Key Features**
 - 🔬 **Scientifically Validated**: All formulas based on peer-reviewed research
 - 🚀 **Aerospace Medicine Focus**: Specialized tools for aviation and space medicine
 - 📊 **Interactive Dashboards**: Real-time calculations with professional visualizations
 - 🌡️ **Environmental Stress Assessment**: Heat, cold, altitude, decompression, and hydration models
-- 💻 **Production Ready**: Robust, tested, and deployment-ready codebase
+- 💻 **Reproducible**: Deterministic implementations with explicit assumptions and units
 - 📱 **Cross-Platform**: Web-based interface accessible from any device
 - 🛡️ **Windows Compatible**: Enhanced Windows support with automated troubleshooting tools
+
+### 🧾 **Why this suite (advantages vs. single-purpose calculators)**
+- **End-to-end workflows**: Atmospheric physiology → stress indices → exposure/risk reporting in one interface (no spreadsheet glue).
+- **Transparent methods**: Units, assumptions, and model limits are explicit in code and surfaced in-app.
+- **Publication-ready outputs**: High-quality interactive plots with export (PNG/SVG/PDF/HTML) for figures and supplements.
+- **Aerospace-specific exposure tooling**: TLV®/BEI-style workflows, mixed exposure indexing, and report generation aligned to occupational practice.
 
 ### ✨ **December 2025 Update**
 - **ISO 7933 Predicted Heat Strain (PHS)** calculator delivers core-temperature, sweat-rate, and hydration guardrails aligned with the Phase 1 roadmap.
@@ -224,13 +230,7 @@ python run_calculator.py
 ## 🔧 **Alternative Installation Methods**
 
 ### **Docker Deployment** 🐳
-```bash
-# Build the container
-docker build -t aerospace-medicine-calc .
-
-# Run the application
-docker run -p 8501:8501 aerospace-medicine-calc
-```
+Docker packaging is not included in this repository snapshot. If you need a Dockerfile, add one with pinned dependencies and a reproducible base image before using this in production/scientific deployments.
 
 ### **Production Deployment**
 For production environments, consider using:
@@ -315,18 +315,22 @@ All calculators in this suite are based on peer-reviewed scientific literature a
 
 ---
 
-## 💻 **Usage Examples**
+## 💻 **Usage Examples (API)**
 
 ### **Altitude Physiology Assessment**
 ```python
 from calculators import standard_atmosphere, spo2_unacclimatized
 
-# Calculate atmospheric conditions at flight altitude
+# Calculate atmospheric conditions at flight altitude (inputs in meters)
 altitude_ft = 35000
-pressure, temp, density = standard_atmosphere(altitude_ft)
+altitude_m = altitude_ft * 0.3048
+isa = standard_atmosphere(altitude_m)
+pressure_pa = isa["pressure_Pa"]
+temp_c = isa["temperature_C"]
+density = isa["density_kg_m3"]
 
-# Assess oxygen saturation for unacclimatized individual
-spo2 = spo2_unacclimatized(altitude_ft)
+# Assess oxygen saturation for unacclimatized individual (inputs in meters)
+spo2 = spo2_unacclimatized(altitude_m)
 print(f"SpO2 at {altitude_ft} ft: {spo2:.1f}%")
 ```
 
@@ -338,7 +342,7 @@ from calculators import wbgt_outdoor, heat_stress_index, predicted_heat_strain
 dry_bulb = 35.0  # °C
 wet_bulb = 28.0  # °C
 globe_temp = 45.0  # °C
-wbgt = wbgt_outdoor(dry_bulb, wet_bulb, globe_temp)
+wbgt = wbgt_outdoor(T_nwb=wet_bulb, T_g=globe_temp, T_db=dry_bulb)
 print(f"WBGT: {wbgt:.1f}°C")
 
 # Predict heat strain per ISO 7933 guidance
@@ -360,14 +364,15 @@ print(
 
 ### **Decompression Risk Assessment**
 ```python
-from calculators import tissue_ratio, interpret_tr
+from calculators import standard_atmosphere, tissue_ratio, interpret_tr
 
-# Assess decompression sickness risk
-cabin_alt = 8000  # feet
-flight_alt = 25000  # feet
-exposure_time = 4  # hours
-
-tr = tissue_ratio(cabin_alt, flight_alt, exposure_time)
+# Assess decompression stress using Tissue Ratio (TR = Ptissue_N2 / Pambient).
+# Here we assume tissues are saturated at sea level N2 prior to ascent.
+altitude_ft = 25000
+altitude_m = altitude_ft * 0.3048
+p_ambient_mmhg = standard_atmosphere(altitude_m)["pressure_Pa"] / 133.322
+ptissue_n2_sea_level_mmhg = 0.78 * (101325 / 133.322)
+tr = tissue_ratio(ptissue_n2_sea_level_mmhg, p_ambient_mmhg)
 risk_assessment = interpret_tr(tr)
 print(f"Tissue Ratio: {tr:.3f} - {risk_assessment}")
 ```
@@ -418,16 +423,13 @@ print(f"Tissue Ratio: {tr:.3f} - {risk_assessment}")
 ## 🧪 **Validation & Testing**
 
 ### **Quality Assurance**
-- ✅ **Unit Tests**: 95%+ code coverage
-- ✅ **Integration Tests**: End-to-end workflow validation
-- ✅ **Performance Tests**: Sub-second response times
-- ✅ **Cross-Platform Testing**: Windows, macOS, Linux compatibility
+- ✅ **Unit Tests**: Pytest suite included (run with `python -m pytest`)
+- ✅ **Deterministic methods**: Stable results for identical inputs
+- ✅ **Cross-platform**: Windows, macOS, Linux
 
 ### **Scientific Validation**
-- 📊 **Benchmark Comparisons**: Results validated against published data
-- 🔬 **Expert Review**: Reviewed by aerospace medicine specialists
-- 📚 **Literature Compliance**: Formulas match peer-reviewed sources
-- 🎯 **Accuracy Testing**: <1% deviation from reference implementations
+- 📚 **Literature traceability**: Key calculators include citations and documented assumptions
+- 🎯 **Scope clarity**: Where models are simplified, limitations are explicitly stated
 
 ---
 
@@ -481,7 +483,7 @@ Malpica, D. (2024). *Aerospace Medicine & Human Performance Calculator Suite* [C
 ### **Technical Support**
 - 📋 **Issues**: [GitHub Issues](https://github.com/strikerdlm/HumanPerformanceCalcs/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/strikerdlm/HumanPerformanceCalcs/discussions)
-- 📖 **Documentation**: [Project Wiki](https://github.com/strikerdlm/HumanPerformanceCalcs/wiki)
+- 📖 **Documentation**: See `docs/` and in-app “Scientific rationale” expanders
 
 ---
 
@@ -539,11 +541,10 @@ This project is licensed under the **Academic Use License** - see the [LICENSE](
 ![GitHub watchers](https://img.shields.io/github/watchers/strikerdlm/HumanPerformanceCalcs?style=social)
 
 **Development Metrics:**
-- 📁 **Lines of Code**: 15,000+
-- 🧮 **Calculators**: 29+ validated formulas
-- 📊 **Visualizations**: 12+ interactive charts
-- 🧪 **Test Coverage**: 95%+
-- 📚 **Documentation**: Comprehensive
+- 🧮 **Calculators**: 29+ referenced formulas/models
+- 📊 **Visualizations**: Interactive Plotly/ECharts visual lab with export
+- 🧪 **Tests**: Pytest suite included
+- 📚 **Documentation**: References + model notes in `docs/` and in-app explainers
 - 🛠️ **Windows Compatibility Tools**: 3 helper scripts
 - 🌐 **Platform Support**: Windows, macOS, Linux
 
