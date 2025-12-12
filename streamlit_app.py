@@ -58,6 +58,33 @@ try:
 except Exception:
     ECHARTS_AVAILABLE = False
 
+
+@st.cache_data(show_spinner=False, max_entries=128)
+def _compute_isa_profile(max_alt_m: float, n_points: int = 120) -> dict[str, np.ndarray]:
+    """Compute ISA profiles for plotting (cached).
+
+    Notes
+    - Cached to keep Streamlit UI responsive when sliders change.
+    - Returns numpy arrays for direct Plotly usage.
+    """
+
+    max_alt = float(max_alt_m)
+    if max_alt <= 0.0:
+        raise ValueError("max_alt_m must be > 0")
+    n = int(n_points)
+    if n < 2 or n > 2000:
+        raise ValueError("n_points must be between 2 and 2000")
+
+    altitudes = np.linspace(0.0, max_alt, n)
+    temps = np.empty_like(altitudes)
+    pressures_hpa = np.empty_like(altitudes)
+    for i, alt in enumerate(altitudes):
+        isa = standard_atmosphere(float(alt))
+        temps[i] = float(isa["temperature_C"])
+        pressures_hpa[i] = float(isa["pressure_Pa"]) / 100.0
+
+    return {"alt_m": altitudes, "temp_c": temps, "pressure_hpa": pressures_hpa}
+
 # Page configuration
 st.set_page_config(
     page_title="Aerospace Physiology & Occupational Health Calculators",
@@ -419,13 +446,19 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             st.metric("Density", f"{result['density_kg_m3']:.4f} kg/m³")
             st.metric("O₂ Partial Pressure", f"{result['pO2_Pa']/100:.2f} hPa")
         
-        # Create visualization
-        altitudes = np.linspace(0, 20000, 100)
-        temps = [standard_atmosphere(alt)['temperature_C'] for alt in altitudes]
-        pressures = [standard_atmosphere(alt)['pressure_Pa']/100 for alt in altitudes]
+        # Create visualization (cached computation)
+        profile = _compute_isa_profile(max_alt_m=20_000.0, n_points=140)
         
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=temps, y=altitudes/1000, mode='lines', name='Temperature', line=dict(color='red')))
+        fig.add_trace(
+            go.Scatter(
+                x=profile["temp_c"],
+                y=profile["alt_m"] / 1000.0,
+                mode="lines",
+                name="Temperature",
+                line=dict(color="red"),
+            )
+        )
         fig.update_layout(
             title="ISA Temperature Profile",
             xaxis_title="Temperature (°C)",
