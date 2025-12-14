@@ -52,6 +52,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **Universal Thermal Climate Index (UTCI)** calculator adds outdoor thermal “feels-like” assessment with standardized stress categories.
 - **Bühlmann ZH‑L16 (Gradient Factors) decompression planner** is now live, with a unit-tested reference schedule and neutral UI outputs.
 - **AGSM effectiveness model (+Gz)** is now live, with parameter defaults anchored to a published configuration comparison study (and all assumptions exposed in-app).
+- **Spatial Disorientation (SD) risk assessment** is now live with explicit physiology anchors (leans threshold, canal entrainment window, Coriolis threshold, somatogravic tilt physics) and in-app citations.
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
 - **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
 - **Thermal stress studio refresh** with interactive plots that visualize core temperature trajectories and highlight the most restrictive limit (core temperature vs. dehydration).
