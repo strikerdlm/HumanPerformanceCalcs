@@ -503,7 +503,7 @@ We maintain a comprehensive development roadmap based on scientific literature r
 - **Predicted Heat Strain (PHS) Model** — ISO 7933:2023 standard
 - **Simulation Studio** — interactive forward trajectories and scientific “what happens next” forecasting for time-steppable calculators (see `Docs/Manual.md`)
 - **Universal Thermal Climate Index (UTCI)** — Outdoor thermal comfort
-- **Cold Water Immersion Survival Time** — Hayward-Tikuisis models
+- **Cold Water Immersion Survival Time** — Cold-water immersion survival guidance (hypothermia-limited; see notes in-app)
 - **Bühlmann ZH-L16 Decompression Algorithm** — Industry-standard DCS prediction
 - **Anti-G Straining Maneuver (AGSM) Effectiveness** — G-tolerance enhancement
 - **Spatial Disorientation Risk Assessment** — Vestibular conflict modeling
