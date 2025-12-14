@@ -1,5 +1,36 @@
 ## Manual — Aerospace Medicine & Human Performance Calculator Suite
 
+### UI (Streamlit): roadmap-driven navigation + crystal cards
+
+The Streamlit app includes:
+
+- A **Roadmap** view that summarizes Phase 1 items from `docs/ROADMAP.md`.
+- **Coming soon** placeholders for Phase 1 items (so planned tools are discoverable without breaking current workflows).
+- A neutral **“crystal / liquid glass”** style applied to **boxes/cards only** (no color palettes injected; compatible with dark mode).
+
+### Environmental Monitoring: Universal Thermal Climate Index (UTCI)
+
+The **UTCI** calculator is available under:
+
+- Sidebar → **🔬 Environmental Monitoring** → **Universal Thermal Climate Index (UTCI)**
+
+**Inputs**
+
+- **Ta**: air temperature (°C)
+- **Tr**: mean radiant temperature (°C)
+- **v**: wind speed at 10 m (m/s)
+- **RH**: relative humidity (%)
+
+**Outputs**
+
+- **UTCI (°C)**: equivalent temperature (“feels-like”)
+- **Thermal stress category** (10-level UTCI scale)
+
+**Notes**
+
+- The calculator uses the standard **UTCI polynomial approximation** (UTCI_approx, Oct 2009).
+- Optional “strict validity bounds” enforces the common published ranges for the polynomial approximation.
+
 ### Simulation Studio (interactive forecasting)
 
 The **Simulation Studio** is a UI for models that naturally support **time-stepping**. It generates trajectories by repeatedly sampling the underlying calculator at bounded intervals (deterministic; no hidden state).
