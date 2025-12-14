@@ -17,6 +17,11 @@ from .wbgt import wbgt_indoor, wbgt_outdoor, heat_stress_index  # type: ignore
 from .utci import utci, utci_category  # type: ignore
 from .buhlmann import plan_zh_l16_gf, GasMix, BuhlmannPlan, DecompressionStop  # type: ignore
 from .agsm import AgsmInputs, AgsmResult, estimate_gz_tolerance_with_agsm  # type: ignore
+from .spatial_disorientation import (  # type: ignore
+    SpatialDisorientationInputs,
+    SpatialDisorientationResult,
+    spatial_disorientation_risk,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -93,6 +98,9 @@ __all__ = [
     "AgsmInputs",
     "AgsmResult",
     "estimate_gz_tolerance_with_agsm",
+    "SpatialDisorientationInputs",
+    "SpatialDisorientationResult",
+    "spatial_disorientation_risk",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
