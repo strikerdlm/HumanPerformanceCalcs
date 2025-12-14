@@ -218,6 +218,72 @@ ROADMAP_PHASE_ONE = [
     },
 ]
 
+# Minimal per-item details (lifted from docs/ROADMAP.md) for "coming soon" pages.
+# Keep this neutral and informational; do not inject color styling here.
+ROADMAP_ITEM_DETAILS: dict[str, dict[str, object]] = {
+    "Universal Thermal Climate Index": {
+        "phase": "Phase 1",
+        "references": [
+            "Jendritzky, G., de Dear, R., & Havenith, G. (2012). UTCI—why another thermal index? International Journal of Biometeorology, 56(3), 421–428.",
+            "Bröde, P., Fiala, D., Błażejczyk, K., et al. (2012). Deriving the operational procedure for the Universal Thermal Climate Index (UTCI). International Journal of Biometeorology, 56(3), 481–494.",
+        ],
+    },
+    "Cold Water Immersion Survival": {
+        "phase": "Phase 1",
+        "references": [
+            "Tikuisis, P. (1997). Prediction of survival time at sea based on observed body cooling rates. Aviation, Space, and Environmental Medicine, 68(5), 441–448.",
+            "Hayward, J. S., Eckerson, J. D., & Collis, M. L. (1975). Effect of behavioral variables on cooling rate of man in cold water. Journal of Applied Physiology, 38(6), 1073–1077.",
+            "Xu, X., Tikuisis, P., & Giesbrecht, G. (2005). A mathematical model for human brain cooling during cold-water near-drowning. Journal of Applied Physiology, 99(4), 1428–1435.",
+        ],
+    },
+    "Bühlmann ZH-L16 Decompression Algorithm": {
+        "phase": "Phase 1",
+        "references": [
+            "Bühlmann, A. A. (1984). Decompression-Decompression Sickness. Springer-Verlag.",
+            "Bühlmann, A. A. (2002). Tauchmedizin: Barotrauma, Gasembolie, Dekompression, Dekompressionskrankheit (5th ed.). Springer.",
+            "Gerth, W. A., & Doolette, D. J. (2007). VVal-18 and VVal-18M thalmann algorithm-based air decompression tables and procedures. NEDU TR 07-09.",
+        ],
+    },
+    "AGSM Effectiveness Model": {
+        "phase": "Phase 1",
+        "references": [
+            "Wood, E. H., Lambert, E. H., Baldes, E. J., & Code, C. F. (1946). Effects of acceleration in relation to aviation. Federation Proceedings, 5, 327–344.",
+            "Whinnery, J. E. (1991). Methods for describing and quantifying +Gz-induced loss of consciousness. Aviation, Space, and Environmental Medicine, 62(8), 738–742.",
+            "Eiken, O., & Mekjavic, I. B. (2016). Ischaemia-reperfusion and G-LOC: a review of the pathophysiology. Aviation, Space, and Environmental Medicine, 87(6), 584–594.",
+        ],
+    },
+    "Spatial Disorientation Risk Assessment": {
+        "phase": "Phase 1",
+        "references": [
+            "Benson, A. J. (1999). Spatial disorientation—common illusions. In Aviation Medicine (3rd ed.). Butterworth-Heinemann.",
+            "Previc, F. H., & Ercoline, W. R. (2004). Spatial Disorientation in Aviation. AIAA.",
+            "Cheung, B. (2013). Spatial disorientation: more than just illusion. Aviation, Space, and Environmental Medicine, 84(11), 1211–1214.",
+        ],
+    },
+}
+
+
+def _coming_soon_label(item_name: str) -> str:
+    """Build a stable navigation label for roadmap items that are not yet live."""
+    if not isinstance(item_name, str):
+        raise TypeError("item_name must be a str")
+    name = item_name.strip()
+    if not name:
+        raise ValueError("item_name must be non-empty")
+    return f"🚧 {name} (Coming soon)"
+
+
+COMING_SOON_NAV: dict[str, dict[str, object]] = {}
+for _item in ROADMAP_PHASE_ONE:
+    if _item.get("status") != "Live":
+        _name = str(_item.get("name", "")).strip()
+        if _name:
+            COMING_SOON_NAV[_coming_soon_label(_name)] = {
+                "name": _name,
+                "status": str(_item.get("status", "Planned")),
+                "description": str(_item.get("description", "")),
+            }
+
 # Main header
 st.title("🚀 Aerospace Physiology & Occupational Health Calculators")
 
@@ -228,6 +294,7 @@ calculator_category = st.sidebar.selectbox(
     [
         "🏠 Home",
         "🗺️ Roadmap",
+        *list(COMING_SOON_NAV.keys()),
         "🌍 Atmospheric & Physiological",
         "🩺 Clinical Calculators",
         "Occupational Health & Safety",
@@ -322,6 +389,19 @@ elif calculator_category == "🗺️ Roadmap":
         for item in ROADMAP_PHASE_ONE:
             st.markdown(f"- **{item['name']}** — {item['status']} · {item['description']}")
 
+    st.markdown("#### Phase 1: coming soon")
+    soon_cols = st.columns(3)
+    soon_items = [v for v in COMING_SOON_NAV.values()]
+    for idx, item in enumerate(soon_items):
+        col = soon_cols[idx % 3]
+        with col:
+            with crystal_container(border=True):
+                st.markdown(f"**{item['name']}**")
+                st.caption(f"{item['status']} · {item['description']}")
+                if st.button("Open preview", key=f"roadmap_open_preview_{idx}"):
+                    st.session_state["calculator_category"] = _coming_soon_label(str(item["name"]))
+                    st.rerun()
+
     with st.expander("View full roadmap (from docs/ROADMAP.md)", expanded=False):
         try:
             with open("docs/ROADMAP.md", "r", encoding="utf-8") as f:
@@ -330,6 +410,48 @@ elif calculator_category == "🗺️ Roadmap":
             st.error(f"Unable to read docs/ROADMAP.md: {e}")
         else:
             st.markdown(roadmap_md)
+
+elif calculator_category in COMING_SOON_NAV:
+    item = COMING_SOON_NAV[calculator_category]
+    name = str(item["name"])
+    status = str(item["status"])
+    description = str(item["description"])
+    details = ROADMAP_ITEM_DETAILS.get(name, {})
+    phase = str(details.get("phase", "Phase 1"))
+    refs = details.get("references", [])
+    if not isinstance(refs, list):
+        refs = []
+
+    st.subheader(f"{name} — coming soon")
+    st.caption(f"{phase} · Status: {status}")
+
+    with crystal_container(border=True):
+        st.markdown("**What you’ll get**")
+        st.markdown(f"- {description}" if description else "- Roadmap item (details pending)")
+
+    with crystal_container(border=True):
+        st.markdown("**Why this is on the roadmap**")
+        st.markdown(
+            "This section is a placeholder UI preview so users can see what’s planned and why, "
+            "without breaking the current calculators."
+        )
+
+    if refs:
+        with crystal_container(border=True):
+            st.markdown("**Key references (from `docs/ROADMAP.md`)**")
+            for r in refs:
+                if isinstance(r, str) and r.strip():
+                    st.markdown(f"- {r.strip()}")
+
+    col_back1, col_back2 = st.columns([1, 1])
+    with col_back1:
+        if st.button("Back to Roadmap", key="coming_soon_back_to_roadmap"):
+            st.session_state["calculator_category"] = "🗺️ Roadmap"
+            st.rerun()
+    with col_back2:
+        if st.button("Back to Home", key="coming_soon_back_to_home"):
+            st.session_state["calculator_category"] = "🏠 Home"
+            st.rerun()
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
     st.subheader("Atmospheric & Physiological Calculators")
