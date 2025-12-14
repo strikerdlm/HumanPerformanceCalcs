@@ -123,6 +123,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: Medium (extends existing tissue ratio calculator)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
