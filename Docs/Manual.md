@@ -8,6 +8,25 @@ The Streamlit app includes:
 - **Coming soon** placeholders for Phase 1 items (so planned tools are discoverable without breaking current workflows).
 - A neutral **“crystal / liquid glass”** style applied to **boxes/cards only** (no color palettes injected; compatible with dark mode).
 
+### Atmospheric & Physiological: Bühlmann ZH‑L16 GF Decompression Planner
+
+The **Bühlmann ZH‑L16 GF** decompression planner is available under:
+
+- Sidebar → **🌍 Atmospheric & Physiological** → **Bühlmann ZH‑L16 GF Decompression Planner**
+
+**Inputs (core)**
+
+- Max depth (m)
+- “for X minutes” (min)
+- GF Low / GF High
+- Ascent and descent rates
+- Gas mix (O₂% and He%; N₂% is inferred)
+
+**Important time convention**
+
+- The UI includes a toggle to interpret **“for X minutes”** as **runtime at max depth including descent** (i.e., time at depth is \( \max(0, X - t_{descent}) \)).
+- Disable the toggle if you want **pure time-at-depth** behavior.
+
 ### Environmental Monitoring: Universal Thermal Climate Index (UTCI)
 
 The **UTCI** calculator is available under:
