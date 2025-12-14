@@ -56,6 +56,10 @@ from .simulation import (  # type: ignore
     simulate_phs_trajectory,
     MitlerTrajectory,
     simulate_mitler_trajectory,
+    PHSSweep1D,
+    PHSSweep2D,
+    sweep_phs_metric_1d,
+    sweep_phs_metric_2d,
 )
 
 __all__ = [
@@ -113,4 +117,8 @@ __all__ = [
     "simulate_phs_trajectory",
     "MitlerTrajectory",
     "simulate_mitler_trajectory",
+    "PHSSweep1D",
+    "PHSSweep2D",
+    "sweep_phs_metric_1d",
+    "sweep_phs_metric_2d",
 ]
