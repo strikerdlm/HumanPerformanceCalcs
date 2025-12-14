@@ -97,208 +97,97 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional styling with light/dark support
-st.markdown("""
+# Neutral “crystal / liquid glass” styling (no injected colors; works in light/dark mode)
+# Note: Streamlit doesn't provide stable per-component class hooks, so we apply this to:
+# - `.info-box` style callouts already used throughout the app
+# - `neutral_box()` containers via a marker element + `:has()` selector (supported in modern Chromium/Edge)
+st.markdown(
+    """
 <style>
-    :root {
-        --color-primary: #2563eb; /* indigo-600 */
-        --color-accent: #7c3aed;  /* violet-600 */
-        --color-sky: #0ea5e9;     /* sky-500 */
-        --color-success: #22c55e; /* green-500 */
-        --color-warning: #f59e0b; /* amber-500 */
-        --color-danger: #ef4444;  /* red-500 */
-        /* Light theme defaults */
-        --color-text: #111827;    /* gray-900 */
-        --color-muted: #6b7280;   /* gray-500 */
-        --surface: #ffffff;
-        --surface-2: #f8fafc;     /* slate-50 */
-        --border: #e5e7eb;        /* gray-200 */
-    }
+  /* Hide the marker node (used only to target crystal containers). */
+  .crystal-box-marker {
+    display: none;
+  }
 
-    body, .stApp {
-        background: radial-gradient(circle at top, rgba(59,130,246,0.22), transparent 55%),
-                    radial-gradient(circle at 20% 20%, rgba(14,165,233,0.28), transparent 40%),
-                    linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-        font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
-        color: var(--color-text);
-    }
+  /* Crystal callouts (used by existing HTML blocks). */
+  .info-box, .warning-box, .danger-box, .success-box {
+    border-radius: 16px;
+    padding: 0.95rem 1.05rem;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+  }
 
-    .hero-panel {
-        padding: 2.4rem;
-        border-radius: 1.5rem;
-        border: 1px solid rgba(255,255,255,0.4);
-        background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.08));
-        box-shadow: 0 30px 60px rgba(15,23,42,0.15);
-        position: relative;
-        overflow: hidden;
-    }
+  /* Crystal containers created via neutral_box(). */
+  div[data-testid="stContainer"]:has(.crystal-box-marker) {
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+  }
 
-    .hero-panel:after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 40% 0%, rgba(255,255,255,0.35), transparent 60%);
-        pointer-events: none;
-    }
-
-    .hero-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6rem;
-        margin: 1rem 0 1.25rem 0;
-    }
-
-    .hero-badge {
-        padding: 0.35rem 0.9rem;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.85);
-        color: #0f172a;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .glass-panel {
-        padding: 1.2rem;
-        border-radius: 1rem;
-        background: rgba(255,255,255,0.75);
-        border: 1px solid rgba(148,163,184,0.35);
-        box-shadow: 0 20px 40px rgba(15,23,42,0.12);
-        backdrop-filter: blur(16px);
-    }
-
-    .roadmap-chip {
-        padding: 0.65rem 1rem;
-        border-radius: 12px;
-        background: rgba(37,99,235,0.08);
-        border: 1px solid rgba(37,99,235,0.2);
-        margin-bottom: 0.8rem;
-    }
-
-    .roadmap-chip strong {
-        display: block;
-        font-size: 0.95rem;
-    }
-
-    .status-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 0.45rem;
-    }
-
-    .stat-card {
-        padding: 1rem 1.2rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(226,232,240,0.6);
-        background: rgba(248,250,252,0.85);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
-    }
-
-    /* Override variables automatically when user prefers dark scheme */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-text: #e5e7eb;    /* slate-200 */
-        --color-muted: #9ca3af;   /* gray-400 */
-        --surface: #0f172a;       /* slate-900 */
-        --surface-2: #111827;     /* gray-900 */
-        --border: #334155;        /* slate-600 */
-      }
-    }
-
-    .main-header {
-        font-size: 2.6rem;
-        font-weight: 800;
-        color: var(--color-text);
-        text-align: center;
-        margin-bottom: 2rem;
-        padding: 1.2rem;
-        background: linear-gradient(135deg, rgba(14,165,233,0.12), rgba(99,102,241,0.12));
-        border-radius: 14px;
-        border: 1px solid var(--border);
-    }
-
-    .section-header {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: var(--color-text);
-        margin: 1.2rem 0 0.8rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--border);
-    }
-
+  /* Dark mode: keep it neutral (no hues), just invert translucency and borders. */
+  @media (prefers-color-scheme: dark) {
     .info-box, .warning-box, .danger-box, .success-box {
-        padding: 1rem 1.2rem;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--color-text);          /* ensure readable text in both themes */
-        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
     }
 
-    .info-box { border-left: 5px solid var(--color-sky); }
-    .warning-box { border-left: 5px solid var(--color-warning); }
-    .danger-box { border-left: 5px solid var(--color-danger); }
-    .success-box { border-left: 5px solid var(--color-success); }
-
-    .metric-card {
-        background: var(--surface);
-        padding: 1.2rem 1.3rem;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
-        margin: 0.5rem 0;
+    div[data-testid="stContainer"]:has(.crystal-box-marker) {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
     }
-
-    .stButton > button {
-        background: linear-gradient(135deg, var(--color-sky), var(--color-accent));
-        color: white;
-        border-radius: 10px;
-        border: none;
-        padding: 0.6rem 1.1rem;
-        font-weight: 700;
-        letter-spacing: 0.2px;
-        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-        box-shadow: 0 8px 20px rgba(99,102,241,0.25);
-    }
-
-    .stButton > button:hover { transform: translateY(-1px); filter: brightness(1.02); }
-
-    .stSelectbox label, .stSlider label, .stRadio label, .stNumberInput label {
-        font-weight: 600; color: var(--color-text);
-    }
+  }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
+def neutral_box(markdown_text: str, *, in_sidebar: bool = False) -> None:
+    """Render a neutral, theme-safe bordered callout (styled via crystal CSS)."""
+    if not isinstance(markdown_text, str):
+        raise TypeError("markdown_text must be a str")
+    text = markdown_text.strip()
+    if not text:
+        raise ValueError("markdown_text must be non-empty")
+
+    target = st.sidebar if in_sidebar else st
+    box = target.container(border=True)
+    with box:
+        st.markdown('<span class="crystal-box-marker"></span>', unsafe_allow_html=True)
+        st.markdown(text)
 
 ROADMAP_PHASE_ONE = [
     {
         "name": "ISO 7933 Predicted Heat Strain",
         "status": "Live",
         "description": "Core temperature + hydration guardrails",
-        "tone": "#22c55e",
     },
     {
         "name": "Simulation Studio",
         "status": "Live",
         "description": "Forward trajectories + next-step forecasts",
-        "tone": "#38bdf8",
     },
     {
         "name": "Universal Thermal Climate Index",
         "status": "Next",
         "description": "Outdoor thermal comfort envelope",
-        "tone": "#f97316",
     },
     {
         "name": "Cold Water Immersion Survival",
         "status": "Planned",
         "description": "Hayward–Tikuisis survival curves",
-        "tone": "#0ea5e9",
     },
 ]
 
 # Main header
-st.markdown('<div class="main-header">🚀 Aerospace Physiology & Occupational Health Calculators</div>', unsafe_allow_html=True)
+st.title("🚀 Aerospace Physiology & Occupational Health Calculators")
 
 # Sidebar navigation
 st.sidebar.markdown("## 📋 Navigation")
@@ -319,70 +208,39 @@ calculator_category = st.sidebar.selectbox(
 
 # Disclaimer
 st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div class="info-box">
-<strong>Important Disclaimer</strong><br>
-These calculators are for educational and research purposes only. 
-Do not use for operational decision-making without professional validation.
-</div>
-""", unsafe_allow_html=True)
+neutral_box(
+    "**Important Disclaimer**\n\n"
+    "These calculators are for educational and research purposes only.\n"
+    "Do not use for operational decision-making without professional validation.",
+    in_sidebar=True,
+)
 
 if calculator_category == "🏠 Home":
     hero_left, hero_right = st.columns([2.2, 1.2])
 
     with hero_left:
-        st.markdown(
-            """
-            <div class="hero-panel">
-                <p style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 0.75rem; opacity: 0.8;">
-                    Aerospace Medicine Ops Suite
-                </p>
-                <h1 style="font-size: 2.6rem; margin: 0.35rem 0 1rem 0;">
-                    Modern, elegant calculators for extreme environments
-                </h1>
-                <p style="font-size: 1.05rem; max-width: 640px;">
-                    Run atmospheric physiology, occupational exposure, circadian, and risk assessment workflows inside a cohesive
-                    mission UI. Every model is referenced, vetted, and tuned for aerospace realities.
-                </p>
-                <div class="hero-badges">
-                    <span class="hero-badge">New · ISO 7933 Predicted Heat Strain</span>
-                    <span class="hero-badge">ACGIH TLV® + BEI 2024</span>
-                    <span class="hero-badge">Plotly + ECharts visual lab</span>
-                </div>
-                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0;">
-                    Roadmap momentum → Phase 1 item \"Predicted Heat Strain\" is now live in-app.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.caption("Aerospace Medicine Ops Suite")
+        st.header("Modern calculators for extreme environments")
+        st.write(
+            "Run atmospheric physiology, occupational exposure, circadian, and risk assessment workflows in one place. "
+            "Models are referenced, vetted, and tuned for aerospace realities."
         )
+        neutral_box(
+            "- New: ISO 7933 Predicted Heat Strain\n"
+            "- ACGIH TLV® + BEI 2024\n"
+            "- Plotly + ECharts visual lab"
+        )
+        st.caption('Roadmap momentum → Phase 1 item "Predicted Heat Strain" is now live in-app.')
 
     with hero_right:
-        st.markdown(
-            f"""
-            <div class="glass-panel">
-                <p style="font-weight:700; margin-bottom:0.8rem;">Mission-ready snapshot</p>
-                <div class="stat-card" style="margin-bottom:0.8rem;">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Calculators</div>
-                    <div style="font-size:1.8rem; font-weight:700;">29+</div>
-                    <small>Heat, hypoxia, circadian, clinical, exposure</small>
-                </div>
-                <div class="stat-card" style="margin-bottom:0.8rem;">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Chemical DB</div>
-                    <div style="font-size:1.8rem; font-weight:700;">{len(AEROSPACE_CHEMICALS)}</div>
-                    <small>Aerospace-specific TLV®/BEI references</small>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Compliance</div>
-                    <div style="font-size:1.4rem; font-weight:700;">ACGIH 2024</div>
-                    <small>Noise · heat · chemicals · biological monitoring</small>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with st.container(border=True):
+            st.markdown("**Mission-ready snapshot**")
+            st.metric("Calculators", "29+")
+            st.metric("Chemical DB", f"{len(AEROSPACE_CHEMICALS)}")
+            st.metric("Compliance", "ACGIH 2024")
+            st.caption("Noise · heat · chemicals · biological monitoring")
 
-    st.markdown('<div class="section-header">Mission-ready focus areas</div>', unsafe_allow_html=True)
+    st.subheader("Mission-ready focus areas")
     mission_cols = st.columns(3)
     mission_descriptions = [
         ("🌍 Physiology & Atmosphere", ["ISA layers & hypoxia cascade", "TUC + decompression guardrails", "Cosmic radiation planning"]),
@@ -390,38 +248,21 @@ if calculator_category == "🏠 Home":
         ("🧠 Fatigue & Performance", ["Circadian performance envelopes", "Two-process sleep modelling", "Jet lag + Mitler vigilance"]),
     ]
     for col, (title, bullets) in zip(mission_cols, mission_descriptions):
-        bullet_html = "".join(f"<li>{b}</li>" for b in bullets)
-        col.markdown(
-            f"""
-            <div class="glass-panel">
-                <h4 style="margin-bottom:0.4rem;">{title}</h4>
-                <ul style="padding-left:1.1rem; margin-bottom:0;">{bullet_html}</ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with col:
+            neutral_box("**" + title + "**\n\n" + "\n".join(f"- {b}" for b in bullets))
 
-    st.markdown('<div class="section-header">Roadmap momentum</div>', unsafe_allow_html=True)
+    st.subheader("Roadmap momentum")
     roadmap_cols = st.columns(len(ROADMAP_PHASE_ONE))
     for info, col in zip(ROADMAP_PHASE_ONE, roadmap_cols):
-        col.markdown(
-            f"""
-            <div class="roadmap-chip">
-                <span class="status-dot" style="background:{info['tone']};"></span>
-                <strong>{info['name']}</strong>
-                <small>{info['status']} · {info['description']}</small>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with col:
+            neutral_box(f"**{info['name']}**\n\n{info['status']} · {info['description']}")
 
-    st.markdown(
-        '<div class="info-box">Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots.</div>',
-        unsafe_allow_html=True,
+    neutral_box(
+        "Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots."
     )
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
-    st.markdown('<div class="section-header">Atmospheric & Physiological Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Atmospheric & Physiological Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -467,7 +308,6 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                 y=profile["alt_m"] / 1000.0,
                 mode="lines",
                 name="Temperature",
-                line=dict(color="red"),
             )
         )
         fig.update_layout(
@@ -816,7 +656,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         st.plotly_chart(fig, use_container_width=True)
 
 elif calculator_category == "🩺 Clinical Calculators":
-    st.markdown('<div class="section-header">Clinical Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Clinical Calculators")
     use_echarts = st.toggle("Use ECharts for plots", value=ECHARTS_AVAILABLE, help="Enhance plots with ECharts if available")
 
     tool = st.selectbox(
@@ -915,7 +755,7 @@ elif calculator_category == "🩺 Clinical Calculators":
         else:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=scrs, y=y, mode='lines', name='eGFR'))
-            fig.add_vline(x=float(scr), line_dash='dash', line_color='red')
+            fig.add_vline(x=float(scr), line_dash='dash')
             fig.update_layout(title="eGFR vs Creatinine", xaxis_title="Scr (mg/dL)", yaxis_title="eGFR (mL/min/1.73m²)")
             st.plotly_chart(fig, use_container_width=True)
 
@@ -932,7 +772,7 @@ elif calculator_category == "🩺 Clinical Calculators":
                 "tooltip": {"show": True},
                 "xAxis": {"type": "category", "data": ["Ratio"]},
                 "yAxis": {"type": "value", "name": "mmHg"},
-                "series": [{"type": "bar", "data": [float(ratio)], "itemStyle": {"color": "#0ea5e9", "borderRadius": [6,6,0,0]}}],
+                "series": [{"type": "bar", "data": [float(ratio)], "itemStyle": {"borderRadius": [6,6,0,0]}}],
                 "markLine": {"data": [
                     {"yAxis": 300, "lineStyle": {"type": "dashed"}},
                     {"yAxis": 200, "lineStyle": {"type": "dashed"}},
@@ -1001,7 +841,7 @@ elif calculator_category == "🩺 Clinical Calculators":
 
 
 elif calculator_category == "Occupational Health & Safety":
-    st.markdown('<div class="section-header">Occupational Health & Safety Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Occupational Health & Safety Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -1319,7 +1159,7 @@ elif calculator_category == "Occupational Health & Safety":
                 )
 
 elif calculator_category == "🔬 Environmental Monitoring":
-    st.markdown('<div class="section-header">Environmental Monitoring Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Environmental Monitoring Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -1493,11 +1333,10 @@ elif calculator_category == "🔬 Environmental Monitoring":
                     x=timeline,
                     y=temps,
                     mode="lines",
-                    line=dict(color="#2563eb"),
                     name="Core temp",
                 )
             )
-            fig.add_hline(y=core_limit, line_dash="dash", line_color="#ef4444", annotation_text="Core limit")
+            fig.add_hline(y=core_limit, line_dash="dash", annotation_text="Core limit")
             fig.update_layout(
                 title="Predicted core temperature trajectory",
                 xaxis_title="Exposure time (minutes)",
@@ -1568,8 +1407,8 @@ elif calculator_category == "🔬 Environmental Monitoring":
         ]
         
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=levels, y=osha_times, mode='lines+markers', name='OSHA', line=dict(color='blue')))
-        fig.add_trace(go.Scatter(x=levels, y=niosh_times, mode='lines+markers', name='NIOSH', line=dict(color='red')))
+        fig.add_trace(go.Scatter(x=levels, y=osha_times, mode='lines+markers', name='OSHA'))
+        fig.add_trace(go.Scatter(x=levels, y=niosh_times, mode='lines+markers', name='NIOSH'))
         fig.update_layout(
             title="Permissible Exposure Time vs Noise Level",
             xaxis_title="Noise Level (dBA)",
@@ -1579,45 +1418,16 @@ elif calculator_category == "🔬 Environmental Monitoring":
         st.plotly_chart(fig, use_container_width=True)
 
 elif calculator_category == "📈 Visualization Studio":
-    st.markdown('<div class="section-header">Visualization Studio</div>', unsafe_allow_html=True)
+    st.subheader("Visualization Studio")
 
-    # Display controls
+    # Display controls (neutral + theme-safe: no manual palette or custom colors)
     with st.container():
-        col_theme, col_palette, col_height = st.columns([1, 1, 1])
+        col_theme, col_height = st.columns([1, 1])
 
-        # Theme selection with auto detection from Streamlit theme
         theme_base = st.get_option("theme.base") or "light"
-        theme_default = "plotly_dark" if theme_base == "dark" else "plotly_white"
-        theme_choice = col_theme.selectbox(
-            "Plot Theme",
-            ["Auto", "Light", "Dark", "Seaborn", "Simple White", "GGPlot2", "Presentation"],
-            help="Choose a visual theme. 'Auto' follows the app's light/dark mode."
-        )
-        theme_template = {
-            "Auto": theme_default,
-            "Light": "plotly_white",
-            "Dark": "plotly_dark",
-            "Seaborn": "seaborn",
-            "Simple White": "simple_white",
-            "GGPlot2": "ggplot2",
-            "Presentation": "presentation",
-        }[theme_choice]
+        theme_template = "plotly_dark" if theme_base == "dark" else "plotly_white"
+        col_theme.caption(f"Plot theme: **{theme_template}** (auto)")
 
-        # Palette selection
-        palette_options = {
-            "Auto": None,
-            "Plotly": px.colors.qualitative.Plotly,
-            "D3": px.colors.qualitative.D3,
-            "Bold": px.colors.qualitative.Bold,
-            "Pastel": px.colors.qualitative.Pastel,
-            "Set2": px.colors.qualitative.Set2,
-            "Dark24": px.colors.qualitative.Dark24,
-            "Vivid": px.colors.qualitative.Vivid,
-        }
-        palette_name = col_palette.selectbox("Color Palette", list(palette_options.keys()), index=0)
-        colorway_selected = palette_options[palette_name]
-
-        # Resizable height
         plot_height = col_height.slider("Plot Height", min_value=420, max_value=900, value=640, step=20)
 
         col_style1, col_style2, col_style3 = st.columns([1, 1, 1])
@@ -1632,7 +1442,6 @@ elif calculator_category == "📈 Visualization Studio":
             template=theme_template,
             font=dict(family="Inter, system-ui, sans-serif", size=14),
             height=plot_height,
-            colorway=colorway_selected if colorway_selected else None,
             margin=dict(l=50, r=30, t=60, b=50),
             showlegend=show_legend,
         )
@@ -1961,7 +1770,7 @@ elif calculator_category == "📈 Visualization Studio":
             )
 
 elif calculator_category == "📊 Risk Assessment Tools":
-    st.markdown('<div class="section-header">Risk Assessment Tools</div>', unsafe_allow_html=True)
+    st.subheader("Risk Assessment Tools")
     
     st.markdown("### 📋 Quick Risk Assessment Dashboard")
     
@@ -2043,7 +1852,7 @@ elif calculator_category == "📊 Risk Assessment Tools":
     st.plotly_chart(fig, use_container_width=True)
 
 elif calculator_category == "🧠 Fatigue & Circadian":
-    st.markdown('<div class="section-header">Fatigue & Circadian Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Fatigue & Circadian Calculators")
 
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -2105,7 +1914,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             st.metric("Estimated days to adjust", f"{days:.1f} days")
 
 elif calculator_category == "🧪 Simulation Studio":
-    st.markdown('<div class="section-header">Simulation Studio</div>', unsafe_allow_html=True)
+    st.subheader("Simulation Studio")
     st.markdown(
         '<div class="info-box"><strong>Purpose:</strong> Forward-simulate scientifically grounded calculators that naturally support time-stepping (e.g., ISO 7933 PHS, circadian envelopes). These are deterministic samplers of existing models—not new ML “black boxes”.</div>',
         unsafe_allow_html=True,
@@ -2234,7 +2043,6 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=np.array(traj.core_temperature_C, dtype=float),
                     mode="lines",
                     name="Core temp",
-                    line=dict(color="#2563eb", width=3),
                 ),
                 row=1,
                 col=1,
@@ -2242,7 +2050,6 @@ elif calculator_category == "🧪 Simulation Studio":
             fig.add_hline(
                 y=float(core_limit),
                 line_dash="dash",
-                line_color="#ef4444",
                 annotation_text="Core limit",
                 row=1,
                 col=1,
@@ -2254,7 +2061,6 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=np.array(traj.dehydration_percent_body_mass, dtype=float),
                     mode="lines",
                     name="Dehydration %",
-                    line=dict(color="#f59e0b", width=3),
                 ),
                 row=2,
                 col=1,
@@ -2262,7 +2068,6 @@ elif calculator_category == "🧪 Simulation Studio":
             fig.add_hline(
                 y=float(dehydration_limit),
                 line_dash="dash",
-                line_color="#ef4444",
                 annotation_text="Dehydration limit",
                 row=2,
                 col=1,
@@ -2274,7 +2079,6 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=np.array(traj.required_sweat_rate_L_per_h, dtype=float),
                     mode="lines",
                     name="SWreq",
-                    line=dict(color="#7c3aed", width=2),
                 ),
                 row=3,
                 col=1,
@@ -2285,7 +2089,6 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=np.array(traj.max_sustainable_sweat_rate_L_per_h, dtype=float),
                     mode="lines",
                     name="SWmax",
-                    line=dict(color="#22c55e", width=2),
                 ),
                 row=3,
                 col=1,
@@ -2296,22 +2099,14 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=np.array(traj.actual_sweat_rate_L_per_h, dtype=float),
                     mode="lines",
                     name="SWeff",
-                    line=dict(color="#0ea5e9", width=3),
                 ),
                 row=3,
                 col=1,
             )
 
-            # Visual guardrail: shade beyond allowable exposure (if within horizon).
+            # Visual guardrail: mark allowable exposure (if within horizon).
             if math.isfinite(allow) and allow < float(horizon):
-                fig.add_vrect(
-                    x0=allow,
-                    x1=float(horizon),
-                    fillcolor="rgba(239, 68, 68, 0.12)",
-                    line_width=0,
-                    layer="below",
-                )
-                fig.add_vline(x=allow, line_dash="dot", line_color="#ef4444")
+                fig.add_vline(x=allow, line_dash="dot")
 
             fig.update_layout(
                 template=theme_template,
@@ -2328,7 +2123,7 @@ elif calculator_category == "🧪 Simulation Studio":
             st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
 
             st.markdown(
-                '<div class="info-box"><strong>Interpretation:</strong> The red-shaded region indicates the portion of the horizon beyond the model’s calculated allowable exposure limit under the selected guardrails.</div>',
+                '<div class="info-box"><strong>Interpretation:</strong> The dotted vertical line indicates the model’s calculated allowable exposure limit under the selected guardrails.</div>',
                 unsafe_allow_html=True,
             )
         except ValueError as e:
@@ -2372,9 +2167,6 @@ elif calculator_category == "🧪 Simulation Studio":
                     y=y,
                     mode="lines",
                     name="Mitler performance",
-                    line=dict(color="#0ea5e9", width=3),
-                    fill="tozeroy",
-                    fillcolor="rgba(14, 165, 233, 0.15)",
                 )
             )
             fig.update_layout(
@@ -2401,9 +2193,4 @@ elif calculator_category == "🧪 Simulation Studio":
 
 # Footer
 st.markdown("---")
-st.markdown("""
-<div style=\"text-align: center; color: #666; font-size: 0.9em;\">
-    <p><strong>Aerospace Physiology & Occupational Health Calculators</strong></p>
-    <p>For educational and research purposes only • Consult qualified professionals for operational use</p>
-</div>
-""", unsafe_allow_html=True)
+st.caption("**Aerospace Physiology & Occupational Health Calculators**  \nFor educational and research purposes only • Consult qualified professionals for operational use")
