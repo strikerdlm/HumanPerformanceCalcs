@@ -53,6 +53,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (extends existing WBGT capability)
+**Status (App)**: Live — implemented in the Streamlit UI (Environmental Monitoring + Simulation Studio)
 
 ---
 
@@ -74,6 +75,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: High (complements WBGT for outdoor assessment)
+**Status (App)**: Live — implemented in the Streamlit UI (Environmental Monitoring)
 
 ---
 
