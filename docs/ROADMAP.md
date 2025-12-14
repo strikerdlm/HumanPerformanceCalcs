@@ -160,6 +160,9 @@ Based on literature review, the following domains have significant potential for
 - Benson, A. J. (1999). Spatial disorientation—common illusions. In: Ernsting, J., Nicholson, A. N., & Rainford, D. J. (Eds.), *Aviation Medicine* (3rd ed., pp. 437-454). Butterworth-Heinemann.
 - Previc, F. H., & Ercoline, W. R. (2004). *Spatial Disorientation in Aviation*. Progress in Astronautics and Aeronautics, Vol. 203. AIAA.
 - Cheung, B. (2013). Spatial disorientation: more than just illusion. *Aviation, Space, and Environmental Medicine*, 84(11), 1211-1214.
+- Federal Aviation Administration (FAA). Spatial Disorientation — Airman Education Programs. https://www.faa.gov/pilots/training/airman_education/topics_of_interest/spatial_disorientation
+- Houben, M. M. J., Meskers, A. J. H., Bos, J. E., & Groen, E. L. (2022). The perception threshold of the vestibular Coriolis illusion. *Journal of Vestibular Research*. (PubMed: 34924407)
+- StatPearls. Physiology of Spatial Orientation. NCBI Bookshelf. https://www.ncbi.nlm.nih.gov/books/NBK518976/
 
 **Key Features**:
 
@@ -171,6 +174,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (addresses major cause of aviation mishaps)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
