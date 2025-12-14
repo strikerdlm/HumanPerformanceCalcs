@@ -27,6 +27,8 @@ from calculators import (
     wbgt_indoor,
     wbgt_outdoor,
     heat_stress_index,
+    utci,
+    utci_category,
     noise_dose_osha,
     noise_dose_niosh,
     permissible_duration,
@@ -193,7 +195,7 @@ ROADMAP_PHASE_ONE = [
     },
     {
         "name": "Universal Thermal Climate Index",
-        "status": "Next",
+        "status": "Live",
         "description": "Outdoor thermal comfort envelope",
     },
     {
@@ -1356,6 +1358,7 @@ elif calculator_category == "🔬 Environmental Monitoring":
     calc_type = st.selectbox(
         "Choose Calculator",
         [
+            "Universal Thermal Climate Index (UTCI)",
             "Heat Stress Index (WBGT)",
             "Heat Stress Index (HSI)",
             "Predicted Heat Strain (ISO 7933)",
@@ -1364,6 +1367,44 @@ elif calculator_category == "🔬 Environmental Monitoring":
         ]
     )
     
+    if calc_type == "Universal Thermal Climate Index (UTCI)":
+        st.markdown("### 🧊 Universal Thermal Climate Index (UTCI)")
+        st.caption("Outdoor ‘feels-like’ equivalent temperature (polynomial approximation).")
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            ta_c = st.number_input("Air temperature Ta (°C)", -50.0, 60.0, 20.0, step=0.5)
+            tr_c = st.number_input("Mean radiant temperature Tr (°C)", -50.0, 90.0, 20.0, step=0.5)
+            wind_10m = st.number_input("Wind speed at 10 m (m/s)", 0.0, 30.0, 2.0, step=0.1)
+            rh = st.slider("Relative humidity (%)", 0, 100, 50, step=1)
+            strict = st.checkbox(
+                "Strict validity bounds",
+                value=False,
+                help="If enabled, raises an error when inputs are outside common UTCI_approx validity bounds.",
+            )
+
+        with col2:
+            st.markdown("#### Results")
+            try:
+                utci_c = utci(
+                    air_temperature_c=float(ta_c),
+                    mean_radiant_temperature_c=float(tr_c),
+                    wind_speed_10m_m_s=float(wind_10m),
+                    relative_humidity_percent=float(rh),
+                    strict=bool(strict),
+                    clamp_wind=True,
+                )
+            except ValueError as e:
+                st.error(f"Input out of bounds: {e}")
+            else:
+                st.metric("UTCI (equivalent temperature)", f"{utci_c:.2f} °C", utci_category(utci_c))
+                neutral_box(
+                    "**Interpretation**\n\n"
+                    "UTCI is categorized on a 10-level thermal stress scale (heat/cold stress). "
+                    "This value is intended for outdoor thermal assessment; it is not a substitute "
+                    "for operational risk management without context and validation."
+                )
+
     if calc_type == "Heat Stress Index (WBGT)":
         st.markdown("### 🌡️ Wet Bulb Globe Temperature (WBGT)")
         
