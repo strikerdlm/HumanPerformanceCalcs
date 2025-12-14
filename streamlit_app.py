@@ -50,6 +50,8 @@ from calculators import (
     PredictedHeatStrainResult,
     simulate_phs_trajectory,
     simulate_mitler_trajectory,
+    plan_zh_l16_gf,
+    GasMix,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -206,7 +208,7 @@ ROADMAP_PHASE_ONE = [
     },
     {
         "name": "Bühlmann ZH-L16 Decompression Algorithm",
-        "status": "Planned",
+        "status": "Live",
         "description": "16-compartment decompression + gradient factors",
     },
     {
@@ -499,6 +501,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "HAPE Risk (Suona 2023 Nomogram)",
             "Oxygen Cascade",
             "Decompression Tissue Ratio (TR)",
+            "Bühlmann ZH-L16 GF Decompression Planner",
             "Time of Useful Consciousness",
             "G-Force Tolerance",
             "Cosmic Radiation Dose"
@@ -879,6 +882,88 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         fig = go.Figure(data=[go.Scatter(x=alts_ft, y=trs, mode="lines")])
         fig.update_layout(title="TR vs Altitude (fixed tissue N₂)", xaxis_title="Altitude (ft)", yaxis_title="TR", height=360)
         st.plotly_chart(fig, use_container_width=True)
+
+    elif calc_type == "Bühlmann ZH-L16 GF Decompression Planner":
+        st.markdown("### 🧮 Bühlmann ZH‑L16 (Gradient Factors) Decompression Planner")
+
+        neutral_box(
+            "**Research/education use only.** Deterministic Bühlmann ZH‑L16 GF planner (ZH‑L16C/B), "
+            "unit-tested against an external reference stop schedule.\n\n"
+            "It does not model bubble dynamics or individual susceptibility."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Profile inputs**")
+            col_a, col_b, col_c = st.columns(3)
+            with col_a:
+                depth_m = float(st.slider("Max depth (m)", 0.0, 100.0, 40.0, step=1.0))
+                profile_minutes = float(st.slider("“for X minutes” (min)", 1.0, 240.0, 35.0, step=1.0))
+            with col_b:
+                gf_low = float(st.slider("GF Low", 0.05, 1.00, 0.30, step=0.01))
+                gf_high = float(st.slider("GF High", 0.10, 1.00, 0.85, step=0.01))
+            with col_c:
+                descent_rate = float(st.slider("Descent rate (m/min)", 5.0, 40.0, 20.0, step=1.0))
+                ascent_rate = float(st.slider("Ascent rate (m/min)", 3.0, 20.0, 10.0, step=1.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Gas + environment**")
+            col_g1, col_g2, col_g3 = st.columns(3)
+            with col_g1:
+                o2_percent = float(st.slider("O₂ (%)", 10.0, 100.0, 21.0, step=1.0))
+                he_percent = float(st.slider("He (%)", 0.0, 80.0, 0.0, step=1.0))
+            with col_g2:
+                model_variant = st.selectbox("Model variant", ["zh-l16c-gf", "zh-l16b-gf"], index=0)
+                include_descent = st.checkbox(
+                    "Interpret “for X minutes” as runtime at max depth (includes descent)",
+                    value=True,
+                    help=(
+                        "If enabled, time at depth is computed as max(0, X − descent_time). "
+                        "This matches the convention used by some planners and the external reference schedule."
+                    ),
+                )
+            with col_g3:
+                surface_pressure_mbar = float(st.slider("Surface pressure (mbar)", 800.0, 1050.0, 1013.25, step=1.0))
+
+        n2_percent = 100.0 - o2_percent - he_percent
+        if n2_percent <= 0.0:
+            neutral_box("Gas mix invalid: O₂% + He% must be < 100%.")
+        else:
+            if st.button("Compute decompression plan", type="primary"):
+                try:
+                    plan = plan_zh_l16_gf(
+                        max_depth_m=depth_m,
+                        bottom_time_min=profile_minutes,
+                        gas=GasMix(o2=o2_percent / 100.0, he=he_percent / 100.0),
+                        include_descent_in_bottom_time=bool(include_descent),
+                        gf_low=gf_low,
+                        gf_high=gf_high,
+                        model=model_variant,  # type: ignore[arg-type]
+                        surface_pressure_bar=surface_pressure_mbar / 1000.0,
+                        descent_rate_m_per_min=descent_rate,
+                        ascent_rate_m_per_min=ascent_rate,
+                        stop_step_m=3.0,
+                    )
+                except (ValueError, TypeError, RuntimeError) as e:
+                    neutral_box(f"**Unable to compute plan**\n\n- {e}")
+                else:
+                    with crystal_container(border=True):
+                        st.markdown("**Decompression stops (3 m increments)**")
+                        if not plan.stops:
+                            st.markdown("- No decompression stops required for this profile (per model settings).")
+                        else:
+                            df = pd.DataFrame(
+                                [{"Stop depth (m)": float(s.depth_m), "Stop time (min)": int(s.minutes)} for s in plan.stops]
+                            )
+                            st.dataframe(df, use_container_width=True, hide_index=True)
+                            st.metric("Total decompression time", f"{plan.total_decompression_minutes} min")
+
+                    with crystal_container(border=True):
+                        st.markdown("**Model notes**")
+                        st.markdown(
+                            "- Tissue loading uses the Schreiner equation.\n"
+                            "- Ascent ceilings use Bühlmann ZH‑L16 A/B coefficients with Erik Baker Gradient Factors.\n"
+                            "- Depth↔pressure conversion uses 0.09985 bar/m (OSTC/DecoTengu convention)."
+                        )
 
 elif calculator_category == "🩺 Clinical Calculators":
     st.subheader("Clinical Calculators")
