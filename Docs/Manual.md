@@ -45,6 +45,28 @@ The **AGSM Effectiveness** calculator is available under:
 - Default deltas are anchored to reported condition values in `PubMed 17484342` (configuration comparisons).
 - The UI exposes deltas as **adjustable parameters** so you can tune to your program’s validated data.
 
+### Risk Assessment Tools: Spatial Disorientation (SD) Risk Assessment
+
+The **Spatial Disorientation** tool is available under:
+
+- Sidebar → **📊 Risk Assessment Tools** → **Spatial Disorientation Risk Assessment**
+
+**What it computes**
+
+- **Somatogravic tilt (deg)** from forward linear acceleration using the gravito‑inertial acceleration (GIA) tilt relationship:
+  \( \\theta = \\arctan(a_{forward}/g) \\).
+- Component scores for common vestibular mechanisms:
+  - **Leans** (slow rotation below ~2°/s detection threshold),
+  - **Canal entrainment** (~10–20 s constant-rate turns),
+  - **Coriolis** (head movement during turn; threshold >~10°/s).
+- A bounded **SD Risk Index (0–100)** for *relative* scenario comparison (not a calibrated mishap probability).
+
+**Primary quantitative anchors**
+
+- FAA Spatial Disorientation training materials (leans threshold).
+- StatPearls (10–20 s canal entrainment window).
+- Houben et al. (2022) for Coriolis threshold (PubMed 34924407).
+
 ### Environmental Monitoring: Universal Thermal Climate Index (UTCI)
 
 The **UTCI** calculator is available under:
