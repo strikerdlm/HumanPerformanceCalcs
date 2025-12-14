@@ -188,6 +188,9 @@ Based on literature review, the following domains have significant potential for
 
 - Hursh, S. R., Redmond, D. P., Johnson, M. L., et al. (2004). Fatigue models for applied research in warfighting. *Aviation, Space, and Environmental Medicine*, 75(3), A44-A53.
 - Van Dongen, H. P. A., Maislin, G., Mullington, J. M., & Dinges, D. F. (2003). The cumulative cost of additional wakefulness: dose-response effects on neurobehavioral functions and sleep physiology from chronic sleep restriction and total sleep deprivation. *Sleep*, 26(2), 117-126.
+- WO2012015383A1. Method and apparatus for mitigating aviation risk by analyzing and modeling air crew fatigue. (SAFTE patent equations; includes explicit formula set). https://patents.google.com/patent/WO2012015383A1/en
+- SAFTEr (open-source). Institute for Behavior Resources. (R implementation rebuilt from patent equations). https://github.com/InstituteBehaviorResources/SAFTEr
+- Frontiers in Public Health / PMC. Forecasting crew fatigue risk on international flights (context + parameter reporting in operational study). https://pmc.ncbi.nlm.nih.gov/articles/PMC9623177/
 
 **Key Features**:
 
@@ -199,6 +202,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: Medium (extends existing circadian models)
+**Status (App)**: Live — implemented in the Streamlit UI (Fatigue & Circadian)
 
 ---
 
