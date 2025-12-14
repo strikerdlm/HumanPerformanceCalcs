@@ -31,6 +31,25 @@ The **UTCI** calculator is available under:
 - The calculator uses the standard **UTCI polynomial approximation** (UTCI_approx, Oct 2009).
 - Optional “strict validity bounds” enforces the common published ranges for the polynomial approximation.
 
+### Environmental Monitoring: Cold Water Immersion Survival Time
+
+The **Cold Water Immersion Survival Time** calculator is available under:
+
+- Sidebar → **🔬 Environmental Monitoring** → **Cold Water Immersion Survival Time**
+
+**What it estimates**
+
+- A **hypothermia-limited** survival time estimate based on published temperature–time guidance.
+
+**What it does NOT estimate**
+
+- Cold shock risk (first minutes), swim failure, wave/spray airway compromise, or drowning risk.
+
+**Models available**
+
+- **Hayward et al. (1975)**: temperature-only survival-time equation (cold-water range).
+- **Golden (1996) as cited in Transport Canada TP 13822 (2003)**: fully clothed + lifejacket guidance points (5–15°C) with linear interpolation.
+
 ### Simulation Studio (interactive forecasting)
 
 The **Simulation Studio** is a UI for models that naturally support **time-stepping**. It generates trajectories by repeatedly sampling the underlying calculator at bounded intervals (deterministic; no hidden state).
