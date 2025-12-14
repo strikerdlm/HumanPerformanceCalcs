@@ -27,6 +27,24 @@ The **Bühlmann ZH‑L16 GF** decompression planner is available under:
 - The UI includes a toggle to interpret **“for X minutes”** as **runtime at max depth including descent** (i.e., time at depth is \( \max(0, X - t_{descent}) \)).
 - Disable the toggle if you want **pure time-at-depth** behavior.
 
+### Atmospheric & Physiological: AGSM Effectiveness (+Gz)
+
+The **AGSM Effectiveness** calculator is available under:
+
+- Sidebar → **🌍 Atmospheric & Physiological** → **AGSM Effectiveness (Anti-G +Gz)**
+
+**What it estimates**
+
+- A transparent **component-style** estimate of how much +Gz tolerance shifts with:
+  - anti‑G suit (AGS),
+  - pressure breathing for G (PBG/PBfG),
+  - AGSM quality (0–100%).
+
+**Scientific anchoring**
+
+- Default deltas are anchored to reported condition values in `PubMed 17484342` (configuration comparisons).
+- The UI exposes deltas as **adjustable parameters** so you can tune to your program’s validated data.
+
 ### Environmental Monitoring: Universal Thermal Climate Index (UTCI)
 
 The **UTCI** calculator is available under:
