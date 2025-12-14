@@ -56,6 +56,10 @@ from calculators import (
     estimate_gz_tolerance_with_agsm,
     SpatialDisorientationInputs,
     spatial_disorientation_risk,
+    SafteInputs,
+    SafteParameters,
+    SleepEpisode,
+    simulate_safte,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -2420,6 +2424,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             "Circadian Performance (Mitler)",
             "Two-Process Model (S & C)",
             "Jet Lag Recovery",
+            "SAFTE Effectiveness (patent-derived)",
         ]
     )
 
@@ -2472,6 +2477,146 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         with col2:
             st.markdown("#### Result")
             st.metric("Estimated days to adjust", f"{days:.1f} days")
+
+    elif calc_type == "SAFTE Effectiveness (patent-derived)":
+        st.markdown("### 🧠 SAFTE Effectiveness (patent-derived)")
+        neutral_box(
+            "**Research/education use only.** This implements the core SAFTE equations as documented in `WO2012015383A1` "
+            "(patent images Eq. 1–9). It does not include FAST-specific sleep prediction or circadian phase shifting/jet-lag logic.\n\n"
+            "If you need operational use, confirm licensing and validate against your organization’s reference tool."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Simulation window**")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                horizon_days = int(st.slider("Horizon (days)", 1, 14, 3, step=1))
+            with c2:
+                step_minutes = int(st.select_slider("Step (min)", options=[5, 10, 15, 30, 60], value=10))
+            with c3:
+                start_hour = float(st.slider("Start clock hour (local)", 0.0, 23.0, 8.0, step=0.5))
+
+        with crystal_container(border=True):
+            st.markdown("**Sleep schedule (repeating daily)**")
+            s1, s2, s3 = st.columns(3)
+            with s1:
+                sleep_start = float(st.slider("Main sleep start (hour)", 0.0, 23.5, 23.0, step=0.5))
+            with s2:
+                sleep_duration_h = float(st.slider("Main sleep duration (h)", 0.0, 12.0, 8.0, step=0.25))
+            with s3:
+                nap_enabled = st.checkbox("Add daily nap", value=False)
+
+            nap_start = 0.0
+            nap_duration_h = 0.0
+            if nap_enabled:
+                n1, n2 = st.columns(2)
+                with n1:
+                    nap_start = float(st.slider("Nap start (hour)", 0.0, 23.5, 14.0, step=0.5))
+                with n2:
+                    nap_duration_h = float(st.slider("Nap duration (h)", 0.0, 4.0, 0.5, step=0.25))
+
+        with crystal_container(border=True):
+            st.markdown("**Initial state + constants**")
+            i1, i2, i3 = st.columns(3)
+            with i1:
+                initial_reservoir_pct = float(st.slider("Initial reservoir (%)", 0.0, 100.0, 100.0, step=1.0))
+            with i2:
+                effectiveness_warn = float(st.slider("Warn threshold (%)", 0.0, 100.0, 77.0, step=1.0))
+            with i3:
+                _ = st.caption("Defaults use patent constants: Rc=2880, K=0.5 units/min, etc.")
+
+        horizon_minutes = int(horizon_days * 24 * 60)
+        start_dt = datetime(2025, 1, 1, int(start_hour) % 24, int(round((start_hour % 1.0) * 60)) % 60, 0)
+
+        def _episodes_for_day(day_index: int) -> list[SleepEpisode]:
+            base = day_index * 24.0
+            eps: list[SleepEpisode] = []
+            if sleep_duration_h > 0.0:
+                s = base + sleep_start
+                e = s + sleep_duration_h
+                # Wrap across midnight if needed.
+                if e <= base + 24.0 + 1e-12:
+                    eps.append(SleepEpisode(start_min=(s - start_hour) * 60.0, end_min=(e - start_hour) * 60.0))
+                else:
+                    # split: [start, 24) and [0, end-24)
+                    eps.append(SleepEpisode(start_min=(s - start_hour) * 60.0, end_min=((base + 24.0) - start_hour) * 60.0))
+                    eps.append(SleepEpisode(start_min=((base + 24.0) - start_hour) * 60.0, end_min=(e - start_hour) * 60.0))
+
+            if nap_enabled and nap_duration_h > 0.0:
+                ns = base + nap_start
+                ne = ns + nap_duration_h
+                if ne <= base + 24.0 + 1e-12:
+                    eps.append(SleepEpisode(start_min=(ns - start_hour) * 60.0, end_min=(ne - start_hour) * 60.0))
+                else:
+                    eps.append(SleepEpisode(start_min=(ns - start_hour) * 60.0, end_min=((base + 24.0) - start_hour) * 60.0))
+                    eps.append(SleepEpisode(start_min=((base + 24.0) - start_hour) * 60.0, end_min=(ne - start_hour) * 60.0))
+            return eps
+
+        episodes_all: list[SleepEpisode] = []
+        for d in range(horizon_days):
+            episodes_all.extend(_episodes_for_day(d))
+
+        # Sort + merge overlaps conservatively.
+        episodes_all.sort(key=lambda ep: ep.start_min)
+        merged: list[SleepEpisode] = []
+        for ep in episodes_all:
+            if not merged:
+                merged.append(ep)
+                continue
+            prev = merged[-1]
+            if ep.start_min <= prev.end_min + 1e-9:
+                merged[-1] = SleepEpisode(prev.start_min, max(prev.end_min, ep.end_min))
+            else:
+                merged.append(ep)
+
+        try:
+            params = SafteParameters()
+            initial_units = params.reservoir_capacity_rc * (initial_reservoir_pct / 100.0)
+            series = simulate_safte(
+                SafteInputs(
+                    start_datetime_local=start_dt,
+                    horizon_minutes=horizon_minutes,
+                    step_minutes=step_minutes,
+                    sleep_episodes=tuple(merged),
+                    initial_reservoir_units=initial_units,
+                    params=params,
+                )
+            )
+        except (ValueError, TypeError) as e:
+            neutral_box(f"**Unable to run SAFTE simulation**\n\n- {e}")
+        else:
+            eff = [p.effectiveness_E for p in series.points]
+            t_hours = [p.t_min / 60.0 for p in series.points]
+            asleep_flags = [p.asleep for p in series.points]
+            min_eff = min(eff) if eff else float("nan")
+
+            theme_base_local = st.get_option("theme.base") or "light"
+            theme_template_local = "plotly_dark" if theme_base_local == "dark" else "plotly_white"
+
+            with crystal_container(border=True):
+                st.markdown("**Summary**")
+                st.metric("Minimum effectiveness", f"{min_eff:.1f}%")
+                below = sum(1 for x in eff if x < effectiveness_warn)
+                st.metric("Points below threshold", f"{below} / {len(eff)}")
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=t_hours, y=eff, mode="lines", name="Effectiveness (%)"))
+            fig.add_hline(y=effectiveness_warn, line_dash="dash", opacity=0.5)
+            fig.update_layout(
+                title="SAFTE Effectiveness Forecast (patent-derived)",
+                xaxis_title="Time since start (hours)",
+                yaxis_title="Effectiveness (%)",
+                height=420,
+                template=theme_template_local,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            with st.expander("References (equation sources)", expanded=False):
+                st.markdown(
+                    "- [WO2012015383A1 (Patent equations used; Eq. 1–9)](https://patents.google.com/patent/WO2012015383A1/en)\n"
+                    "- [Frontiers/PMC operational use context (PMC9623177)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9623177/)\n"
+                    "- [SAFTEr open-source R package (patent-equation implementation)](https://github.com/InstituteBehaviorResources/SAFTEr)"
+                )
 
 elif calculator_category == "🧪 Simulation Studio":
     st.subheader("Simulation Studio")
