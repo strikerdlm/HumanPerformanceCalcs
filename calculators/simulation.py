@@ -19,6 +19,7 @@ Notes on scientific validity
 """
 
 from dataclasses import dataclass
+import math
 from typing import Final
 
 from .circadian import mitler_performance
@@ -51,7 +52,13 @@ class PHSTrajectory:
     actual_sweat_rate_L_per_h:
         Actual/effective sweat rate at each time (L/h).
     allowable_exposure_minutes:
-        Allowable exposure time (minutes) at the final horizon.
+        Allowable exposure time (minutes) under the selected guardrails.
+
+        Notes
+        -----
+        - This value is derived from the underlying model's limit calculations.
+        - When no limit is reached within the simplified PHS model (e.g., zero
+          heat storage and negligible sweat), this may be ``float('inf')``.
     limiting_factor:
         Limiting factor (e.g., "Core temperature limit" or "Dehydration limit")
         at the final horizon.
@@ -165,6 +172,35 @@ def simulate_phs_trajectory(
     if last is None:
         raise ValueError("Internal error: trajectory generation produced no points")
 
+    # Estimate an *actual* allowable exposure under the model.
+    #
+    # predicted_heat_strain caps allowable_exposure_minutes to the requested
+    # exposure duration whenever no limits are reached. To avoid reporting
+    # "Allowable exposure == horizon" in safe conditions, probe the model at a
+    # large duration and interpret "Input duration" as unbounded in practice.
+    probe_minutes = 1_000_000.0
+    probe = predicted_heat_strain(
+        metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+        air_temperature_C=float(air_temperature_C),
+        mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+        relative_humidity_percent=float(relative_humidity_percent),
+        air_velocity_m_s=float(air_velocity_m_s),
+        clothing_insulation_clo=float(clothing_insulation_clo),
+        exposure_minutes=float(probe_minutes),
+        mechanical_power_w_m2=float(mechanical_power_w_m2),
+        body_mass_kg=float(body_mass_kg),
+        body_surface_area_m2=float(body_surface_area_m2),
+        baseline_core_temp_C=float(baseline_core_temp_C),
+        core_temp_limit_C=float(core_temp_limit_C),
+        dehydration_limit_percent=float(dehydration_limit_percent),
+    )
+    if probe.limiting_factor == "Input duration":
+        allowable = float("inf")
+        limiting_factor = "No limit reached (model)"
+    else:
+        allowable = float(probe.allowable_exposure_minutes)
+        limiting_factor = str(probe.limiting_factor)
+
     return PHSTrajectory(
         times_minutes=tuple(times),
         core_temperature_C=tuple(core),
@@ -172,8 +208,8 @@ def simulate_phs_trajectory(
         required_sweat_rate_L_per_h=tuple(sw_req),
         max_sustainable_sweat_rate_L_per_h=tuple(sw_max),
         actual_sweat_rate_L_per_h=tuple(sw_act),
-        allowable_exposure_minutes=float(last.allowable_exposure_minutes),
-        limiting_factor=str(last.limiting_factor),
+        allowable_exposure_minutes=allowable,
+        limiting_factor=limiting_factor,
     )
 
 
@@ -200,6 +236,10 @@ def simulate_mitler_trajectory(
         raise ValueError("horizon_hours must be > 0")
     if step_minutes <= 0.0:
         raise ValueError("step_minutes must be > 0")
+    if float(SD) <= 0.0:
+        raise ValueError("SD must be > 0")
+    if float(K) <= 0.0:
+        raise ValueError("K must be > 0")
 
     max_n = int(max_points)
     if max_n < 2 or max_n > 200_000:
@@ -208,16 +248,15 @@ def simulate_mitler_trajectory(
     step_h = float(step_minutes) / 60.0
     horizon = float(horizon_hours)
 
-    times: list[float] = []
-    t = 0.0
-    for _ in range(max_n):
-        times.append(t)
-        t += step_h
-        if t > horizon:
-            break
-
+    # Build a grid that always includes the horizon; do not silently truncate.
+    n_full_steps = int(math.floor(horizon / step_h))
+    times: list[float] = [i * step_h for i in range(n_full_steps + 1)]
+    if times[-1] < horizon:
+        times.append(horizon)
     if len(times) > max_n:
-        raise ValueError("Time grid exceeded max_points")
+        raise ValueError(
+            "Requested horizon/step would exceed max_points; increase step_minutes or max_points"
+        )
 
     perf: list[float] = []
     for t_i in times:

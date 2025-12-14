@@ -4,6 +4,7 @@ import plotly.graph_objects as go  # type: ignore
 import plotly.express as px  # type: ignore
 from plotly.subplots import make_subplots  # type: ignore
 from datetime import datetime
+import math
 import numpy as np
 import io
 
@@ -2196,10 +2197,17 @@ elif calculator_category == "🧪 Simulation Studio":
             col_m2.metric(
                 "Dehydration @ horizon", f"{traj.dehydration_percent_body_mass[-1]:.2f} %"
             )
+            allow = float(traj.allowable_exposure_minutes)
+            if math.isfinite(allow):
+                allow_display = f"{allow:.0f} min"
+                allow_note = traj.limiting_factor
+            else:
+                allow_display = "No limit (model)"
+                allow_note = "No limit reached (model)"
             col_m3.metric(
                 "Allowable exposure",
-                f"{traj.allowable_exposure_minutes:.0f} min",
-                traj.limiting_factor,
+                allow_display,
+                allow_note,
             )
             col_m4.metric(
                 f"Next +{step_minutes:.0f} min Δcore",
@@ -2295,8 +2303,7 @@ elif calculator_category == "🧪 Simulation Studio":
             )
 
             # Visual guardrail: shade beyond allowable exposure (if within horizon).
-            allow = float(traj.allowable_exposure_minutes)
-            if allow < float(horizon):
+            if math.isfinite(allow) and allow < float(horizon):
                 fig.add_vrect(
                     x0=allow,
                     x1=float(horizon),

@@ -48,6 +48,9 @@ def test_simulate_phs_trajectory_core_temperature_trend_in_heat_storage_case() -
         b >= a for a, b in zip(traj.core_temperature_C, traj.core_temperature_C[1:])
     )
 
+    # In a stressful case, the model should report a finite allowable exposure.
+    assert math.isfinite(traj.allowable_exposure_minutes)
+
 
 def test_simulate_mitler_trajectory_returns_expected_grid() -> None:
     traj = simulate_mitler_trajectory(phi_hours=0.0, SD=2.0, K=2.0, horizon_hours=24.0, step_minutes=30.0)
@@ -66,3 +69,9 @@ def test_simulate_mitler_trajectory_validates_inputs() -> None:
 
     with pytest.raises(ValueError):
         _ = simulate_mitler_trajectory(phi_hours=0.0, SD=2.0, K=2.0, step_minutes=0.0)
+
+    with pytest.raises(ValueError):
+        _ = simulate_mitler_trajectory(phi_hours=0.0, SD=0.0, K=2.0)
+
+    with pytest.raises(ValueError):
+        _ = simulate_mitler_trajectory(phi_hours=0.0, SD=2.0, K=0.0)
