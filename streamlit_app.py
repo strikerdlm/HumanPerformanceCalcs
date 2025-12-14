@@ -54,6 +54,8 @@ from calculators import (
     GasMix,
     AgsmInputs,
     estimate_gz_tolerance_with_agsm,
+    SpatialDisorientationInputs,
+    spatial_disorientation_risk,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -220,7 +222,7 @@ ROADMAP_PHASE_ONE = [
     },
     {
         "name": "Spatial Disorientation Risk Assessment",
-        "status": "Planned",
+        "status": "Live",
         "description": "Vestibular + flight condition risk scoring",
     },
 ]
@@ -2237,11 +2239,103 @@ elif calculator_category == "📈 Visualization Studio":
 
 elif calculator_category == "📊 Risk Assessment Tools":
     st.subheader("Risk Assessment Tools")
-    
-    st.markdown("### 📋 Quick Risk Assessment Dashboard")
-    
-    # Chemical database overview
-    st.markdown("#### Aerospace Chemical Database Overview")
+    tool = st.selectbox(
+        "Choose Tool",
+        [
+            "Aerospace Chemical Risk Dashboard",
+            "Spatial Disorientation Risk Assessment",
+        ],
+        index=0,
+    )
+
+    if tool == "Spatial Disorientation Risk Assessment":
+        st.markdown("### 🧭 Spatial Disorientation (SD) Risk Assessment")
+
+        neutral_box(
+            "**Research/education use only.** This tool computes a transparent SD Risk Index (0–100) from "
+            "physiology-grounded components (leans threshold, canal entrainment window, Coriolis threshold, "
+            "somatogravic tilt from GIA).\n\n"
+            "It is not a calibrated mishap probability."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Flight conditions**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                imc = st.checkbox("IMC", value=True)
+            with c2:
+                night = st.checkbox("Night", value=False)
+            with c3:
+                nvg = st.checkbox("NVG", value=False)
+            with c4:
+                time_no_horizon = float(st.slider("Time since horizon reference (s)", 0.0, 180.0, 45.0, step=5.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Maneuver / motion**")
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                yaw_rate = float(st.slider("Yaw/turn rate (deg/s)", 0.0, 60.0, 1.0, step=0.5))
+                turn_dur = float(st.slider("Sustained turn duration (s)", 0.0, 120.0, 60.0, step=5.0))
+            with m2:
+                head_move = st.checkbox("Head movement during turn (Coriolis trigger)", value=False)
+                workload = float(st.slider("Workload (0–100%)", 0.0, 100.0, 50.0, step=5.0))
+            with m3:
+                # Somatogravic: forward linear acceleration produces an apparent pitch tilt (GIA).
+                forward_accel_g = float(st.slider("Forward acceleration (g)", -0.30, 1.00, 0.00, step=0.02))
+
+        try:
+            res = spatial_disorientation_risk(
+                SpatialDisorientationInputs(
+                    imc=bool(imc),
+                    night=bool(night),
+                    nvg=bool(nvg),
+                    time_since_horizon_reference_s=time_no_horizon,
+                    yaw_rate_deg_s=yaw_rate,
+                    sustained_turn_duration_s=turn_dur,
+                    head_movement_during_turn=bool(head_move),
+                    forward_accel_m_s2=forward_accel_g * 9.80665,
+                    workload=float(workload / 100.0),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("SD Risk Index (0–100)", f"{res.risk_index_0_100:.1f}")
+                st.metric("Risk level", res.risk_level)
+                st.metric("Somatogravic tilt (deg)", f"{res.somatogravic_tilt_deg:.1f}")
+
+                if res.likely_illusions:
+                    st.markdown("**Likely illusion types (scenario-based)**")
+                    for it in res.likely_illusions:
+                        st.markdown(f"- {it}")
+
+            with crystal_container(border=True):
+                st.markdown("**Component breakdown (0–1)**")
+                df_sd = pd.DataFrame(
+                    [
+                        {"Component": "Cue deprivation", "Score": res.cue_deprivation_component_0_1},
+                        {"Component": "Leans (below ~2°/s)", "Score": res.leans_risk_component_0_1},
+                        {"Component": "Canal entrainment (~10–20s)", "Score": res.canal_entraintment_component_0_1},
+                        {"Component": "Coriolis (head movement; >~10°/s)", "Score": res.coriolis_component_0_1},
+                        {"Component": "Somatogravic (GIA tilt)", "Score": res.somatogravic_component_0_1},
+                    ]
+                )
+                st.dataframe(df_sd, use_container_width=True, hide_index=True)
+
+            with st.expander("References (model anchors)", expanded=False):
+                st.markdown(
+                    "- [FAA: Spatial Disorientation (Airman Education Programs)](https://www.faa.gov/pilots/training/airman_education/topics_of_interest/spatial_disorientation)\n"
+                    "- [StatPearls: Physiology of Spatial Orientation (NCBI Bookshelf)](https://www.ncbi.nlm.nih.gov/books/NBK518976/)\n"
+                    "- [Houben et al. (2022): Coriolis illusion threshold (PubMed 34924407)](https://pubmed.ncbi.nlm.nih.gov/34924407/)\n"
+                    "- [Somatogravic demonstration: 0.58 g ≈ 30° (PubMed 9491247)](https://pubmed.ncbi.nlm.nih.gov/9491247/)"
+                )
+
+    else:
+        st.markdown("### 📋 Quick Risk Assessment Dashboard")
+        # Chemical database overview
+        st.markdown("#### Aerospace Chemical Database Overview")
     
     # Create DataFrame for display
     chem_data = []
