@@ -15,6 +15,7 @@ from .g_force import g_loc_time  # type: ignore
 from .radiation import dose_rate  # type: ignore
 from .wbgt import wbgt_indoor, wbgt_outdoor, heat_stress_index  # type: ignore
 from .utci import utci, utci_category  # type: ignore
+from .buhlmann import plan_zh_l16_gf, GasMix, BuhlmannPlan, DecompressionStop  # type: ignore
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -84,6 +85,10 @@ __all__ = [
     "heat_stress_index",
     "utci",
     "utci_category",
+    "plan_zh_l16_gf",
+    "GasMix",
+    "BuhlmannPlan",
+    "DecompressionStop",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
