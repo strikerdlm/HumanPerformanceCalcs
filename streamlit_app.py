@@ -7,6 +7,7 @@ from datetime import datetime
 import math
 import numpy as np
 import io
+from contextlib import contextmanager
 
 from calculators import (
     standard_atmosphere,
@@ -149,6 +150,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+@contextmanager
+def crystal_container(*, in_sidebar: bool = False, border: bool = True):
+    """Create a neutral 'crystal' container for card/box UI.
+
+    Notes
+    - The crystal look is applied via CSS to containers that include the hidden marker.
+    - This intentionally avoids any colored styling so it stays compatible with dark mode.
+    """
+    if not isinstance(in_sidebar, bool):
+        raise TypeError("in_sidebar must be a bool")
+    if not isinstance(border, bool):
+        raise TypeError("border must be a bool")
+
+    target = st.sidebar if in_sidebar else st
+    box = target.container(border=border)
+    with box:
+        st.markdown('<span class="crystal-box-marker"></span>', unsafe_allow_html=True)
+        yield
+
 def neutral_box(markdown_text: str, *, in_sidebar: bool = False) -> None:
     """Render a neutral, theme-safe bordered callout (styled via crystal CSS)."""
     if not isinstance(markdown_text, str):
@@ -157,10 +177,7 @@ def neutral_box(markdown_text: str, *, in_sidebar: bool = False) -> None:
     if not text:
         raise ValueError("markdown_text must be non-empty")
 
-    target = st.sidebar if in_sidebar else st
-    box = target.container(border=True)
-    with box:
-        st.markdown('<span class="crystal-box-marker"></span>', unsafe_allow_html=True)
+    with crystal_container(in_sidebar=in_sidebar, border=True):
         st.markdown(text)
 
 ROADMAP_PHASE_ONE = [
@@ -233,7 +250,7 @@ if calculator_category == "🏠 Home":
         st.caption('Roadmap momentum → Phase 1 item "Predicted Heat Strain" is now live in-app.')
 
     with hero_right:
-        with st.container(border=True):
+        with crystal_container(border=True):
             st.markdown("**Mission-ready snapshot**")
             st.metric("Calculators", "29+")
             st.metric("Chemical DB", f"{len(AEROSPACE_CHEMICALS)}")
