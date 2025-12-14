@@ -52,6 +52,8 @@ from calculators import (
     simulate_mitler_trajectory,
     plan_zh_l16_gf,
     GasMix,
+    AgsmInputs,
+    estimate_gz_tolerance_with_agsm,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -213,7 +215,7 @@ ROADMAP_PHASE_ONE = [
     },
     {
         "name": "AGSM Effectiveness Model",
-        "status": "Planned",
+        "status": "Live",
         "description": "Quantify anti-G straining and suit benefit",
     },
     {
@@ -502,6 +504,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "Oxygen Cascade",
             "Decompression Tissue Ratio (TR)",
             "Bühlmann ZH-L16 GF Decompression Planner",
+            "AGSM Effectiveness (Anti-G +Gz)",
             "Time of Useful Consciousness",
             "G-Force Tolerance",
             "Cosmic Radiation Dose"
@@ -964,6 +967,76 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                             "- Ascent ceilings use Bühlmann ZH‑L16 A/B coefficients with Erik Baker Gradient Factors.\n"
                             "- Depth↔pressure conversion uses 0.09985 bar/m (OSTC/DecoTengu convention)."
                         )
+
+    elif calc_type == "AGSM Effectiveness (Anti-G +Gz)":
+        st.markdown("### 🛡️ AGSM Effectiveness Model (+Gz)")
+
+        neutral_box(
+            "**Research/education use only.** This tool estimates how anti‑G equipment and AGSM quality can shift +Gz tolerance.\n\n"
+            "Default deltas are anchored to a published comparative study of configurations (no suit, suit, suit+PBG, suit+AGSM, suit+PBG+AGSM)."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Inputs**")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                baseline = float(st.slider("Baseline relaxed tolerance (Gz)", 1.0, 8.0, 3.4, step=0.1))
+                agsm_quality = float(st.slider("AGSM quality (0–100%)", 0.0, 100.0, 100.0, step=1.0))
+            with col2:
+                anti_g_suit = st.checkbox("Anti‑G suit (AGS) worn", value=True)
+                pbg = st.checkbox("Pressure breathing for G (PBG/PBfG)", value=False, disabled=not anti_g_suit)
+            with col3:
+                max_cap = float(st.slider("Physiologic/equipment cap (Gz)", 6.0, 12.0, 9.0, step=0.1))
+
+        with crystal_container(border=True):
+            st.markdown("**Model parameters (advanced; defaults from literature anchor)**")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                suit_delta = float(st.slider("Suit delta (Gz)", 0.0, 6.0, 3.1, step=0.1))
+            with c2:
+                pbg_delta = float(st.slider("PBG delta (Gz)", 0.0, 4.0, 1.5, step=0.1))
+            with c3:
+                agsm_delta = float(st.slider("AGSM delta at 100% (Gz)", 0.0, 6.0, 2.4, step=0.1))
+
+        try:
+            res = estimate_gz_tolerance_with_agsm(
+                AgsmInputs(
+                    baseline_relaxed_gz=baseline,
+                    anti_g_suit=bool(anti_g_suit),
+                    pressure_breathing_for_g=bool(pbg),
+                    agsm_quality=float(agsm_quality / 100.0),
+                    suit_delta_gz=suit_delta,
+                    pbg_delta_gz=pbg_delta,
+                    agsm_delta_gz=agsm_delta,
+                    max_system_gz=max_cap,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("Estimated +Gz tolerance", f"{res.capped_estimated_gz:.2f} Gz")
+                if res.was_capped:
+                    st.caption("Capped at the configured max (represents saturation/limits of the protection ensemble).")
+
+                df = pd.DataFrame(
+                    [
+                        {"Component": "Baseline (relaxed)", "ΔGz": res.baseline_relaxed_gz},
+                        {"Component": "Anti‑G suit", "ΔGz": res.suit_component_gz},
+                        {"Component": "Pressure breathing (PBG)", "ΔGz": res.pbg_component_gz},
+                        {"Component": "AGSM (quality‑scaled)", "ΔGz": res.agsm_component_gz},
+                        {"Component": "Raw sum", "ΔGz": res.raw_estimated_gz},
+                    ]
+                )
+                st.dataframe(df, use_container_width=True, hide_index=True)
+
+            with crystal_container(border=True):
+                st.markdown("**Reference anchor**")
+                st.markdown(
+                    "- Study comparing configurations during rapid-onset +Gz profiles: `PubMed 17484342`.\n"
+                    "- Default parameters mirror those reported condition values (and are user-adjustable)."
+                )
 
 elif calculator_category == "🩺 Clinical Calculators":
     st.subheader("Clinical Calculators")
