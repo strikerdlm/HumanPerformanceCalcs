@@ -147,6 +147,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (critical for fighter pilot operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
