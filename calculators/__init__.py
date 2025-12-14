@@ -38,6 +38,12 @@ from .circadian import (  # type: ignore
     jet_lag_days_to_adjust,
 )
 from .cold import peak_shivering_intensity  # type: ignore
+from .cold_water_survival import (  # type: ignore
+    cold_water_survival,
+    cold_water_survival_hayward_1975_minutes,
+    cold_water_survival_golden_lifejacket_hours,
+    ColdWaterSurvivalEstimate,
+)
 from .decompression import tissue_ratio, interpret_tr  # type: ignore
 from .clinical import (  # type: ignore
     bmr_mifflin_st_jeor,
@@ -97,6 +103,10 @@ __all__ = [
     "circadian_component",
     "jet_lag_days_to_adjust",
     "peak_shivering_intensity",
+    "cold_water_survival",
+    "cold_water_survival_hayward_1975_minutes",
+    "cold_water_survival_golden_lifejacket_hours",
+    "ColdWaterSurvivalEstimate",
     "tissue_ratio",
     "interpret_tr",
     # Clinical calculators
