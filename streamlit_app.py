@@ -286,11 +286,29 @@ for _item in ROADMAP_PHASE_ONE:
                 "description": str(_item.get("description", "")),
             }
 
+
+def _request_navigation(target: str) -> None:
+    """Request navigation to a new sidebar selection on the next rerun.
+
+    Streamlit forbids mutating a session_state key after the widget with that key is
+    instantiated in the same run. We therefore write to a separate key and apply it
+    before the selectbox is created.
+    """
+    if not isinstance(target, str):
+        raise TypeError("target must be a str")
+    nav_target = target.strip()
+    if not nav_target:
+        raise ValueError("target must be non-empty")
+    st.session_state["nav_to"] = nav_target
+
 # Main header
 st.title("🚀 Aerospace Physiology & Occupational Health Calculators")
 
 # Sidebar navigation
 st.sidebar.markdown("## 📋 Navigation")
+if "nav_to" in st.session_state:
+    # Apply pending navigation BEFORE the selectbox is instantiated.
+    st.session_state["calculator_category"] = st.session_state.pop("nav_to")
 calculator_category = st.sidebar.selectbox(
     "Select Calculator Category",
     [
@@ -374,9 +392,12 @@ if calculator_category == "🏠 Home":
             with crystal_container(border=True):
                 st.markdown(f"**{label}**")
                 st.caption(subtitle)
-                if st.button("Open", key=f"quick_launch_{i}"):
-                    st.session_state["calculator_category"] = target
-                    st.rerun()
+                st.button(
+                    "Open",
+                    key=f"quick_launch_{i}",
+                    on_click=_request_navigation,
+                    args=(target,),
+                )
 
     neutral_box(
         "Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots."
@@ -400,9 +421,12 @@ elif calculator_category == "🗺️ Roadmap":
             with crystal_container(border=True):
                 st.markdown(f"**{item['name']}**")
                 st.caption(f"{item['status']} · {item['description']}")
-                if st.button("Open preview", key=f"roadmap_open_preview_{idx}"):
-                    st.session_state["calculator_category"] = _coming_soon_label(str(item["name"]))
-                    st.rerun()
+                st.button(
+                    "Open preview",
+                    key=f"roadmap_open_preview_{idx}",
+                    on_click=_request_navigation,
+                    args=(_coming_soon_label(str(item["name"])),),
+                )
 
     with st.expander("View full roadmap (from docs/ROADMAP.md)", expanded=False):
         try:
@@ -447,13 +471,19 @@ elif calculator_category in COMING_SOON_NAV:
 
     col_back1, col_back2 = st.columns([1, 1])
     with col_back1:
-        if st.button("Back to Roadmap", key="coming_soon_back_to_roadmap"):
-            st.session_state["calculator_category"] = "🗺️ Roadmap"
-            st.rerun()
+        st.button(
+            "Back to Roadmap",
+            key="coming_soon_back_to_roadmap",
+            on_click=_request_navigation,
+            args=("🗺️ Roadmap",),
+        )
     with col_back2:
-        if st.button("Back to Home", key="coming_soon_back_to_home"):
-            st.session_state["calculator_category"] = "🏠 Home"
-            st.rerun()
+        st.button(
+            "Back to Home",
+            key="coming_soon_back_to_home",
+            on_click=_request_navigation,
+            args=("🏠 Home",),
+        )
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
     st.subheader("Atmospheric & Physiological Calculators")
