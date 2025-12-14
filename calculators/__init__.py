@@ -22,6 +22,14 @@ from .spatial_disorientation import (  # type: ignore
     SpatialDisorientationResult,
     spatial_disorientation_risk,
 )
+from .safte import (  # type: ignore
+    SafteParameters,
+    SleepEpisode,
+    SafteInputs,
+    SaftePoint,
+    SafteSeries,
+    simulate_safte,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -101,6 +109,12 @@ __all__ = [
     "SpatialDisorientationInputs",
     "SpatialDisorientationResult",
     "spatial_disorientation_risk",
+    "SafteParameters",
+    "SleepEpisode",
+    "SafteInputs",
+    "SaftePoint",
+    "SafteSeries",
+    "simulate_safte",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
