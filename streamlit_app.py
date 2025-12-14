@@ -2,6 +2,7 @@ import streamlit as st  # type: ignore
 import pandas as pd  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import plotly.express as px  # type: ignore
+from plotly.subplots import make_subplots  # type: ignore
 from datetime import datetime
 import numpy as np
 import io
@@ -42,6 +43,8 @@ from calculators import (
     AEROSPACE_CHEMICALS,
     predicted_heat_strain,
     PredictedHeatStrainResult,
+    simulate_phs_trajectory,
+    simulate_mitler_trajectory,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -274,6 +277,12 @@ ROADMAP_PHASE_ONE = [
         "tone": "#22c55e",
     },
     {
+        "name": "Simulation Studio",
+        "status": "Live",
+        "description": "Forward trajectories + next-step forecasts",
+        "tone": "#38bdf8",
+    },
+    {
         "name": "Universal Thermal Climate Index",
         "status": "Next",
         "description": "Outdoor thermal comfort envelope",
@@ -301,6 +310,7 @@ calculator_category = st.sidebar.selectbox(
         "Occupational Health & Safety",
         "🔬 Environmental Monitoring",
         "🧠 Fatigue & Circadian",
+        "🧪 Simulation Studio",
         "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
     ]
@@ -2092,6 +2102,295 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         with col2:
             st.markdown("#### Result")
             st.metric("Estimated days to adjust", f"{days:.1f} days")
+
+elif calculator_category == "🧪 Simulation Studio":
+    st.markdown('<div class="section-header">Simulation Studio</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="info-box"><strong>Purpose:</strong> Forward-simulate scientifically grounded calculators that naturally support time-stepping (e.g., ISO 7933 PHS, circadian envelopes). These are deterministic samplers of existing models—not new ML “black boxes”.</div>',
+        unsafe_allow_html=True,
+    )
+
+    sim_type = st.selectbox(
+        "Choose Simulator",
+        [
+            "Heat Strain Simulator (ISO 7933-inspired PHS)",
+            "Circadian Forecast (Mitler performance envelope)",
+        ],
+    )
+
+    theme_base = st.get_option("theme.base") or "light"
+    theme_template = "plotly_dark" if theme_base == "dark" else "plotly_white"
+
+    if sim_type == "Heat Strain Simulator (ISO 7933-inspired PHS)":
+        st.markdown("### ♨️ Heat Strain Simulator — forward trajectory + next-step forecast")
+
+        input_col1, input_col2, input_col3 = st.columns([1.0, 1.0, 1.0])
+        with input_col1:
+            metabolic_rate = st.slider("Metabolic rate (W/m²)", 150.0, 650.0, 380.0, step=10.0)
+            clothing = st.slider("Clothing insulation (clo)", 0.3, 1.6, 0.9, step=0.1)
+            air_velocity = st.slider("Air speed (m/s)", 0.1, 3.0, 0.6, step=0.1)
+        with input_col2:
+            air_temp = st.slider("Air temperature (°C)", 20.0, 50.0, 32.0, step=0.5)
+            mean_radiant = st.slider("Mean radiant / globe (°C)", 20.0, 60.0, 38.0, step=0.5)
+            rh = st.slider("Relative humidity (%)", 10.0, 100.0, 55.0, step=1.0)
+        with input_col3:
+            horizon = st.slider("Simulation horizon (min)", 15.0, 360.0, 120.0, step=5.0)
+            step_minutes = st.select_slider(
+                "Time step (min)",
+                options=[1.0, 2.0, 5.0, 10.0, 15.0],
+                value=5.0,
+                help="Smaller steps look smoother but run more model evaluations.",
+            )
+
+        with st.expander("Advanced physiology assumptions", expanded=False):
+            adv1, adv2, adv3 = st.columns(3)
+            with adv1:
+                mechanical_power = st.slider("External mechanical power (W/m²)", 0.0, 80.0, 0.0, step=5.0)
+                body_mass = st.slider("Body mass (kg)", 55.0, 110.0, 75.0, step=1.0)
+            with adv2:
+                body_surface_area = st.slider("Body surface area (m²)", 1.4, 2.4, 1.9, step=0.05)
+                baseline_core = st.slider("Baseline core temperature (°C)", 36.5, 37.5, 37.0, step=0.1)
+            with adv3:
+                core_limit = st.slider("Core temperature limit (°C)", 37.5, 39.5, 38.5, step=0.1)
+                dehydration_limit = st.slider("Dehydration limit (% body mass)", 2.0, 7.0, 5.0, step=0.5)
+
+        try:
+            traj = simulate_phs_trajectory(
+                metabolic_rate_w_m2=float(metabolic_rate),
+                air_temperature_C=float(air_temp),
+                mean_radiant_temperature_C=float(mean_radiant),
+                relative_humidity_percent=float(rh),
+                air_velocity_m_s=float(air_velocity),
+                clothing_insulation_clo=float(clothing),
+                exposure_minutes=float(horizon),
+                step_minutes=float(step_minutes),
+                mechanical_power_w_m2=float(mechanical_power),
+                body_mass_kg=float(body_mass),
+                body_surface_area_m2=float(body_surface_area),
+                baseline_core_temp_C=float(baseline_core),
+                core_temp_limit_C=float(core_limit),
+                dehydration_limit_percent=float(dehydration_limit),
+            )
+
+            # Next-step forecast: one more step beyond the horizon (bounded).
+            next_horizon = float(horizon) + float(step_minutes)
+            next_point = predicted_heat_strain(
+                metabolic_rate_w_m2=float(metabolic_rate),
+                air_temperature_C=float(air_temp),
+                mean_radiant_temperature_C=float(mean_radiant),
+                relative_humidity_percent=float(rh),
+                air_velocity_m_s=float(air_velocity),
+                clothing_insulation_clo=float(clothing),
+                exposure_minutes=float(next_horizon),
+                mechanical_power_w_m2=float(mechanical_power),
+                body_mass_kg=float(body_mass),
+                body_surface_area_m2=float(body_surface_area),
+                baseline_core_temp_C=float(baseline_core),
+                core_temp_limit_C=float(core_limit),
+                dehydration_limit_percent=float(dehydration_limit),
+            )
+
+            # Summary metrics
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            col_m1.metric("Core temp @ horizon", f"{traj.core_temperature_C[-1]:.2f} °C")
+            col_m2.metric(
+                "Dehydration @ horizon", f"{traj.dehydration_percent_body_mass[-1]:.2f} %"
+            )
+            col_m3.metric(
+                "Allowable exposure",
+                f"{traj.allowable_exposure_minutes:.0f} min",
+                traj.limiting_factor,
+            )
+            col_m4.metric(
+                f"Next +{step_minutes:.0f} min Δcore",
+                f"{(next_point.predicted_core_temperature_C - traj.core_temperature_C[-1]):+.2f} °C",
+            )
+
+            # Modern stacked plot with risk shading.
+            fig = make_subplots(
+                rows=3,
+                cols=1,
+                shared_xaxes=True,
+                vertical_spacing=0.08,
+                subplot_titles=(
+                    "Core temperature trajectory",
+                    "Dehydration trajectory",
+                    "Sweat rate (required vs max vs effective)",
+                ),
+            )
+
+            x = np.array(traj.times_minutes, dtype=float)
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=np.array(traj.core_temperature_C, dtype=float),
+                    mode="lines",
+                    name="Core temp",
+                    line=dict(color="#2563eb", width=3),
+                ),
+                row=1,
+                col=1,
+            )
+            fig.add_hline(
+                y=float(core_limit),
+                line_dash="dash",
+                line_color="#ef4444",
+                annotation_text="Core limit",
+                row=1,
+                col=1,
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=np.array(traj.dehydration_percent_body_mass, dtype=float),
+                    mode="lines",
+                    name="Dehydration %",
+                    line=dict(color="#f59e0b", width=3),
+                ),
+                row=2,
+                col=1,
+            )
+            fig.add_hline(
+                y=float(dehydration_limit),
+                line_dash="dash",
+                line_color="#ef4444",
+                annotation_text="Dehydration limit",
+                row=2,
+                col=1,
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=np.array(traj.required_sweat_rate_L_per_h, dtype=float),
+                    mode="lines",
+                    name="SWreq",
+                    line=dict(color="#7c3aed", width=2),
+                ),
+                row=3,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=np.array(traj.max_sustainable_sweat_rate_L_per_h, dtype=float),
+                    mode="lines",
+                    name="SWmax",
+                    line=dict(color="#22c55e", width=2),
+                ),
+                row=3,
+                col=1,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=np.array(traj.actual_sweat_rate_L_per_h, dtype=float),
+                    mode="lines",
+                    name="SWeff",
+                    line=dict(color="#0ea5e9", width=3),
+                ),
+                row=3,
+                col=1,
+            )
+
+            # Visual guardrail: shade beyond allowable exposure (if within horizon).
+            allow = float(traj.allowable_exposure_minutes)
+            if allow < float(horizon):
+                fig.add_vrect(
+                    x0=allow,
+                    x1=float(horizon),
+                    fillcolor="rgba(239, 68, 68, 0.12)",
+                    line_width=0,
+                    layer="below",
+                )
+                fig.add_vline(x=allow, line_dash="dot", line_color="#ef4444")
+
+            fig.update_layout(
+                template=theme_template,
+                height=820,
+                margin=dict(l=40, r=20, t=80, b=40),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
+                hovermode="x unified",
+            )
+            fig.update_xaxes(title_text="Time (minutes)", row=3, col=1)
+            fig.update_yaxes(title_text="°C", row=1, col=1)
+            fig.update_yaxes(title_text="% body mass", row=2, col=1)
+            fig.update_yaxes(title_text="L/h", row=3, col=1)
+
+            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+
+            st.markdown(
+                '<div class="info-box"><strong>Interpretation:</strong> The red-shaded region indicates the portion of the horizon beyond the model’s calculated allowable exposure limit under the selected guardrails.</div>',
+                unsafe_allow_html=True,
+            )
+        except ValueError as e:
+            st.error(f"Simulation error: {e}")
+
+    else:
+        st.markdown("### 🧠 Circadian Forecast — performance envelope")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            horizon_hours = st.slider(
+                "Forecast horizon (hours)", 12.0, 72.0, 48.0, step=6.0
+            )
+            step_minutes = st.select_slider(
+                "Time step (min)",
+                options=[5.0, 10.0, 15.0, 30.0, 60.0],
+                value=15.0,
+            )
+        with col2:
+            phi = st.slider("Phase (φ, hours)", -12.0, 12.0, 0.0, step=0.5)
+            SD = st.slider("Sleep debt parameter (SD)", 0.5, 5.0, 2.0, step=0.1)
+        with col3:
+            K = st.slider("Scaling (K)", 0.5, 5.0, 2.0, step=0.1)
+
+        try:
+            traj = simulate_mitler_trajectory(
+                phi_hours=float(phi),
+                SD=float(SD),
+                K=float(K),
+                horizon_hours=float(horizon_hours),
+                step_minutes=float(step_minutes),
+            )
+
+            x = np.array(traj.times_hours, dtype=float)
+            y = np.array(traj.performance, dtype=float)
+
+            fig = go.Figure()
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    mode="lines",
+                    name="Mitler performance",
+                    line=dict(color="#0ea5e9", width=3),
+                    fill="tozeroy",
+                    fillcolor="rgba(14, 165, 233, 0.15)",
+                )
+            )
+            fig.update_layout(
+                template=theme_template,
+                title="Mitler performance forecast",
+                xaxis_title="Time (hours)",
+                yaxis_title="Performance (unitless)",
+                height=520,
+                margin=dict(l=40, r=20, t=70, b=40),
+                hovermode="x unified",
+            )
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+                config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+            )
+
+            st.markdown(
+                '<div class="info-box"><strong>Note:</strong> This is an educational circadian-performance envelope; it does not ingest real sleep logs or operational schedules.</div>',
+                unsafe_allow_html=True,
+            )
+        except ValueError as e:
+            st.error(f"Forecast error: {e}")
 
 # Footer
 st.markdown("---")

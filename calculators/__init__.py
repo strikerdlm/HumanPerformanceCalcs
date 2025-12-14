@@ -51,6 +51,12 @@ from .clinical import (  # type: ignore
     six_minute_walk_distance,
     EGFRResult,
 )
+from .simulation import (  # type: ignore
+    PHSTrajectory,
+    simulate_phs_trajectory,
+    MitlerTrajectory,
+    simulate_mitler_trajectory,
+)
 
 __all__ = [
     "standard_atmosphere",
@@ -102,4 +108,9 @@ __all__ = [
     "oxygen_index",
     "six_minute_walk_distance",
     "EGFRResult",
+    # Simulation helpers
+    "PHSTrajectory",
+    "simulate_phs_trajectory",
+    "MitlerTrajectory",
+    "simulate_mitler_trajectory",
 ]
