@@ -35,6 +35,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - 🔬 **Scientifically Validated**: All formulas based on peer-reviewed research
 - 🚀 **Aerospace Medicine Focus**: Specialized tools for aviation and space medicine
 - 📊 **Interactive Dashboards**: Real-time calculations with professional visualizations
+- 🧪 **Simulation Studio**: Forward trajectories + next-step forecasting for time-steppable models
 - 🌡️ **Environmental Stress Assessment**: Heat, cold, altitude, decompression, and hydration models
 - 💻 **Reproducible**: Deterministic implementations with explicit assumptions and units
 - 📱 **Cross-Platform**: Web-based interface accessible from any device
@@ -48,6 +49,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 
 ### ✨ **December 2025 Update**
 - **ISO 7933 Predicted Heat Strain (PHS)** calculator delivers core-temperature, sweat-rate, and hydration guardrails aligned with the Phase 1 roadmap.
+- **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
 - **Modern glassmorphic UI** for the Streamlit home page with hero panel, mission cards, and roadmap chips highlighting live and upcoming features.
 - **Thermal stress studio refresh** with interactive plots that visualize core temperature trajectories and highlight the most restrictive limit (core temperature vs. dehydration).
 
@@ -418,6 +420,11 @@ print(f"Tissue Ratio: {tr:.3f} - {risk_assessment}")
 - Export capabilities (PNG, SVG, PDF, HTML)
 - Real-time parameter adjustment
 
+### **🧪 Simulation Studio**
+- Forward simulators for time-steppable models (deterministic sampling, bounded loops)
+- PHS trajectories (core temperature, dehydration, sweat-rate limits) + next-step forecast
+- Mitler circadian performance envelope forecasting
+
 ---
 
 ## 🧪 **Validation & Testing**
@@ -493,6 +500,7 @@ We maintain a comprehensive development roadmap based on scientific literature r
 
 ### Phase 1 (High Priority)
 - **Predicted Heat Strain (PHS) Model** — ISO 7933:2023 standard
+- **Simulation Studio** — interactive forward trajectories and scientific “what happens next” forecasting for time-steppable calculators (see `Docs/Manual.md`)
 - **Universal Thermal Climate Index (UTCI)** — Outdoor thermal comfort
 - **Cold Water Immersion Survival Time** — Hayward-Tikuisis models
 - **Bühlmann ZH-L16 Decompression Algorithm** — Industry-standard DCS prediction
@@ -512,7 +520,8 @@ We maintain a comprehensive development roadmap based on scientific literature r
 - Psychomotor vigilance task (PVT) prediction
 - Clinical scoring systems (Wells, qSOFA)
 
-📖 **See the full roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
+📖 **Simulation Studio manual**: `Docs/Manual.md`  
+📖 **Full suite roadmap**: [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ---
 

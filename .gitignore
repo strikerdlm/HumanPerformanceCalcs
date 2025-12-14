@@ -1,0 +1,18 @@
+# Local environment / secrets
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Test/cache artifacts
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
