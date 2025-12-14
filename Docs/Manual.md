@@ -67,6 +67,28 @@ The **Spatial Disorientation** tool is available under:
 - StatPearls (10–20 s canal entrainment window).
 - Houben et al. (2022) for Coriolis threshold (PubMed 34924407).
 
+### Fatigue & Circadian: SAFTE Effectiveness (patent-derived)
+
+The **SAFTE Effectiveness** calculator is available under:
+
+- Sidebar → **🧠 Fatigue & Circadian** → **SAFTE Effectiveness (patent-derived)**
+
+**What it computes**
+
+- A multi-day time series of **Effectiveness** \(E_t\) using the patent-equation SAFTE core:
+  - Sleep reservoir dynamics (linear depletion while awake; fill while asleep after a short delay)
+  - Circadian modulation (two-harmonic cosine form)
+  - Sleep inertia (first ~120 minutes after waking)
+
+**Key equation sources**
+
+- `WO2012015383A1` for the explicit equation set (Eq. 1–9): `https://patents.google.com/patent/WO2012015383A1/en`
+- SAFTEr (IBR) open-source R implementation built from the patent equations: `https://github.com/InstituteBehaviorResources/SAFTEr`
+
+**Important limitations (explicit)**
+
+- This implementation **does not** include FAST’s proprietary sleep prediction pipeline or circadian phase shifting / jet-lag algorithmic adjustments beyond the explicit circadian equation.
+
 ### Environmental Monitoring: Universal Thermal Climate Index (UTCI)
 
 The **UTCI** calculator is available under:
