@@ -201,6 +201,21 @@ ROADMAP_PHASE_ONE = [
         "status": "Planned",
         "description": "Hayward–Tikuisis survival curves",
     },
+    {
+        "name": "Bühlmann ZH-L16 Decompression Algorithm",
+        "status": "Planned",
+        "description": "16-compartment decompression + gradient factors",
+    },
+    {
+        "name": "AGSM Effectiveness Model",
+        "status": "Planned",
+        "description": "Quantify anti-G straining and suit benefit",
+    },
+    {
+        "name": "Spatial Disorientation Risk Assessment",
+        "status": "Planned",
+        "description": "Vestibular + flight condition risk scoring",
+    },
 ]
 
 # Main header
@@ -212,6 +227,7 @@ calculator_category = st.sidebar.selectbox(
     "Select Calculator Category",
     [
         "🏠 Home",
+        "🗺️ Roadmap",
         "🌍 Atmospheric & Physiological",
         "🩺 Clinical Calculators",
         "Occupational Health & Safety",
@@ -220,7 +236,8 @@ calculator_category = st.sidebar.selectbox(
         "🧪 Simulation Studio",
         "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
-    ]
+    ],
+    key="calculator_category",
 )
 
 # Disclaimer
@@ -269,14 +286,50 @@ if calculator_category == "🏠 Home":
             neutral_box("**" + title + "**\n\n" + "\n".join(f"- {b}" for b in bullets))
 
     st.subheader("Roadmap momentum")
-    roadmap_cols = st.columns(len(ROADMAP_PHASE_ONE))
-    for info, col in zip(ROADMAP_PHASE_ONE, roadmap_cols):
+    roadmap_cols = st.columns(4)
+    for idx, info in enumerate(ROADMAP_PHASE_ONE[:4]):
+        col = roadmap_cols[idx % 4]
         with col:
             neutral_box(f"**{info['name']}**\n\n{info['status']} · {info['description']}")
+
+    st.markdown("#### Quick launch")
+    launch_cols = st.columns(4)
+    launch_targets = [
+        ("🌍 Physiology", "🌍 Atmospheric & Physiological", "Atmosphere, hypoxia, decompression, radiation"),
+        ("🩺 Clinical", "🩺 Clinical Calculators", "Bedside indices and clinical physiology tools"),
+        ("🛡️ Occupational", "Occupational Health & Safety", "Noise, chemicals, TLVs/BEIs and reporting"),
+        ("🧪 Simulation", "🧪 Simulation Studio", "Forward trajectories (PHS, circadian envelopes)"),
+    ]
+    for i, (label, target, subtitle) in enumerate(launch_targets):
+        with launch_cols[i]:
+            with crystal_container(border=True):
+                st.markdown(f"**{label}**")
+                st.caption(subtitle)
+                if st.button("Open", key=f"quick_launch_{i}"):
+                    st.session_state["calculator_category"] = target
+                    st.rerun()
 
     neutral_box(
         "Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots."
     )
+
+elif calculator_category == "🗺️ Roadmap":
+    st.subheader("Roadmap")
+    st.caption("Derived from `docs/ROADMAP.md` (Phase 1 highlighted).")
+
+    with crystal_container(border=True):
+        st.markdown("**Phase 1 — High-Priority Additions (0–6 months)**")
+        for item in ROADMAP_PHASE_ONE:
+            st.markdown(f"- **{item['name']}** — {item['status']} · {item['description']}")
+
+    with st.expander("View full roadmap (from docs/ROADMAP.md)", expanded=False):
+        try:
+            with open("docs/ROADMAP.md", "r", encoding="utf-8") as f:
+                roadmap_md = f.read()
+        except OSError as e:
+            st.error(f"Unable to read docs/ROADMAP.md: {e}")
+        else:
+            st.markdown(roadmap_md)
 
 elif calculator_category == "🌍 Atmospheric & Physiological":
     st.subheader("Atmospheric & Physiological Calculators")
