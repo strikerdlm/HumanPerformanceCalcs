@@ -49,8 +49,9 @@ This suite provides **research-grade computational tools** for aerospace medicin
 
 ### ✨ **December 2025 Update**
 - **ISO 7933 Predicted Heat Strain (PHS)** calculator delivers core-temperature, sweat-rate, and hydration guardrails aligned with the Phase 1 roadmap.
+- **Universal Thermal Climate Index (UTCI)** calculator adds outdoor thermal “feels-like” assessment with standardized stress categories.
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
-- **Modern glassmorphic UI** for the Streamlit home page with hero panel, mission cards, and roadmap chips highlighting live and upcoming features.
+- **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
 - **Thermal stress studio refresh** with interactive plots that visualize core temperature trajectories and highlight the most restrictive limit (core temperature vs. dehydration).
 
 ---
