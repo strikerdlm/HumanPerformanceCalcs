@@ -44,6 +44,7 @@ from calculators import (
     circadian_component,
     jet_lag_days_to_adjust,
     peak_shivering_intensity,
+    cold_water_survival,
     AEROSPACE_CHEMICALS,
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -200,7 +201,7 @@ ROADMAP_PHASE_ONE = [
     },
     {
         "name": "Cold Water Immersion Survival",
-        "status": "Planned",
+        "status": "Live",
         "description": "Hayward–Tikuisis survival curves",
     },
     {
@@ -1389,6 +1390,7 @@ elif calculator_category == "🔬 Environmental Monitoring":
         "Choose Calculator",
         [
             "Universal Thermal Climate Index (UTCI)",
+            "Cold Water Immersion Survival Time",
             "Heat Stress Index (WBGT)",
             "Heat Stress Index (HSI)",
             "Predicted Heat Strain (ISO 7933)",
@@ -1434,6 +1436,49 @@ elif calculator_category == "🔬 Environmental Monitoring":
                     "This value is intended for outdoor thermal assessment; it is not a substitute "
                     "for operational risk management without context and validation."
                 )
+
+    elif calc_type == "Cold Water Immersion Survival Time":
+        st.markdown("### 🌊 Cold Water Immersion Survival Time")
+        st.caption("Hypothermia-limited guidance for immersion in cold water (does not model cold shock or swim failure).")
+
+        model_choice = st.radio(
+            "Model",
+            [
+                "Hayward et al. (1975) — temperature-only equation",
+                "Golden (1996) cited in TP 13822 — fully clothed + lifejacket (5–15°C)",
+            ],
+            horizontal=False,
+        )
+        model = "hayward_1975" if model_choice.startswith("Hayward") else "golden_lifejacket_tp13822"
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            water_temp_c = st.number_input("Water temperature (°C)", -2.0, 30.0, 10.0, step=0.5)
+            strict = st.checkbox(
+                "Strict validity bounds",
+                value=True,
+                help="If enabled, raises an error when inputs are outside the supported ranges for the chosen model.",
+            )
+
+            neutral_box(
+                "**Important**\n\n"
+                "- **Cold shock** can be fatal in ~3–5 minutes.\n"
+                "- **Swimming failure** can occur in under ~30 minutes.\n"
+                "- These estimates are **hypothermia-limited** only; drowning risk can dominate earlier."
+            )
+
+        with col2:
+            st.markdown("#### Results")
+            try:
+                est = cold_water_survival(float(water_temp_c), model=model, strict=bool(strict))
+            except ValueError as e:
+                st.error(f"Input out of bounds: {e}")
+            else:
+                st.metric("Estimated survival time", f"{est.survival_time_hours:.2f} hours", f"{est.survival_time_minutes:.0f} min")
+                with crystal_container(border=True):
+                    st.markdown("**Model notes**")
+                    for n in est.notes:
+                        st.markdown(f"- {n}")
 
     if calc_type == "Heat Stress Index (WBGT)":
         st.markdown("### 🌡️ Wet Bulb Globe Temperature (WBGT)")
