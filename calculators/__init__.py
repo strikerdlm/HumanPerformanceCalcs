@@ -86,6 +86,14 @@ from .easa_ftl import (  # type: ignore
     easa_max_daily_fdp,
     easa_oroflt_210_cumulative_limits,
 )
+from .wells import (  # type: ignore
+    WellsDvtInputs,
+    WellsDvtResult,
+    compute_wells_dvt,
+    WellsPeInputs,
+    WellsPeResult,
+    compute_wells_pe,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -213,6 +221,12 @@ __all__ = [
     "EasaOroFtl210Result",
     "easa_max_daily_fdp",
     "easa_oroflt_210_cumulative_limits",
+    "WellsDvtInputs",
+    "WellsDvtResult",
+    "compute_wells_dvt",
+    "WellsPeInputs",
+    "WellsPeResult",
+    "compute_wells_pe",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
