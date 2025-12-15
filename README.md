@@ -55,6 +55,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **Spatial Disorientation (SD) risk assessment** is now live with explicit physiology anchors (leans threshold, canal entrainment window, Coriolis threshold, somatogravic tilt physics) and in-app citations.
 - **NVG / EO target acquisition (Johnson/ACQUIRE cycles-on-target)** is now live as a resolution-based feasibility check with a public cycle-criteria reference (SAND2015-6368).
 - **Whole-body vibration exposure (ISO 2631-1 style A(8) / VDV)** is now live as a frequency-weighted exposure scaler with literature-anchored HGCZ thresholds and in-app citations.
+- **Motion sickness susceptibility (MSSQ-short)** is now live as a questionnaire-based susceptibility screen (raw score + quartile band against an open pre-test sample; limitations explicit).
 - **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
 - **Crew duty time limits (FAA Part 117 + EASA ORO.FTL)** are now live, including FAA table lookups (Table A/Table B + cumulative limits) and a scoped EASA subset (ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps), with transparent scope notes.
 - **A–a gradient** and **oxygen delivery (CaO₂/DO₂/DO₂I)** calculators are now live for clinical/altitude physiology workflows, with explicit equations and citations.

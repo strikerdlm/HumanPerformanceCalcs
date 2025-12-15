@@ -83,6 +83,9 @@ from calculators import (
     compute_wells_dvt,
     WellsPeInputs,
     compute_wells_pe,
+    MSSQ_SHORT_ITEMS,
+    MssqShortInputs,
+    compute_mssq_short,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -2598,9 +2601,81 @@ elif calculator_category == "📊 Risk Assessment Tools":
             "Spatial Disorientation Risk Assessment",
             "NVG/EO Target Acquisition (Johnson/ACQUIRE)",
             "Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)",
+            "Motion Sickness Susceptibility (MSSQ-short)",
         ],
         index=0,
     )
+
+    if tool == "Motion Sickness Susceptibility (MSSQ-short)":
+        st.markdown("### 🤢 Motion Sickness Susceptibility (MSSQ-short)")
+        neutral_box(
+            "**Clinical/research decision support only.** This computes **MSSQ-short raw sums** for Section A (childhood) "
+            "and Section B (adulthood), plus a simple quartile band relative to an open pre-test sample.\n\n"
+            "Primary concept references: Golding (1998, 2006). Scoring scale reference: Rivera et al. (2022, open)."
+        )
+
+        st.caption("Response scale (per Rivera et al. 2022): 0=Never, 1=Almost never, 2=Sometimes, 3=Frequently.")
+
+        with crystal_container(border=True):
+            st.markdown("**Section A — Childhood**")
+            a_scores: list[int] = []
+            for i, item in enumerate(MSSQ_SHORT_ITEMS):
+                a_scores.append(
+                    int(
+                        st.select_slider(
+                            f"A{i+1}. {item}",
+                            options=[0, 1, 2, 3],
+                            value=0,
+                            key=f"mssq_a_{i}",
+                        )
+                    )
+                )
+
+        with crystal_container(border=True):
+            st.markdown("**Section B — Adulthood**")
+            b_scores: list[int] = []
+            for i, item in enumerate(MSSQ_SHORT_ITEMS):
+                b_scores.append(
+                    int(
+                        st.select_slider(
+                            f"B{i+1}. {item}",
+                            options=[0, 1, 2, 3],
+                            value=0,
+                            key=f"mssq_b_{i}",
+                        )
+                    )
+                )
+
+        try:
+            res = compute_mssq_short(
+                MssqShortInputs(
+                    section_a_scores_0_3=tuple(a_scores),
+                    section_b_scores_0_3=tuple(b_scores),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Results**")
+                c1, c2, c3, c4 = st.columns(4)
+                with c1:
+                    st.metric("Section A (0–27)", f"{res.section_a_sum_0_27:d}")
+                with c2:
+                    st.metric("Section B (0–27)", f"{res.section_b_sum_0_27:d}")
+                with c3:
+                    st.metric("Total (0–54)", f"{res.total_sum_0_54:d}")
+                with c4:
+                    p25, p50, p75 = res.rivera_2022_reference
+                    st.metric("Quartile band (Rivera 2022)", res.rivera_2022_percentile_band, f"P25={p25:.2f}, P50={p50:.1f}, P75={p75:.1f}")
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Rivera R. et al. (2022). *Revista de otorrinolaringología y cirugía de cabeza y cuello* (open SciELO). "
+                    "[DOI: 10.4067/S0718-48162022000200172](https://doi.org/10.4067/S0718-48162022000200172)\n"
+                    "- Golding (1998). *Brain Research Bulletin*. [DOI: 10.1016/S0361-9230(98)00091-4](https://doi.org/10.1016/S0361-9230(98)00091-4)\n"
+                    "- Golding (2006). *Autonomic Neuroscience*. [DOI: 10.1016/j.autneu.2006.07.019](https://doi.org/10.1016/j.autneu.2006.07.019)"
+                )
 
     if tool == "NVG/EO Target Acquisition (Johnson/ACQUIRE)":
         st.markdown("### 🌙 NVG / Electro-Optical Target Acquisition (Cycles-on-target)")
