@@ -56,7 +56,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **NVG / EO target acquisition (Johnson/ACQUIRE cycles-on-target)** is now live as a resolution-based feasibility check with a public cycle-criteria reference (SAND2015-6368).
 - **Whole-body vibration exposure (ISO 2631-1 style A(8) / VDV)** is now live as a frequency-weighted exposure scaler with literature-anchored HGCZ thresholds and in-app citations.
 - **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
-- **Crew duty time limits (FAA Part 117, unaugmented)** are now live with official eCFR table lookups (Table A/Table B) and transparent scope notes.
+- **Crew duty time limits (FAA Part 117 + EASA ORO.FTL)** are now live, including FAA table lookups (Table A/Table B + cumulative limits) and a scoped EASA subset (ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps), with transparent scope notes.
 - **A–a gradient** and **oxygen delivery (CaO₂/DO₂/DO₂I)** calculators are now live for clinical/altitude physiology workflows, with explicit equations and citations.
 - **SAFTE effectiveness forecasting (patent-derived)** is now live for multi-day fatigue prediction, with equations sourced from the published patent and SAFTEr open implementation (limitations explicitly stated).
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
