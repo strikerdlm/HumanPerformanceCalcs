@@ -114,6 +114,26 @@ This tool implements the FAA Part 117 **unaugmented** lookup tables:
 - eCFR Table B: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
 - eCFR § 117.13: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13
 
+### Fatigue & Circadian: Crew Duty Time Limits (EASA ORO.FTL, basic)
+
+This tool implements a **scoped, table-driven subset** of EASA Air Ops FTL focused on:
+
+- **ORO.FTL.205(b)**: maximum daily FDP for:
+  - **acclimatised** crews (Table 2; start time at reference time + sectors)
+  - **unknown** state (Table 3; sectors only)
+  - **unknown under FRM** (Table 4; sectors only)
+- **CS FTL.1.205(b)**: *planned* FDP extension **without in-flight rest** (maximum daily FDP with extension table; limited time bands and sectors)
+- **ORO.FTL.210**: cumulative **duty** and **flight time** caps (7/14/28 days, calendar year, 12 months)
+
+**Important limitations (explicit)**
+
+- This does **not** implement the full ORO.FTL framework (standby, reserve, split duty, operator-specific FTL schemes, full in-flight rest extension schemes, commander’s discretion workflows, or WOCL-dependent special cases beyond what is explicitly tabled in the cited tables).
+- Treat as a **planning / education** assistant unless validated against your operator’s approved FTL scheme and rostering system.
+
+**Primary reference (official)**
+
+- EASA. *Easy Access Rules for Air Operations (Regulation (EU) No 965/2012) — Revision 22 (February 2025).* (Official PDF) https://www.easa.europa.eu/en/downloads/20342/en
+
 ### Atmospheric & Physiological: Alveolar–arterial Oxygen Gradient (A–a)
 
 This tool computes:
