@@ -79,6 +79,10 @@ from calculators import (
     easa_max_daily_fdp,
     EasaOroFtl210Inputs,
     easa_oroflt_210_cumulative_limits,
+    WellsDvtInputs,
+    compute_wells_dvt,
+    WellsPeInputs,
+    compute_wells_pe,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -1274,7 +1278,9 @@ elif calculator_category == "🩺 Clinical Calculators":
             "eGFR (CKD‑EPI 2009)",
             "PaO₂/FiO₂ Ratio (P/F)",
             "Oxygen Index (OI)",
-            "6‑Minute Walk Distance"
+            "6‑Minute Walk Distance",
+            "Wells Score (DVT)",
+            "Wells Score (PE)",
         ]
     )
 
@@ -1445,6 +1451,130 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig.add_trace(go.Scatter(x=ages, y=curve, mode='lines', fill='tozeroy'))
             fig.update_layout(title="6MWD vs Age", xaxis_title="Age (yr)", yaxis_title="6MWD (m)")
             st.plotly_chart(fig, width="stretch")
+
+    elif tool == "Wells Score (DVT)":
+        st.markdown("### 🩺 Wells Score — Suspected DVT")
+        neutral_box(
+            "**Clinical decision support only.** Implements the Wells DVT point system and reports both "
+            "**3-tier** (low/moderate/high) and **2-tier** (unlikely/likely) strata.\n\n"
+            "Primary reference: Wells et al. (2003) *NEJM*."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria**")
+            c1, c2 = st.columns(2)
+            with c1:
+                active_cancer = st.checkbox("Active cancer (treatment ongoing, within 6 months, or palliative)", value=False)
+                paralysis = st.checkbox("Paralysis/paresis or recent plaster immobilization of lower extremity", value=False)
+                bedridden = st.checkbox("Recently bedridden >3 days OR major surgery within 12 weeks", value=False)
+                tenderness = st.checkbox("Localized tenderness along deep venous system", value=False)
+                entire_leg = st.checkbox("Entire leg swollen", value=False)
+            with c2:
+                pitting = st.checkbox("Pitting edema confined to symptomatic leg", value=False)
+                collateral = st.checkbox("Collateral superficial veins (non-varicose)", value=False)
+                alt_dx = st.checkbox("Alternative diagnosis as likely as DVT (−2 points)", value=False)
+                calf_mode = st.radio("Calf swelling criterion", ["Enter difference (cm)", "Manual yes/no"], horizontal=True)
+                calf_diff_cm = None
+                calf_gt_3 = None
+                if calf_mode == "Enter difference (cm)":
+                    calf_diff_cm = st.number_input("Calf circumference difference (cm; symptomatic − asymptomatic)", min_value=0.0, value=0.0, step=0.1)
+                else:
+                    calf_gt_3 = st.checkbox("Calf swelling > 3 cm compared to asymptomatic leg", value=False)
+
+        try:
+            res = compute_wells_dvt(
+                WellsDvtInputs(
+                    active_cancer=bool(active_cancer),
+                    paralysis_paresis_or_recent_plaster_immobilization=bool(paralysis),
+                    recently_bedridden_gt3d_or_major_surgery_within_12w=bool(bedridden),
+                    localized_tenderness_along_deep_venous_system=bool(tenderness),
+                    entire_leg_swollen=bool(entire_leg),
+                    calf_diff_cm=float(calf_diff_cm) if calf_diff_cm is not None else None,
+                    calf_swelling_gt_3cm_compared_to_asymptomatic_leg=bool(calf_gt_3) if calf_gt_3 is not None else None,
+                    pitting_edema_confined_to_symptomatic_leg=bool(pitting),
+                    collateral_superficial_veins_nonvaricose=bool(collateral),
+                    alternative_diagnosis_as_likely_as_dvt=bool(alt_dx),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Result**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("Wells DVT score", f"{res.total_points:.1f}")
+                with o2:
+                    st.metric("3-tier stratum", res.three_tier)
+                with o3:
+                    st.metric("2-tier stratum", res.two_tier)
+                st.caption(f"Calf swelling >3 cm: {'Yes' if res.calf_swelling_gt_3cm else 'No'}")
+
+        with st.expander("References", expanded=False):
+            st.markdown(
+                "- Wells et al. (2003). *New England Journal of Medicine*, 349(13), 1227–1235. "
+                "[DOI: 10.1056/NEJMoa023153](https://doi.org/10.1056/NEJMoa023153)"
+            )
+
+    elif tool == "Wells Score (PE)":
+        st.markdown("### 🩺 Wells Score — Suspected Pulmonary Embolism (PE)")
+        neutral_box(
+            "**Clinical decision support only.** Implements the Wells PE point system and reports both "
+            "**3-tier** (low/moderate/high) and **2-tier** (unlikely/likely) strata.\n\n"
+            "Primary reference: Wells et al. (2001) *Ann Intern Med*."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria**")
+            c1, c2 = st.columns(2)
+            with c1:
+                signs_dvt = st.checkbox("Clinical signs and symptoms of DVT", value=False)
+                pe_most_likely = st.checkbox("PE is the most likely diagnosis (alt dx less likely)", value=False)
+                immob = st.checkbox("Immobilization ≥3 days OR surgery within 4 weeks", value=False)
+                prev = st.checkbox("Previous DVT/PE", value=False)
+            with c2:
+                hemoptysis = st.checkbox("Hemoptysis", value=False)
+                malignancy = st.checkbox("Malignancy (on treatment, within 6 months, or palliative)", value=False)
+                hr_mode = st.radio("Heart rate criterion", ["Enter HR (bpm)", "Manual yes/no"], horizontal=True)
+                hr_bpm = None
+                hr_gt_100 = None
+                if hr_mode == "Enter HR (bpm)":
+                    hr_bpm = st.number_input("Heart rate (bpm)", min_value=0.0, value=80.0, step=1.0)
+                else:
+                    hr_gt_100 = st.checkbox("Heart rate > 100 bpm", value=False)
+
+        try:
+            res = compute_wells_pe(
+                WellsPeInputs(
+                    clinical_signs_dvt=bool(signs_dvt),
+                    pe_most_likely_diagnosis=bool(pe_most_likely),
+                    heart_rate_bpm=float(hr_bpm) if hr_bpm is not None else None,
+                    heart_rate_bpm_gt_100=bool(hr_gt_100) if hr_gt_100 is not None else None,
+                    immobilization_ge3d_or_surgery_within_4w=bool(immob),
+                    previous_dvt_or_pe=bool(prev),
+                    hemoptysis=bool(hemoptysis),
+                    malignancy_on_treatment_or_within_6m_or_palliative=bool(malignancy),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Result**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("Wells PE score", f"{res.total_points:.1f}")
+                with o2:
+                    st.metric("3-tier stratum", res.three_tier)
+                with o3:
+                    st.metric("2-tier stratum", res.two_tier)
+                st.caption(f"Heart rate >100 bpm: {'Yes' if res.heart_rate_gt_100 else 'No'}")
+
+        with st.expander("References", expanded=False):
+            st.markdown(
+                "- Wells et al. (2001). *Annals of Internal Medicine*, 135(2), 98–107. "
+                "[DOI: 10.7326/0003-4819-135-2-200107170-00010](https://doi.org/10.7326/0003-4819-135-2-200107170-00010)"
+            )
 
 
 elif calculator_category == "Occupational Health & Safety":
