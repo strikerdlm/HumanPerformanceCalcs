@@ -69,6 +69,10 @@ from calculators import (
     estimate_dva_logmar_wang2024,
     Faa117Inputs,
     faa117_limits,
+    AaGradientInputs,
+    compute_aa_gradient,
+    OxygenDeliveryInputs,
+    compute_oxygen_delivery,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -518,6 +522,8 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "Acute Mountain Sickness Risk",
             "HAPE Risk (Suona 2023 Nomogram)",
             "Oxygen Cascade",
+            "Alveolar-arterial Oxygen Gradient (A–a)",
+            "Oxygen Delivery Index (DO₂I)",
             "Decompression Tissue Ratio (TR)",
             "Bühlmann ZH-L16 GF Decompression Planner",
             "AGSM Effectiveness (Anti-G +Gz)",
@@ -634,6 +640,162 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
 
             with st.expander("References (empirical anchor)", expanded=False):
                 st.markdown("- Wang et al. (2024). *Frontiers in Neuroscience*. [DOI: 10.3389/fnins.2024.1428987](https://doi.org/10.3389/fnins.2024.1428987)")
+
+    elif calc_type == "Alveolar-arterial Oxygen Gradient (A–a)":
+        st.markdown("### 🫁↔️🩸 Alveolar–arterial Oxygen Gradient (A–a)")
+
+        neutral_box(
+            "**Definition**: A–a = PAO₂ − PaO₂. PAO₂ is computed using the alveolar gas equation.\n\n"
+            "Primary reference (normal cohort + methodology discussion): Filley et al. (1954) J Clin Invest. "
+            "[DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)"
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                alt_ft = st.slider("Altitude (ft)", 0, 40_000, 0, step=500)
+                alt_m = float(alt_ft * 0.3048)
+            with c2:
+                pao2 = float(st.number_input("PaO₂ (mmHg)", min_value=0.0, value=90.0, step=1.0))
+            with c3:
+                paco2 = float(st.number_input("PaCO₂ (mmHg)", min_value=0.0, value=40.0, step=1.0))
+            with c4:
+                fio2 = float(st.number_input("FiO₂ (fraction)", min_value=0.0, max_value=1.0, value=0.21, step=0.01))
+
+        with crystal_container(border=True):
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                rq = float(st.number_input("RQ (dimensionless)", min_value=0.1, max_value=1.5, value=0.8, step=0.05))
+            with m2:
+                normal_model = st.selectbox(
+                    "Reference normal model",
+                    ["filley1954_rest_air_1600ft", "heuristic_age_over4_plus4"],
+                    index=0,
+                )
+            with m3:
+                age = None
+                if normal_model == "heuristic_age_over4_plus4":
+                    age = float(st.number_input("Age (years) for heuristic", min_value=0.0, value=30.0, step=1.0))
+                else:
+                    _ = st.caption("Filley 1954 cohort reference (rest, air-breathing, ~1600 ft).")
+
+        try:
+            res = compute_aa_gradient(
+                AaGradientInputs(
+                    altitude_m=alt_m,
+                    pao2_mmHg=pao2,
+                    paco2_mmHg=paco2,
+                    fio2=fio2,
+                    rq=rq,
+                    age_years=age,
+                    normal_model=normal_model,  # type: ignore[arg-type]
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("PAO₂ (calc, mmHg)", f"{res.pao2_calc_mmHg:.1f}")
+                with o2:
+                    st.metric("A–a gradient (mmHg)", f"{res.aa_gradient_mmHg:.1f}")
+                with o3:
+                    if res.normal_upper_approx_mmHg is not None:
+                        st.metric("Ref upper (approx, mmHg)", f"{res.normal_upper_approx_mmHg:.1f}")
+                if res.normal_upper_approx_mmHg is not None:
+                    st.caption(
+                        "Reference bounds are context-dependent; interpret with FiO₂, altitude, and clinical scenario."
+                    )
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Filley et al. (1954) *J Clin Invest* (A–a definition + methodology; normal cohort stats). "
+                    "[DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)\n"
+                    "- Harris et al. (1974) *Clinical Science* (age and FiO₂ dependence of normal A–a). "
+                    "[DOI: 10.1042/cs0460089](https://doi.org/10.1042/cs0460089)"
+                )
+
+    elif calc_type == "Oxygen Delivery Index (DO₂I)":
+        st.markdown("### 🫀🩸 Oxygen Delivery (CaO₂ / DO₂ / DO₂I)")
+
+        neutral_box(
+            "**Core equations**: CaO₂ = (Hüfner·Hb·SaO₂) + (α·PaO₂); DO₂ = CO·CaO₂·10; DO₂I = DO₂/BSA.\n\n"
+            "Constants vary by convention; this UI exposes Hüfner and α as editable parameters."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                hb = float(st.number_input("Hemoglobin Hb (g/dL)", min_value=0.0, value=15.0, step=0.1))
+            with c2:
+                sao2_pct = float(st.number_input("SaO₂ (%)", min_value=0.0, max_value=100.0, value=98.0, step=0.5))
+            with c3:
+                pao2 = float(st.number_input("PaO₂ (mmHg)", min_value=0.0, value=90.0, step=1.0))
+            with c4:
+                co = float(st.number_input("Cardiac output CO (L/min)", min_value=0.1, value=5.0, step=0.1))
+
+        with crystal_container(border=True):
+            bsa_mode = st.selectbox("Indexing mode", ["Provide BSA directly", "Estimate BSA (DuBois)"], index=1)
+            bsa = None
+            height_cm = None
+            weight_kg = None
+            if bsa_mode == "Provide BSA directly":
+                bsa = float(st.number_input("BSA (m²)", min_value=0.5, value=1.9, step=0.01))
+            else:
+                h1, w1 = st.columns(2)
+                with h1:
+                    height_cm = float(st.number_input("Height (cm)", min_value=50.0, value=180.0, step=1.0))
+                with w1:
+                    weight_kg = float(st.number_input("Weight (kg)", min_value=10.0, value=80.0, step=1.0))
+
+        with crystal_container(border=True):
+            k1, k2 = st.columns(2)
+            with k1:
+                hufner = float(st.number_input("Hüfner constant (mL O₂/g Hb)", min_value=1.0, max_value=1.5, value=1.34, step=0.01))
+            with k2:
+                alpha = float(st.number_input("α dissolved O₂ (mL O₂/dL/mmHg)", min_value=0.0, max_value=0.01, value=0.003, step=0.0001, format="%.4f"))
+
+        try:
+            out = compute_oxygen_delivery(
+                OxygenDeliveryInputs(
+                    hb_g_dl=hb,
+                    sao2_frac=float(sao2_pct / 100.0),
+                    pao2_mmhg=pao2,
+                    cardiac_output_l_min=co,
+                    bsa_m2=bsa,
+                    height_cm=height_cm,
+                    weight_kg=weight_kg,
+                    hufner_ml_per_g=hufner,
+                    alpha_ml_per_dl_per_mmhg=alpha,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3, o4 = st.columns(4)
+                with o1:
+                    st.metric("CaO₂ (mL/dL)", f"{out.cao2_ml_o2_dl:.2f}")
+                with o2:
+                    st.metric("O₂ bound (mL/dL)", f"{out.o2_bound_ml_o2_dl:.2f}")
+                with o3:
+                    st.metric("O₂ dissolved (mL/dL)", f"{out.o2_dissolved_ml_o2_dl:.2f}")
+                with o4:
+                    st.metric("DO₂ (mL/min)", f"{out.do2_ml_o2_min:.0f}")
+                if out.do2i_ml_o2_min_m2 is not None:
+                    st.metric("DO₂I (mL/min/m²)", f"{out.do2i_ml_o2_min_m2:.0f}")
+                else:
+                    st.caption("Provide BSA (or height+weight) to compute DO₂I.")
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Oxygen content/capacity concepts and measurement context are discussed in: "
+                    "Filley et al. (1954) *J Clin Invest*. [DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)\n"
+                    "- Alveolar gas equation reference used elsewhere in this suite: West, J.B. (Respiratory Physiology)."
+                )
     
     elif calc_type == "Time of Useful Consciousness":
         st.markdown("### ⏱️ Time of Useful Consciousness (TUC)")
