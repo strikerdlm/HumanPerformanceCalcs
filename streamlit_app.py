@@ -50,6 +50,8 @@ from calculators import (
     PredictedHeatStrainResult,
     simulate_phs_trajectory,
     simulate_mitler_trajectory,
+    sweep_phs_metric_1d,
+    sweep_phs_metric_2d,
     plan_zh_l16_gf,
     GasMix,
     AgsmInputs,
@@ -128,6 +130,194 @@ def _compute_isa_profile(max_alt_m: float, n_points: int = 120) -> dict[str, np.
         pressures_hpa[i] = float(isa["pressure_Pa"]) / 100.0
 
     return {"alt_m": altitudes, "temp_c": temps, "pressure_hpa": pressures_hpa}
+
+
+@st.cache_data(show_spinner=False, max_entries=256)
+def _compute_phs_trajectory_cached(
+    *,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    exposure_minutes: float,
+    step_minutes: float,
+    mechanical_power_w_m2: float,
+    body_mass_kg: float,
+    body_surface_area_m2: float,
+    baseline_core_temp_C: float,
+    core_temp_limit_C: float,
+    dehydration_limit_percent: float,
+) -> object:
+    """Cached wrapper for PHS trajectory simulation (deterministic)."""
+    return simulate_phs_trajectory(
+        metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+        air_temperature_C=float(air_temperature_C),
+        mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+        relative_humidity_percent=float(relative_humidity_percent),
+        air_velocity_m_s=float(air_velocity_m_s),
+        clothing_insulation_clo=float(clothing_insulation_clo),
+        exposure_minutes=float(exposure_minutes),
+        step_minutes=float(step_minutes),
+        mechanical_power_w_m2=float(mechanical_power_w_m2),
+        body_mass_kg=float(body_mass_kg),
+        body_surface_area_m2=float(body_surface_area_m2),
+        baseline_core_temp_C=float(baseline_core_temp_C),
+        core_temp_limit_C=float(core_temp_limit_C),
+        dehydration_limit_percent=float(dehydration_limit_percent),
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=64)
+def _compute_phs_sweep_1d_cached(
+    *,
+    sweep_parameter: str,
+    start: float,
+    stop: float,
+    n_points: int,
+    metric: str,
+    exposure_minutes: float,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    mechanical_power_w_m2: float,
+    body_mass_kg: float,
+    body_surface_area_m2: float,
+    baseline_core_temp_C: float,
+    core_temp_limit_C: float,
+    dehydration_limit_percent: float,
+    max_evaluations: int,
+) -> object:
+    """Cached wrapper for 1D PHS sweeps."""
+    return sweep_phs_metric_1d(
+        sweep_parameter=str(sweep_parameter),
+        start=float(start),
+        stop=float(stop),
+        n_points=int(n_points),
+        metric=str(metric),
+        exposure_minutes=float(exposure_minutes),
+        metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+        air_temperature_C=float(air_temperature_C),
+        mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+        relative_humidity_percent=float(relative_humidity_percent),
+        air_velocity_m_s=float(air_velocity_m_s),
+        clothing_insulation_clo=float(clothing_insulation_clo),
+        mechanical_power_w_m2=float(mechanical_power_w_m2),
+        body_mass_kg=float(body_mass_kg),
+        body_surface_area_m2=float(body_surface_area_m2),
+        baseline_core_temp_C=float(baseline_core_temp_C),
+        core_temp_limit_C=float(core_temp_limit_C),
+        dehydration_limit_percent=float(dehydration_limit_percent),
+        max_evaluations=int(max_evaluations),
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def _compute_phs_sweep_2d_cached(
+    *,
+    x_parameter: str,
+    x_start: float,
+    x_stop: float,
+    x_points: int,
+    y_parameter: str,
+    y_start: float,
+    y_stop: float,
+    y_points: int,
+    metric: str,
+    exposure_minutes: float,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    mechanical_power_w_m2: float,
+    body_mass_kg: float,
+    body_surface_area_m2: float,
+    baseline_core_temp_C: float,
+    core_temp_limit_C: float,
+    dehydration_limit_percent: float,
+    max_evaluations: int,
+) -> object:
+    """Cached wrapper for 2D PHS sweeps."""
+    return sweep_phs_metric_2d(
+        x_parameter=str(x_parameter),
+        x_start=float(x_start),
+        x_stop=float(x_stop),
+        x_points=int(x_points),
+        y_parameter=str(y_parameter),
+        y_start=float(y_start),
+        y_stop=float(y_stop),
+        y_points=int(y_points),
+        metric=str(metric),
+        exposure_minutes=float(exposure_minutes),
+        metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+        air_temperature_C=float(air_temperature_C),
+        mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+        relative_humidity_percent=float(relative_humidity_percent),
+        air_velocity_m_s=float(air_velocity_m_s),
+        clothing_insulation_clo=float(clothing_insulation_clo),
+        mechanical_power_w_m2=float(mechanical_power_w_m2),
+        body_mass_kg=float(body_mass_kg),
+        body_surface_area_m2=float(body_surface_area_m2),
+        baseline_core_temp_C=float(baseline_core_temp_C),
+        core_temp_limit_C=float(core_temp_limit_C),
+        dehydration_limit_percent=float(dehydration_limit_percent),
+        max_evaluations=int(max_evaluations),
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def _compute_mitler_phase_map_cached(
+    *,
+    phi_start_hours: float,
+    phi_stop_hours: float,
+    phi_points: int,
+    horizon_hours: float,
+    step_minutes: float,
+    SD: float,
+    K: float,
+    max_evaluations: int = 25_000,
+) -> dict[str, np.ndarray]:
+    """Compute a bounded Mitler performance phase map (phi × time)."""
+    phi_n = int(phi_points)
+    if phi_n < 2 or phi_n > 400:
+        raise ValueError("phi_points must be between 2 and 400")
+
+    h = float(horizon_hours)
+    if h <= 0.0:
+        raise ValueError("horizon_hours must be > 0")
+    step_m = float(step_minutes)
+    if step_m <= 0.0:
+        raise ValueError("step_minutes must be > 0")
+    step_h = step_m / 60.0
+
+    # Build a time grid that includes the horizon.
+    n_steps = int(math.floor(h / step_h))
+    times = np.array([i * step_h for i in range(n_steps + 1)], dtype=float)
+    if times.size == 0:
+        raise ValueError("Internal error: empty time grid")
+    if float(times[-1]) < h:
+        times = np.append(times, h)
+
+    phis = np.linspace(float(phi_start_hours), float(phi_stop_hours), phi_n, dtype=float)
+
+    max_eval = int(max_evaluations)
+    if max_eval < 1 or max_eval > 250_000:
+        raise ValueError("max_evaluations must be between 1 and 250000")
+    if int(times.size) * int(phis.size) > max_eval:
+        raise ValueError("Requested grid exceeds max_evaluations")
+
+    z = np.empty((int(phis.size), int(times.size)), dtype=float)
+    for i, phi in enumerate(phis):
+        for j, t in enumerate(times):
+            z[i, j] = float(mitler_performance(float(t), float(phi), float(SD), float(K)))
+
+    return {"phis": phis, "times": times, "z": z}
 
 # Page configuration
 st.set_page_config(
@@ -3475,11 +3665,13 @@ elif calculator_category == "🧪 Simulation Studio":
     theme_template = "plotly_dark" if theme_base == "dark" else "plotly_white"
 
     if sim_type == "Heat Strain Simulator (ISO 7933-inspired PHS)":
-        st.markdown("### ♨️ Heat Strain Simulator — forward trajectory + next-step forecast")
+        st.markdown("### ♨️ Heat Strain Simulator — trajectories, scenario comparisons, and sensitivity maps")
 
         input_col1, input_col2, input_col3 = st.columns([1.0, 1.0, 1.0])
         with input_col1:
-            metabolic_rate = st.slider("Metabolic rate (W/m²)", 150.0, 650.0, 380.0, step=10.0)
+            metabolic_rate = st.slider(
+                "Metabolic rate (W/m²)", 150.0, 650.0, 380.0, step=10.0
+            )
             clothing = st.slider("Clothing insulation (clo)", 0.3, 1.6, 0.9, step=0.1)
             air_velocity = st.slider("Air speed (m/s)", 0.1, 3.0, 0.6, step=0.1)
         with input_col2:
@@ -3498,188 +3690,767 @@ elif calculator_category == "🧪 Simulation Studio":
         with st.expander("Advanced physiology assumptions", expanded=False):
             adv1, adv2, adv3 = st.columns(3)
             with adv1:
-                mechanical_power = st.slider("External mechanical power (W/m²)", 0.0, 80.0, 0.0, step=5.0)
+                mechanical_power = st.slider(
+                    "External mechanical power (W/m²)", 0.0, 80.0, 0.0, step=5.0
+                )
                 body_mass = st.slider("Body mass (kg)", 55.0, 110.0, 75.0, step=1.0)
             with adv2:
-                body_surface_area = st.slider("Body surface area (m²)", 1.4, 2.4, 1.9, step=0.05)
-                baseline_core = st.slider("Baseline core temperature (°C)", 36.5, 37.5, 37.0, step=0.1)
+                body_surface_area = st.slider(
+                    "Body surface area (m²)", 1.4, 2.4, 1.9, step=0.05
+                )
+                baseline_core = st.slider(
+                    "Baseline core temperature (°C)", 36.5, 37.5, 37.0, step=0.1
+                )
             with adv3:
-                core_limit = st.slider("Core temperature limit (°C)", 37.5, 39.5, 38.5, step=0.1)
-                dehydration_limit = st.slider("Dehydration limit (% body mass)", 2.0, 7.0, 5.0, step=0.5)
+                core_limit = st.slider(
+                    "Core temperature limit (°C)", 37.5, 39.5, 38.5, step=0.1
+                )
+                dehydration_limit = st.slider(
+                    "Dehydration limit (% body mass)", 2.0, 7.0, 5.0, step=0.5
+                )
+        # NOTE: Deterministic tabbed workflows continue below.
 
-        try:
-            traj = simulate_phs_trajectory(
-                metabolic_rate_w_m2=float(metabolic_rate),
-                air_temperature_C=float(air_temp),
-                mean_radiant_temperature_C=float(mean_radiant),
-                relative_humidity_percent=float(rh),
-                air_velocity_m_s=float(air_velocity),
-                clothing_insulation_clo=float(clothing),
-                exposure_minutes=float(horizon),
-                step_minutes=float(step_minutes),
-                mechanical_power_w_m2=float(mechanical_power),
-                body_mass_kg=float(body_mass),
-                body_surface_area_m2=float(body_surface_area),
-                baseline_core_temp_C=float(baseline_core),
-                core_temp_limit_C=float(core_limit),
-                dehydration_limit_percent=float(dehydration_limit),
-            )
+        tabs = st.tabs(
+            [
+                "▶ Run",
+                "🧩 Compare scenarios",
+                "🗺 Parameter sweep (maps)",
+                "📌 Sensitivity (tornado)",
+                "⬇ Export",
+            ]
+        )
 
-            # Next-step forecast: one more step beyond the horizon (bounded).
-            next_horizon = float(horizon) + float(step_minutes)
-            next_point = predicted_heat_strain(
-                metabolic_rate_w_m2=float(metabolic_rate),
-                air_temperature_C=float(air_temp),
-                mean_radiant_temperature_C=float(mean_radiant),
-                relative_humidity_percent=float(rh),
-                air_velocity_m_s=float(air_velocity),
-                clothing_insulation_clo=float(clothing),
-                exposure_minutes=float(next_horizon),
-                mechanical_power_w_m2=float(mechanical_power),
-                body_mass_kg=float(body_mass),
-                body_surface_area_m2=float(body_surface_area),
-                baseline_core_temp_C=float(baseline_core),
-                core_temp_limit_C=float(core_limit),
-                dehydration_limit_percent=float(dehydration_limit),
-            )
+        base_inputs = {
+            "metabolic_rate_w_m2": float(metabolic_rate),
+            "air_temperature_C": float(air_temp),
+            "mean_radiant_temperature_C": float(mean_radiant),
+            "relative_humidity_percent": float(rh),
+            "air_velocity_m_s": float(air_velocity),
+            "clothing_insulation_clo": float(clothing),
+            "exposure_minutes": float(horizon),
+            "step_minutes": float(step_minutes),
+            "mechanical_power_w_m2": float(mechanical_power),
+            "body_mass_kg": float(body_mass),
+            "body_surface_area_m2": float(body_surface_area),
+            "baseline_core_temp_C": float(baseline_core),
+            "core_temp_limit_C": float(core_limit),
+            "dehydration_limit_percent": float(dehydration_limit),
+        }
 
-            # Summary metrics
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            col_m1.metric("Core temp @ horizon", f"{traj.core_temperature_C[-1]:.2f} °C")
-            col_m2.metric(
-                "Dehydration @ horizon", f"{traj.dehydration_percent_body_mass[-1]:.2f} %"
+        def _format_allowable_minutes(allow: float) -> tuple[str, str]:
+            if math.isfinite(float(allow)):
+                return (f"{float(allow):.0f} min", "")
+            return ("No limit (model)", "No limit reached (model)")
+
+        def _metric_value(
+            metric_key: str, *, inputs: dict[str, float]
+        ) -> float:
+            if metric_key == "allowable_exposure_minutes":
+                # Use the sweep helper (which includes the safe-case probe) by
+                # running a 2-point sweep with identical values (bounded).
+                sweep = _compute_phs_sweep_1d_cached(
+                    sweep_parameter="air_temperature_C",
+                    start=float(inputs["air_temperature_C"]),
+                    stop=float(inputs["air_temperature_C"]),
+                    n_points=2,
+                    metric="allowable_exposure_minutes",
+                    exposure_minutes=float(inputs["exposure_minutes"]),
+                    metabolic_rate_w_m2=float(inputs["metabolic_rate_w_m2"]),
+                    air_temperature_C=float(inputs["air_temperature_C"]),
+                    mean_radiant_temperature_C=float(inputs["mean_radiant_temperature_C"]),
+                    relative_humidity_percent=float(inputs["relative_humidity_percent"]),
+                    air_velocity_m_s=float(inputs["air_velocity_m_s"]),
+                    clothing_insulation_clo=float(inputs["clothing_insulation_clo"]),
+                    mechanical_power_w_m2=float(inputs["mechanical_power_w_m2"]),
+                    body_mass_kg=float(inputs["body_mass_kg"]),
+                    body_surface_area_m2=float(inputs["body_surface_area_m2"]),
+                    baseline_core_temp_C=float(inputs["baseline_core_temp_C"]),
+                    core_temp_limit_C=float(inputs["core_temp_limit_C"]),
+                    dehydration_limit_percent=float(inputs["dehydration_limit_percent"]),
+                    max_evaluations=10,
+                )
+                return float(sweep.metric_values[-1])
+
+            point = predicted_heat_strain(
+                metabolic_rate_w_m2=float(inputs["metabolic_rate_w_m2"]),
+                air_temperature_C=float(inputs["air_temperature_C"]),
+                mean_radiant_temperature_C=float(inputs["mean_radiant_temperature_C"]),
+                relative_humidity_percent=float(inputs["relative_humidity_percent"]),
+                air_velocity_m_s=float(inputs["air_velocity_m_s"]),
+                clothing_insulation_clo=float(inputs["clothing_insulation_clo"]),
+                exposure_minutes=float(inputs["exposure_minutes"]),
+                mechanical_power_w_m2=float(inputs["mechanical_power_w_m2"]),
+                body_mass_kg=float(inputs["body_mass_kg"]),
+                body_surface_area_m2=float(inputs["body_surface_area_m2"]),
+                baseline_core_temp_C=float(inputs["baseline_core_temp_C"]),
+                core_temp_limit_C=float(inputs["core_temp_limit_C"]),
+                dehydration_limit_percent=float(inputs["dehydration_limit_percent"]),
             )
-            allow = float(traj.allowable_exposure_minutes)
-            if math.isfinite(allow):
-                allow_display = f"{allow:.0f} min"
-                allow_note = traj.limiting_factor
+            if metric_key == "core_temperature_C_at_horizon":
+                return float(point.predicted_core_temperature_C)
+            if metric_key == "dehydration_percent_body_mass_at_horizon":
+                return float(point.dehydration_percent_body_mass)
+            raise ValueError(f"Unsupported metric_key: {metric_key}")
+
+        with tabs[0]:
+            try:
+                traj = _compute_phs_trajectory_cached(**base_inputs)
+
+                # Next-step forecast: one more step beyond the horizon (bounded).
+                next_horizon = float(horizon) + float(step_minutes)
+                next_point = predicted_heat_strain(
+                    metabolic_rate_w_m2=float(metabolic_rate),
+                    air_temperature_C=float(air_temp),
+                    mean_radiant_temperature_C=float(mean_radiant),
+                    relative_humidity_percent=float(rh),
+                    air_velocity_m_s=float(air_velocity),
+                    clothing_insulation_clo=float(clothing),
+                    exposure_minutes=float(next_horizon),
+                    mechanical_power_w_m2=float(mechanical_power),
+                    body_mass_kg=float(body_mass),
+                    body_surface_area_m2=float(body_surface_area),
+                    baseline_core_temp_C=float(baseline_core),
+                    core_temp_limit_C=float(core_limit),
+                    dehydration_limit_percent=float(dehydration_limit),
+                )
+
+                allow = float(traj.allowable_exposure_minutes)
+
+                col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+                col_m1.metric("Core temp @ horizon", f"{traj.core_temperature_C[-1]:.2f} °C")
+                col_m2.metric(
+                    "Dehydration @ horizon", f"{traj.dehydration_percent_body_mass[-1]:.2f} %"
+                )
+                allow_display, allow_note = _format_allowable_minutes(allow)
+                col_m3.metric("Allowable exposure", allow_display, allow_note or traj.limiting_factor)
+                col_m4.metric(
+                    f"Next +{step_minutes:.0f} min Δcore",
+                    f"{(next_point.predicted_core_temperature_C - traj.core_temperature_C[-1]):+.2f} °C",
+                )
+
+                fig = make_subplots(
+                    rows=3,
+                    cols=1,
+                    shared_xaxes=True,
+                    vertical_spacing=0.08,
+                    subplot_titles=(
+                        "Core temperature trajectory",
+                        "Dehydration trajectory",
+                        "Sweat rate (required vs max vs effective)",
+                    ),
+                )
+
+                x = np.array(traj.times_minutes, dtype=float)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=np.array(traj.core_temperature_C, dtype=float),
+                        mode="lines",
+                        name="Core temp",
+                        line=dict(color="#2563eb", width=3),
+                    ),
+                    row=1,
+                    col=1,
+                )
+                fig.add_hline(
+                    y=float(core_limit),
+                    line_dash="dash",
+                    line_color="#ef4444",
+                    annotation_text="Core limit",
+                    row=1,
+                    col=1,
+                )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=np.array(traj.dehydration_percent_body_mass, dtype=float),
+                        mode="lines",
+                        name="Dehydration %",
+                        line=dict(color="#f59e0b", width=3),
+                    ),
+                    row=2,
+                    col=1,
+                )
+                fig.add_hline(
+                    y=float(dehydration_limit),
+                    line_dash="dash",
+                    line_color="#ef4444",
+                    annotation_text="Dehydration limit",
+                    row=2,
+                    col=1,
+                )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=np.array(traj.required_sweat_rate_L_per_h, dtype=float),
+                        mode="lines",
+                        name="SWreq",
+                        line=dict(color="#7c3aed", width=2),
+                    ),
+                    row=3,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=np.array(traj.max_sustainable_sweat_rate_L_per_h, dtype=float),
+                        mode="lines",
+                        name="SWmax",
+                        line=dict(color="#22c55e", width=2),
+                    ),
+                    row=3,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=np.array(traj.actual_sweat_rate_L_per_h, dtype=float),
+                        mode="lines",
+                        name="SWeff",
+                        line=dict(color="#0ea5e9", width=3),
+                    ),
+                    row=3,
+                    col=1,
+                )
+
+                if math.isfinite(allow) and allow < float(horizon):
+                    fig.add_vrect(
+                        x0=allow,
+                        x1=float(horizon),
+                        fillcolor="rgba(239, 68, 68, 0.12)",
+                        line_width=0,
+                        layer="below",
+                    )
+                    fig.add_vline(x=allow, line_dash="dot", line_color="#ef4444")
+
+                fig.update_layout(
+                    template=theme_template,
+                    height=820,
+                    margin=dict(l=40, r=20, t=80, b=40),
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="left",
+                        x=0.0,
+                    ),
+                    hovermode="x unified",
+                )
+                fig.update_xaxes(title_text="Time (minutes)", row=3, col=1)
+                fig.update_yaxes(title_text="°C", row=1, col=1)
+                fig.update_yaxes(title_text="% body mass", row=2, col=1)
+                fig.update_yaxes(title_text="L/h", row=3, col=1)
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                )
+                st.markdown(
+                    '<div class="info-box"><strong>Interpretation:</strong> The red-shaded region indicates the portion of the horizon beyond the model’s calculated allowable exposure limit under the selected guardrails.</div>',
+                    unsafe_allow_html=True,
+                )
+            except ValueError as e:
+                st.error(f"Simulation error: {e}")
+
+        with tabs[1]:
+            max_scenarios = 6
+            if "phs_scenarios" not in st.session_state:
+                st.session_state["phs_scenarios"] = []
+
+            col_a, col_b, col_c = st.columns([1.4, 1.0, 1.0])
+            with col_a:
+                scenario_label = st.text_input(
+                    "Scenario label",
+                    value=f"Scenario {len(st.session_state['phs_scenarios']) + 1}",
+                    help="Saved scenarios are overlaid for direct comparison.",
+                    key="phs_scenario_label",
+                )
+            with col_b:
+                scenario_palette = st.selectbox(
+                    "Color palette",
+                    ["Vivid", "Scientific", "Colorblind-safe"],
+                    index=2,
+                    key="phs_palette",
+                )
+            with col_c:
+                add_now = st.button(
+                    "Add current inputs",
+                    disabled=len(st.session_state["phs_scenarios"]) >= max_scenarios,
+                    key="phs_add",
+                )
+
+            if add_now:
+                st.session_state["phs_scenarios"].append(
+                    {
+                        "label": str(scenario_label).strip() or "Scenario",
+                        "inputs": dict(base_inputs),
+                    }
+                )
+
+            if st.session_state["phs_scenarios"]:
+                if st.button("Clear scenarios", key="phs_clear"):
+                    st.session_state["phs_scenarios"] = []
+
+            scenarios = list(st.session_state["phs_scenarios"])
+            if not scenarios:
+                st.markdown(
+                    '<div class="info-box"><strong>Tip:</strong> Add 2–6 scenarios (e.g., different WBGT, workload, airflow) to get comparative overlays and a summary table.</div>',
+                    unsafe_allow_html=True,
+                )
             else:
-                allow_display = "No limit (model)"
-                allow_note = "No limit reached (model)"
-            col_m3.metric(
-                "Allowable exposure",
-                allow_display,
-                allow_note,
-            )
-            col_m4.metric(
-                f"Next +{step_minutes:.0f} min Δcore",
-                f"{(next_point.predicted_core_temperature_C - traj.core_temperature_C[-1]):+.2f} °C",
-            )
+                palette_map = {
+                    "Vivid": px.colors.qualitative.Bold,
+                    "Scientific": px.colors.qualitative.Set2,
+                    "Colorblind-safe": px.colors.qualitative.Safe,
+                }
+                colors = palette_map.get(str(scenario_palette), px.colors.qualitative.Safe)
 
-            # Modern stacked plot with risk shading.
-            fig = make_subplots(
-                rows=3,
-                cols=1,
-                shared_xaxes=True,
-                vertical_spacing=0.08,
-                subplot_titles=(
-                    "Core temperature trajectory",
-                    "Dehydration trajectory",
-                    "Sweat rate (required vs max vs effective)",
-                ),
-            )
+                summary_rows: list[dict[str, object]] = []
+                fig_cmp = make_subplots(
+                    rows=2,
+                    cols=1,
+                    shared_xaxes=True,
+                    vertical_spacing=0.08,
+                    subplot_titles=("Core temperature", "Dehydration"),
+                )
+                for idx, sc in enumerate(scenarios[:max_scenarios]):
+                    sc_inputs = dict(sc["inputs"])
+                    sc_traj = _compute_phs_trajectory_cached(**sc_inputs)
+                    color = colors[idx % len(colors)]
+                    name = str(sc.get("label", f"Scenario {idx+1}"))
+                    x = np.array(sc_traj.times_minutes, dtype=float)
 
-            x = np.array(traj.times_minutes, dtype=float)
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=np.array(traj.core_temperature_C, dtype=float),
-                    mode="lines",
-                    name="Core temp",
-                ),
-                row=1,
-                col=1,
-            )
-            fig.add_hline(
-                y=float(core_limit),
-                line_dash="dash",
-                annotation_text="Core limit",
-                row=1,
-                col=1,
-            )
+                    fig_cmp.add_trace(
+                        go.Scatter(
+                            x=x,
+                            y=np.array(sc_traj.core_temperature_C, dtype=float),
+                            mode="lines",
+                            name=name,
+                            line=dict(color=color, width=3),
+                        ),
+                        row=1,
+                        col=1,
+                    )
+                    fig_cmp.add_trace(
+                        go.Scatter(
+                            x=x,
+                            y=np.array(sc_traj.dehydration_percent_body_mass, dtype=float),
+                            mode="lines",
+                            name=name,
+                            line=dict(color=color, width=3),
+                            showlegend=False,
+                        ),
+                        row=2,
+                        col=1,
+                    )
+                    allow = float(sc_traj.allowable_exposure_minutes)
+                    allow_display, _ = _format_allowable_minutes(allow)
+                    summary_rows.append(
+                        {
+                            "Scenario": name,
+                            "Core@horizon (°C)": float(sc_traj.core_temperature_C[-1]),
+                            "Dehydration@horizon (%BM)": float(
+                                sc_traj.dehydration_percent_body_mass[-1]
+                            ),
+                            "Allowable exposure": allow_display,
+                            "Limiting factor": str(sc_traj.limiting_factor),
+                        }
+                    )
 
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=np.array(traj.dehydration_percent_body_mass, dtype=float),
-                    mode="lines",
-                    name="Dehydration %",
-                ),
-                row=2,
-                col=1,
-            )
-            fig.add_hline(
-                y=float(dehydration_limit),
-                line_dash="dash",
-                annotation_text="Dehydration limit",
-                row=2,
-                col=1,
-            )
+                fig_cmp.add_hline(
+                    y=float(core_limit),
+                    line_dash="dash",
+                    line_color="#ef4444",
+                    annotation_text="Core limit",
+                    row=1,
+                    col=1,
+                )
+                fig_cmp.add_hline(
+                    y=float(dehydration_limit),
+                    line_dash="dash",
+                    line_color="#ef4444",
+                    annotation_text="Dehydration limit",
+                    row=2,
+                    col=1,
+                )
+                fig_cmp.update_layout(
+                    template=theme_template,
+                    height=620,
+                    margin=dict(l=40, r=20, t=80, b=40),
+                    hovermode="x unified",
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
+                )
+                fig_cmp.update_xaxes(title_text="Time (minutes)", row=2, col=1)
+                fig_cmp.update_yaxes(title_text="°C", row=1, col=1)
+                fig_cmp.update_yaxes(title_text="% body mass", row=2, col=1)
+                st.plotly_chart(
+                    fig_cmp,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                )
+                st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
 
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=np.array(traj.required_sweat_rate_L_per_h, dtype=float),
-                    mode="lines",
-                    name="SWreq",
-                ),
-                row=3,
-                col=1,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=np.array(traj.max_sustainable_sweat_rate_L_per_h, dtype=float),
-                    mode="lines",
-                    name="SWmax",
-                ),
-                row=3,
-                col=1,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=np.array(traj.actual_sweat_rate_L_per_h, dtype=float),
-                    mode="lines",
-                    name="SWeff",
-                ),
-                row=3,
-                col=1,
-            )
-
-            # Visual guardrail: mark allowable exposure (if within horizon).
-            if math.isfinite(allow) and allow < float(horizon):
-                fig.add_vline(x=allow, line_dash="dot")
-
-            fig.update_layout(
-                template=theme_template,
-                height=820,
-                margin=dict(l=40, r=20, t=80, b=40),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
-                hovermode="x unified",
-            )
-            fig.update_xaxes(title_text="Time (minutes)", row=3, col=1)
-            fig.update_yaxes(title_text="°C", row=1, col=1)
-            fig.update_yaxes(title_text="% body mass", row=2, col=1)
-            fig.update_yaxes(title_text="L/h", row=3, col=1)
-
-            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
-
+        with tabs[2]:
             st.markdown(
-                '<div class="info-box"><strong>Interpretation:</strong> The dotted vertical line indicates the model’s calculated allowable exposure limit under the selected guardrails.</div>',
+                '<div class="info-box"><strong>Parameter sweeps:</strong> These plots are deterministic “what-if” maps of the <em>existing</em> PHS calculator—no extra physiology is introduced. Keep grids modest for responsiveness.</div>',
                 unsafe_allow_html=True,
             )
-        except ValueError as e:
-            st.error(f"Simulation error: {e}")
+
+            sweep_mode = st.radio(
+                "Sweep mode",
+                ["1D curve", "2D heatmap"],
+                horizontal=True,
+                index=1,
+            )
+            metric = st.selectbox(
+                "Metric",
+                [
+                    ("Allowable exposure", "allowable_exposure_minutes"),
+                    ("Core temperature at horizon", "core_temperature_C_at_horizon"),
+                    (
+                        "Dehydration at horizon",
+                        "dehydration_percent_body_mass_at_horizon",
+                    ),
+                ],
+                format_func=lambda x: x[0],
+            )[1]
+
+            param_defs = {
+                "air_temperature_C": ("Air temperature", 20.0, 50.0),
+                "mean_radiant_temperature_C": ("Mean radiant", 20.0, 60.0),
+                "relative_humidity_percent": ("Relative humidity", 10.0, 100.0),
+                "metabolic_rate_w_m2": ("Metabolic rate", 150.0, 650.0),
+                "air_velocity_m_s": ("Air speed", 0.1, 3.0),
+                "clothing_insulation_clo": ("Clothing", 0.3, 1.6),
+            }
+
+            try:
+                if sweep_mode == "1D curve":
+                    p = st.selectbox(
+                        "Sweep parameter",
+                        list(param_defs.keys()),
+                        format_func=lambda k: param_defs[k][0],
+                    )
+                    p_min, p_max = float(param_defs[p][1]), float(param_defs[p][2])
+                    col_s1, col_s2, col_s3 = st.columns([1, 1, 1])
+                    with col_s1:
+                        start = st.number_input("Start", value=float(p_min), min_value=float(p_min), max_value=float(p_max))
+                    with col_s2:
+                        stop = st.number_input("Stop", value=float(p_max), min_value=float(p_min), max_value=float(p_max))
+                    with col_s3:
+                        n_points = st.slider("Points", 10, 120, 45, step=5)
+
+                    sweep = _compute_phs_sweep_1d_cached(
+                        sweep_parameter=str(p),
+                        start=float(start),
+                        stop=float(stop),
+                        n_points=int(n_points),
+                        metric=str(metric),
+                        exposure_minutes=float(base_inputs["exposure_minutes"]),
+                        metabolic_rate_w_m2=float(base_inputs["metabolic_rate_w_m2"]),
+                        air_temperature_C=float(base_inputs["air_temperature_C"]),
+                        mean_radiant_temperature_C=float(base_inputs["mean_radiant_temperature_C"]),
+                        relative_humidity_percent=float(base_inputs["relative_humidity_percent"]),
+                        air_velocity_m_s=float(base_inputs["air_velocity_m_s"]),
+                        clothing_insulation_clo=float(base_inputs["clothing_insulation_clo"]),
+                        mechanical_power_w_m2=float(base_inputs["mechanical_power_w_m2"]),
+                        body_mass_kg=float(base_inputs["body_mass_kg"]),
+                        body_surface_area_m2=float(base_inputs["body_surface_area_m2"]),
+                        baseline_core_temp_C=float(base_inputs["baseline_core_temp_C"]),
+                        core_temp_limit_C=float(base_inputs["core_temp_limit_C"]),
+                        dehydration_limit_percent=float(base_inputs["dehydration_limit_percent"]),
+                        max_evaluations=2500,
+                    )
+
+                    xs = np.array(sweep.parameter_values, dtype=float)
+                    ys_raw = np.array(sweep.metric_values, dtype=float)
+                    ys = np.where(np.isfinite(ys_raw), ys_raw, np.nan)
+                    unbounded_count = int(np.sum(~np.isfinite(ys_raw)))
+
+                    fig1 = go.Figure()
+                    fig1.add_trace(
+                        go.Scatter(
+                            x=xs,
+                            y=ys,
+                            mode="lines+markers",
+                            line=dict(width=3, color="#0ea5e9"),
+                            marker=dict(size=7),
+                        )
+                    )
+                    title = f"{param_defs[p][0]} → {metric.replace('_', ' ')}"
+                    if unbounded_count > 0 and metric == "allowable_exposure_minutes":
+                        title = f"{title} (unbounded in {unbounded_count}/{len(xs)} points)"
+                    fig1.update_layout(
+                        template=theme_template,
+                        title=title,
+                        height=460,
+                        margin=dict(l=40, r=20, t=70, b=40),
+                        hovermode="x unified",
+                    )
+                    fig1.update_xaxes(title_text=f"{param_defs[p][0]} ({sweep.parameter_unit})")
+                    fig1.update_yaxes(title_text=f"{metric.replace('_', ' ')} ({sweep.metric_unit})")
+                    st.plotly_chart(
+                        fig1,
+                        use_container_width=True,
+                        config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                    )
+                else:
+                    col_x, col_y = st.columns(2)
+                    with col_x:
+                        x_p = st.selectbox(
+                            "X parameter",
+                            list(param_defs.keys()),
+                            index=0,
+                            format_func=lambda k: param_defs[k][0],
+                        )
+                    with col_y:
+                        y_p = st.selectbox(
+                            "Y parameter",
+                            [k for k in param_defs.keys() if k != x_p],
+                            index=2 if x_p != "relative_humidity_percent" else 0,
+                            format_func=lambda k: param_defs[k][0],
+                        )
+
+                    x_min, x_max = float(param_defs[x_p][1]), float(param_defs[x_p][2])
+                    y_min, y_max = float(param_defs[y_p][1]), float(param_defs[y_p][2])
+
+                    grid_cols = st.columns([1, 1, 1, 1])
+                    with grid_cols[0]:
+                        x_start = st.number_input("X start", value=float(x_min), min_value=float(x_min), max_value=float(x_max))
+                    with grid_cols[1]:
+                        x_stop = st.number_input("X stop", value=float(x_max), min_value=float(x_min), max_value=float(x_max))
+                    with grid_cols[2]:
+                        y_start = st.number_input("Y start", value=float(y_min), min_value=float(y_min), max_value=float(y_max))
+                    with grid_cols[3]:
+                        y_stop = st.number_input("Y stop", value=float(y_max), min_value=float(y_min), max_value=float(y_max))
+
+                    density = st.slider("Grid resolution", 10, 40, 22, step=2, help="Total evaluations = resolution².")
+                    max_evals = int(min(2500, density * density))
+
+                    grid = _compute_phs_sweep_2d_cached(
+                        x_parameter=str(x_p),
+                        x_start=float(x_start),
+                        x_stop=float(x_stop),
+                        x_points=int(density),
+                        y_parameter=str(y_p),
+                        y_start=float(y_start),
+                        y_stop=float(y_stop),
+                        y_points=int(density),
+                        metric=str(metric),
+                        exposure_minutes=float(base_inputs["exposure_minutes"]),
+                        metabolic_rate_w_m2=float(base_inputs["metabolic_rate_w_m2"]),
+                        air_temperature_C=float(base_inputs["air_temperature_C"]),
+                        mean_radiant_temperature_C=float(base_inputs["mean_radiant_temperature_C"]),
+                        relative_humidity_percent=float(base_inputs["relative_humidity_percent"]),
+                        air_velocity_m_s=float(base_inputs["air_velocity_m_s"]),
+                        clothing_insulation_clo=float(base_inputs["clothing_insulation_clo"]),
+                        mechanical_power_w_m2=float(base_inputs["mechanical_power_w_m2"]),
+                        body_mass_kg=float(base_inputs["body_mass_kg"]),
+                        body_surface_area_m2=float(base_inputs["body_surface_area_m2"]),
+                        baseline_core_temp_C=float(base_inputs["baseline_core_temp_C"]),
+                        core_temp_limit_C=float(base_inputs["core_temp_limit_C"]),
+                        dehydration_limit_percent=float(base_inputs["dehydration_limit_percent"]),
+                        max_evaluations=int(max_evals),
+                    )
+
+                    xs = np.array(grid.x_values, dtype=float)
+                    ys = np.array(grid.y_values, dtype=float)
+                    z_raw = np.array(grid.z_values, dtype=float)
+                    z = np.where(np.isfinite(z_raw), z_raw, np.nan)
+
+                    fig2 = go.Figure()
+                    fig2.add_trace(
+                        go.Heatmap(
+                            x=xs,
+                            y=ys,
+                            z=z,
+                            colorscale="Turbo",
+                            colorbar=dict(title=f"{metric.replace('_', ' ')} ({grid.metric_unit})"),
+                            hovertemplate=(
+                                f"{param_defs[x_p][0]}: %{x:.2f} {grid.x_unit}<br>"
+                                f"{param_defs[y_p][0]}: %{y:.2f} {grid.y_unit}<br>"
+                                f"{metric.replace('_', ' ')}: %{z:.2f} {grid.metric_unit}<extra></extra>"
+                            ),
+                        )
+                    )
+                    fig2.update_layout(
+                        template=theme_template,
+                        title=f"2D map: {param_defs[x_p][0]} × {param_defs[y_p][0]} → {metric.replace('_', ' ')}",
+                        height=620,
+                        margin=dict(l=40, r=20, t=70, b=40),
+                    )
+                    fig2.update_xaxes(title_text=f"{param_defs[x_p][0]} ({grid.x_unit})")
+                    fig2.update_yaxes(title_text=f"{param_defs[y_p][0]} ({grid.y_unit})")
+                    st.plotly_chart(
+                        fig2,
+                        use_container_width=True,
+                        config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                    )
+            except ValueError as e:
+                st.error(f"Sweep error: {e}")
+
+        with tabs[3]:
+            st.markdown(
+                '<div class="info-box"><strong>Sensitivity:</strong> A local “tornado” scan around your current inputs. Each parameter is perturbed up/down by a fixed percentage and the chosen metric is recomputed.</div>',
+                unsafe_allow_html=True,
+            )
+            metric_key = st.selectbox(
+                "Metric for sensitivity",
+                [
+                    ("Allowable exposure (min)", "allowable_exposure_minutes"),
+                    ("Core temperature at horizon (°C)", "core_temperature_C_at_horizon"),
+                    ("Dehydration at horizon (%BM)", "dehydration_percent_body_mass_at_horizon"),
+                ],
+                format_func=lambda x: x[0],
+            )[1]
+            delta_pct = st.slider("Perturbation (±%)", 2.0, 25.0, 10.0, step=1.0)
+
+            base_val = _metric_value(metric_key, inputs=base_inputs)
+            scan_params = [
+                ("air_temperature_C", "Air temperature"),
+                ("relative_humidity_percent", "Relative humidity"),
+                ("air_velocity_m_s", "Air speed"),
+                ("metabolic_rate_w_m2", "Metabolic rate"),
+                ("clothing_insulation_clo", "Clothing"),
+                ("mean_radiant_temperature_C", "Mean radiant"),
+            ]
+
+            impacts: list[dict[str, object]] = []
+            for key, label in scan_params:
+                v0 = float(base_inputs[key])
+                dv = abs(v0) * float(delta_pct) / 100.0
+                if dv == 0.0:
+                    dv = float(delta_pct) / 100.0
+                v_lo = v0 - dv
+                v_hi = v0 + dv
+                inp_lo = dict(base_inputs)
+                inp_hi = dict(base_inputs)
+                inp_lo[key] = float(v_lo)
+                inp_hi[key] = float(v_hi)
+                try:
+                    lo = _metric_value(metric_key, inputs=inp_lo)
+                    hi = _metric_value(metric_key, inputs=inp_hi)
+                except ValueError:
+                    continue
+                impacts.append(
+                    {
+                        "Parameter": label,
+                        "Δ(+)": float(hi - base_val) if math.isfinite(float(hi)) and math.isfinite(float(base_val)) else float("nan"),
+                        "Δ(-)": float(lo - base_val) if math.isfinite(float(lo)) and math.isfinite(float(base_val)) else float("nan"),
+                    }
+                )
+
+            if not impacts:
+                st.warning("Sensitivity scan produced no results for this configuration.")
+            else:
+                df_imp = pd.DataFrame(impacts)
+                df_imp["Span"] = (df_imp["Δ(+)"].abs() + df_imp["Δ(-)"].abs()).fillna(0.0)
+                df_imp = df_imp.sort_values("Span", ascending=False)
+
+                fig_t = go.Figure()
+                fig_t.add_trace(
+                    go.Bar(
+                        y=df_imp["Parameter"],
+                        x=df_imp["Δ(-)"],
+                        name="Down",
+                        orientation="h",
+                        marker_color="rgba(239, 68, 68, 0.75)",
+                    )
+                )
+                fig_t.add_trace(
+                    go.Bar(
+                        y=df_imp["Parameter"],
+                        x=df_imp["Δ(+)"],
+                        name="Up",
+                        orientation="h",
+                        marker_color="rgba(34, 197, 94, 0.75)",
+                    )
+                )
+                fig_t.update_layout(
+                    template=theme_template,
+                    barmode="relative",
+                    title=f"Sensitivity tornado (±{delta_pct:.0f}%) for {metric_key.replace('_', ' ')}",
+                    height=520,
+                    margin=dict(l=40, r=20, t=70, b=40),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
+                )
+                fig_t.update_xaxes(title_text="Change vs baseline")
+                st.plotly_chart(
+                    fig_t,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True},
+                )
+
+        with tabs[4]:
+            try:
+                traj = _compute_phs_trajectory_cached(**base_inputs)
+                df = pd.DataFrame(
+                    {
+                        "time_minutes": np.array(traj.times_minutes, dtype=float),
+                        "core_temperature_C": np.array(traj.core_temperature_C, dtype=float),
+                        "dehydration_percent_body_mass": np.array(
+                            traj.dehydration_percent_body_mass, dtype=float
+                        ),
+                        "required_sweat_rate_L_per_h": np.array(
+                            traj.required_sweat_rate_L_per_h, dtype=float
+                        ),
+                        "max_sustainable_sweat_rate_L_per_h": np.array(
+                            traj.max_sustainable_sweat_rate_L_per_h, dtype=float
+                        ),
+                        "actual_sweat_rate_L_per_h": np.array(
+                            traj.actual_sweat_rate_L_per_h, dtype=float
+                        ),
+                    }
+                )
+                meta = {
+                    "metabolic_rate_w_m2": float(metabolic_rate),
+                    "clothing_insulation_clo": float(clothing),
+                    "air_velocity_m_s": float(air_velocity),
+                    "air_temperature_C": float(air_temp),
+                    "mean_radiant_temperature_C": float(mean_radiant),
+                    "relative_humidity_percent": float(rh),
+                    "exposure_minutes": float(horizon),
+                    "step_minutes": float(step_minutes),
+                    "mechanical_power_w_m2": float(mechanical_power),
+                    "body_mass_kg": float(body_mass),
+                    "body_surface_area_m2": float(body_surface_area),
+                    "baseline_core_temp_C": float(baseline_core),
+                    "core_temp_limit_C": float(core_limit),
+                    "dehydration_limit_percent": float(dehydration_limit),
+                    "allowable_exposure_minutes": float(traj.allowable_exposure_minutes),
+                    "limiting_factor": str(traj.limiting_factor),
+                }
+
+                st.markdown("#### Export current trajectory")
+                csv = df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download CSV (trajectory)",
+                    data=csv,
+                    file_name="phs_trajectory.csv",
+                    mime="text/csv",
+                )
+
+                st.markdown("#### Export scenario metadata")
+                meta_df = pd.DataFrame([meta])
+                meta_csv = meta_df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download CSV (scenario metadata)",
+                    data=meta_csv,
+                    file_name="phs_scenario_metadata.csv",
+                    mime="text/csv",
+                )
+            except ValueError as e:
+                st.error(f"Export error: {e}")
 
     else:
-        st.markdown("### 🧠 Circadian Forecast — performance envelope")
+        st.markdown("### 🧠 Circadian Forecast — multi-day envelope + phase maps")
 
         col1, col2, col3 = st.columns(3)
         with col1:
-            horizon_hours = st.slider(
-                "Forecast horizon (hours)", 12.0, 72.0, 48.0, step=6.0
-            )
+            horizon_hours = st.slider("Forecast horizon (hours)", 12.0, 72.0, 48.0, step=6.0)
             step_minutes = st.select_slider(
                 "Time step (min)",
                 options=[5.0, 10.0, 15.0, 30.0, 60.0],
@@ -3691,48 +4462,261 @@ elif calculator_category == "🧪 Simulation Studio":
         with col3:
             K = st.slider("Scaling (K)", 0.5, 5.0, 2.0, step=0.1)
 
-        try:
-            traj = simulate_mitler_trajectory(
-                phi_hours=float(phi),
-                SD=float(SD),
-                K=float(K),
-                horizon_hours=float(horizon_hours),
-                step_minutes=float(step_minutes),
-            )
+        tabs_c = st.tabs(["▶ Run", "🧩 Compare scenarios", "🗺 Phase map (φ × time)", "⬇ Export"])
+        base = {
+            "phi_hours": float(phi),
+            "SD": float(SD),
+            "K": float(K),
+            "horizon_hours": float(horizon_hours),
+            "step_minutes": float(step_minutes),
+        }
 
-            x = np.array(traj.times_hours, dtype=float)
-            y = np.array(traj.performance, dtype=float)
-
-            fig = go.Figure()
-            fig.add_trace(
-                go.Scatter(
-                    x=x,
-                    y=y,
-                    mode="lines",
-                    name="Mitler performance",
+        with tabs_c[0]:
+            try:
+                traj = simulate_mitler_trajectory(
+                    phi_hours=float(base["phi_hours"]),
+                    SD=float(base["SD"]),
+                    K=float(base["K"]),
+                    horizon_hours=float(base["horizon_hours"]),
+                    step_minutes=float(base["step_minutes"]),
                 )
-            )
-            fig.update_layout(
-                template=theme_template,
-                title="Mitler performance forecast",
-                xaxis_title="Time (hours)",
-                yaxis_title="Performance (unitless)",
-                height=520,
-                margin=dict(l=40, r=20, t=70, b=40),
-                hovermode="x unified",
-            )
-            st.plotly_chart(
-                fig,
-                width="stretch",
-                config={"displaylogo": False, "responsive": True, "scrollZoom": True},
-            )
+                x = np.array(traj.times_hours, dtype=float)
+                y = np.array(traj.performance, dtype=float)
 
+                colm1, colm2, colm3 = st.columns(3)
+                colm1.metric("Min performance", f"{float(np.min(y)):.3f}")
+                colm2.metric("Mean performance", f"{float(np.mean(y)):.3f}")
+                colm3.metric("Max performance", f"{float(np.max(y)):.3f}")
+
+                fig = go.Figure()
+                fig.add_trace(
+                    go.Scatter(
+                        x=x,
+                        y=y,
+                        mode="lines",
+                        name="Mitler performance",
+                        line=dict(color="#0ea5e9", width=3),
+                        fill="tozeroy",
+                        fillcolor="rgba(14, 165, 233, 0.15)",
+                    )
+                )
+
+                # Day separators to help operational interpretation.
+                max_h = float(np.max(x)) if x.size > 0 else float(horizon_hours)
+                day = 24.0
+                n_days = int(math.floor(max_h / day))
+                for d in range(1, n_days + 1):
+                    fig.add_vline(x=float(d) * day, line_dash="dot", line_color="rgba(107,114,128,0.6)")
+
+                fig.update_layout(
+                    template=theme_template,
+                    title="Mitler performance forecast (envelope)",
+                    xaxis_title="Time (hours)",
+                    yaxis_title="Performance (unitless)",
+                    height=520,
+                    margin=dict(l=40, r=20, t=70, b=40),
+                    hovermode="x unified",
+                )
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                )
+
+                st.markdown(
+                    '<div class="info-box"><strong>Note:</strong> This is an educational circadian-performance envelope. It does not ingest real sleep/wake logs, naps, caffeine, nor shift schedules.</div>',
+                    unsafe_allow_html=True,
+                )
+            except ValueError as e:
+                st.error(f"Forecast error: {e}")
+
+        with tabs_c[1]:
+            max_scenarios = 8
+            if "mitler_scenarios" not in st.session_state:
+                st.session_state["mitler_scenarios"] = []
+
+            c1, c2, c3 = st.columns([1.4, 1.0, 1.0])
+            with c1:
+                label = st.text_input(
+                    "Scenario label",
+                    value=f"Circadian {len(st.session_state['mitler_scenarios']) + 1}",
+                    key="mitler_scenario_label",
+                )
+            with c2:
+                palette = st.selectbox(
+                    "Color palette",
+                    ["Vivid", "Scientific", "Colorblind-safe"],
+                    index=2,
+                    key="mitler_palette",
+                )
+            with c3:
+                add = st.button(
+                    "Add current inputs",
+                    disabled=len(st.session_state["mitler_scenarios"]) >= max_scenarios,
+                    key="mitler_add",
+                )
+
+            if add:
+                st.session_state["mitler_scenarios"].append(
+                    {"label": str(label).strip() or "Circadian", "inputs": dict(base)}
+                )
+
+            if st.session_state["mitler_scenarios"]:
+                if st.button("Clear scenarios", key="mitler_clear"):
+                    st.session_state["mitler_scenarios"] = []
+
+            scenarios = list(st.session_state["mitler_scenarios"])
+            if not scenarios:
+                st.markdown(
+                    '<div class="info-box"><strong>Tip:</strong> Compare phase offsets (φ) and sleep debt (SD) across the same horizon to see how the envelope shifts.</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                palette_map = {
+                    "Vivid": px.colors.qualitative.Bold,
+                    "Scientific": px.colors.qualitative.Set2,
+                    "Colorblind-safe": px.colors.qualitative.Safe,
+                }
+                colors = palette_map.get(str(palette), px.colors.qualitative.Safe)
+
+                fig_cmp = go.Figure()
+                rows: list[dict[str, object]] = []
+                for idx, sc in enumerate(scenarios[:max_scenarios]):
+                    inp = dict(sc["inputs"])
+                    t = simulate_mitler_trajectory(
+                        phi_hours=float(inp["phi_hours"]),
+                        SD=float(inp["SD"]),
+                        K=float(inp["K"]),
+                        horizon_hours=float(inp["horizon_hours"]),
+                        step_minutes=float(inp["step_minutes"]),
+                    )
+                    x = np.array(t.times_hours, dtype=float)
+                    y = np.array(t.performance, dtype=float)
+                    name = str(sc.get("label", f"Scenario {idx+1}"))
+                    color = colors[idx % len(colors)]
+                    fig_cmp.add_trace(
+                        go.Scatter(
+                            x=x,
+                            y=y,
+                            mode="lines",
+                            name=name,
+                            line=dict(color=color, width=3),
+                        )
+                    )
+                    rows.append(
+                        {
+                            "Scenario": name,
+                            "φ (h)": float(inp["phi_hours"]),
+                            "SD": float(inp["SD"]),
+                            "K": float(inp["K"]),
+                            "Min": float(np.min(y)),
+                            "Mean": float(np.mean(y)),
+                            "Max": float(np.max(y)),
+                        }
+                    )
+
+                fig_cmp.update_layout(
+                    template=theme_template,
+                    title="Scenario comparison (Mitler envelope)",
+                    xaxis_title="Time (hours)",
+                    yaxis_title="Performance (unitless)",
+                    height=520,
+                    margin=dict(l=40, r=20, t=70, b=40),
+                    hovermode="x unified",
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0.0),
+                )
+                st.plotly_chart(
+                    fig_cmp,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                )
+                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+        with tabs_c[2]:
             st.markdown(
-                '<div class="info-box"><strong>Note:</strong> This is an educational circadian-performance envelope; it does not ingest real sleep logs or operational schedules.</div>',
+                '<div class="info-box"><strong>Phase map:</strong> Visualize predicted performance across time and phase offset (φ) for fixed SD and K.</div>',
                 unsafe_allow_html=True,
             )
-        except ValueError as e:
-            st.error(f"Forecast error: {e}")
+            m1, m2, m3 = st.columns([1.0, 1.0, 1.2])
+            with m1:
+                phi_start = st.slider("φ start (h)", -12.0, 12.0, -8.0, step=0.5)
+            with m2:
+                phi_stop = st.slider("φ stop (h)", -12.0, 12.0, 8.0, step=0.5)
+            with m3:
+                phi_points = st.slider("φ resolution", 15, 121, 41, step=2)
+
+            try:
+                grid = _compute_mitler_phase_map_cached(
+                    phi_start_hours=float(phi_start),
+                    phi_stop_hours=float(phi_stop),
+                    phi_points=int(phi_points),
+                    horizon_hours=float(horizon_hours),
+                    step_minutes=float(step_minutes),
+                    SD=float(SD),
+                    K=float(K),
+                    max_evaluations=25000,
+                )
+                phis = np.array(grid["phis"], dtype=float)
+                times = np.array(grid["times"], dtype=float)
+                z = np.array(grid["z"], dtype=float)
+
+                fig_map = go.Figure()
+                fig_map.add_trace(
+                    go.Heatmap(
+                        x=times,
+                        y=phis,
+                        z=z,
+                        colorscale="Viridis",
+                        colorbar=dict(title="Performance"),
+                        hovertemplate=(
+                            "Time: %{x:.2f} h<br>"
+                            "φ: %{y:.2f} h<br>"
+                            "Performance: %{z:.3f}<extra></extra>"
+                        ),
+                    )
+                )
+                fig_map.update_layout(
+                    template=theme_template,
+                    title="Mitler performance phase map (φ × time)",
+                    height=620,
+                    margin=dict(l=40, r=20, t=70, b=40),
+                )
+                fig_map.update_xaxes(title_text="Time (hours)")
+                fig_map.update_yaxes(title_text="Phase offset φ (hours)")
+                st.plotly_chart(
+                    fig_map,
+                    use_container_width=True,
+                    config={"displaylogo": False, "responsive": True, "scrollZoom": True},
+                )
+            except ValueError as e:
+                st.error(f"Phase map error: {e}")
+
+        with tabs_c[3]:
+            try:
+                traj = simulate_mitler_trajectory(
+                    phi_hours=float(base["phi_hours"]),
+                    SD=float(base["SD"]),
+                    K=float(base["K"]),
+                    horizon_hours=float(base["horizon_hours"]),
+                    step_minutes=float(base["step_minutes"]),
+                )
+                df = pd.DataFrame(
+                    {
+                        "time_hours": np.array(traj.times_hours, dtype=float),
+                        "performance": np.array(traj.performance, dtype=float),
+                        "phi_hours": float(base["phi_hours"]),
+                        "SD": float(base["SD"]),
+                        "K": float(base["K"]),
+                    }
+                )
+                st.download_button(
+                    "Download CSV (trajectory)",
+                    data=df.to_csv(index=False).encode("utf-8"),
+                    file_name="mitler_forecast.csv",
+                    mime="text/csv",
+                )
+            except ValueError as e:
+                st.error(f"Export error: {e}")
 
 # Footer
 st.markdown("---")

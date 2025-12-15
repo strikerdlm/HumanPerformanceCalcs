@@ -79,7 +79,7 @@ def cold_water_survival_hayward_1975_minutes(
     *,
     strict: bool = False,
 ) -> float:
-    """Estimate survival time (minutes) from water temperature using Hayward et al. (1975).
+    r"""Estimate survival time (minutes) from water temperature using Hayward et al. (1975).
 
     Equation
     --------
