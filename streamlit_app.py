@@ -60,6 +60,15 @@ from calculators import (
     SafteParameters,
     SleepEpisode,
     simulate_safte,
+    ImagingSystem,
+    Target,
+    assess_target_acquisition,
+    WbvAxisWeightedRms,
+    WbvExposureInputs,
+    compute_wbv_exposure,
+    estimate_dva_logmar_wang2024,
+    Faa117Inputs,
+    faa117_limits,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -505,6 +514,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "Standard Atmosphere Properties",
             "Alveolar Oxygen Pressure", 
             "Altitude & Hypoxia Predictions",
+            "Visual Acuity at Altitude (DVA, Wang 2024)",
             "Acute Mountain Sickness Risk",
             "HAPE Risk (Suona 2023 Nomogram)",
             "Oxygen Cascade",
@@ -584,6 +594,46 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                 st.markdown('<div class="info-box"><strong>Assessment:</strong> PAO₂ within typical range</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box"><strong>Formula:</strong> PAO₂ = FiO₂·(Pb − PH₂O) − PaCO₂/R</div>', unsafe_allow_html=True)
+
+    elif calc_type == "Visual Acuity at Altitude (DVA, Wang 2024)":
+        st.markdown("### 👁️ Visual Acuity at Altitude (Dynamic Visual Acuity, LogMAR)")
+
+        neutral_box(
+            "**Model type**: empirical interpolation from a hypobaric chamber study (short-term exposure).\n\n"
+            "Source: Wang et al. (2024) *Influence of short-term hypoxia exposure on dynamic visual acuity* (Frontiers in Neuroscience). "
+            "Outputs are **group-mean DVA (LogMAR)** under the study protocol; not a personalized clinical prediction."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                alt_m = float(st.slider("Altitude (m)", 0.0, 4500.0, 3500.0, step=100.0))
+            with c2:
+                t_min = float(st.slider("Time at altitude (min)", 0.0, 30.0, 0.0, step=1.0))
+            with c3:
+                vel = float(st.slider("Target angular velocity (deg/s)", 20.0, 80.0, 40.0, step=5.0))
+
+        try:
+            est = estimate_dva_logmar_wang2024(
+                altitude_m=alt_m,
+                time_at_altitude_min=t_min,
+                angular_velocity_deg_s=vel,
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("DVA (LogMAR)", f"{est.logmar:.2f}")
+                with o2:
+                    st.metric("Approx Snellen", f"20/{est.snellen_denominator_20ft:d}")
+                with o3:
+                    st.metric("Inputs used (clamped)", f"{est.altitude_m:.0f} m, {est.time_at_altitude_min:.0f} min, {est.angular_velocity_deg_s:.0f}°/s")
+
+            with st.expander("References (empirical anchor)", expanded=False):
+                st.markdown("- Wang et al. (2024). *Frontiers in Neuroscience*. [DOI: 10.3389/fnins.2024.1428987](https://doi.org/10.3389/fnins.2024.1428987)")
     
     elif calc_type == "Time of Useful Consciousness":
         st.markdown("### ⏱️ Time of Useful Consciousness (TUC)")
@@ -2248,11 +2298,165 @@ elif calculator_category == "📊 Risk Assessment Tools":
         [
             "Aerospace Chemical Risk Dashboard",
             "Spatial Disorientation Risk Assessment",
+            "NVG/EO Target Acquisition (Johnson/ACQUIRE)",
+            "Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)",
         ],
         index=0,
     )
 
-    if tool == "Spatial Disorientation Risk Assessment":
+    if tool == "NVG/EO Target Acquisition (Johnson/ACQUIRE)":
+        st.markdown("### 🌙 NVG / Electro-Optical Target Acquisition (Cycles-on-target)")
+
+        neutral_box(
+            "**Research/education use only.** This is a resolution-based (cycles-on-target) feasibility estimator.\n\n"
+            "Primary source: Sjaardema et al. (2015) *History and Evolution of the Johnson Criteria* (SAND2015-6368), "
+            "which summarizes Johnson and ACQUIRE N50 cycle criteria and their limitations."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Imaging system**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                hpx = int(st.slider("Horizontal pixels", 128, 4096, 1024, step=32))
+            with c2:
+                vpx = int(st.slider("Vertical pixels", 128, 4096, 768, step=32))
+            with c3:
+                hfov = float(st.slider("Horizontal FOV (deg)", 5.0, 120.0, 40.0, step=1.0))
+            with c4:
+                vfov = float(st.slider("Vertical FOV (deg)", 5.0, 120.0, 30.0, step=1.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Target + range**")
+            t1, t2, t3, t4 = st.columns(4)
+            with t1:
+                target_h = float(st.slider("Target height (m)", 0.1, 10.0, 1.8, step=0.1))
+            with t2:
+                target_w = float(st.slider("Target width (m)", 0.1, 10.0, 0.5, step=0.1))
+            with t3:
+                range_m = float(st.slider("Range (m)", 10.0, 10000.0, 300.0, step=10.0))
+            with t4:
+                crit_dim = st.selectbox("Critical dimension", ["height", "width"], index=0)
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria family**")
+            f1, f2 = st.columns(2)
+            with f1:
+                family = st.selectbox("Family", ["johnson", "acquire"], index=0)
+            with f2:
+                if family == "johnson":
+                    discr = st.selectbox("Discrimination", ["detection", "orientation", "recognition", "identification"], index=0)
+                else:
+                    discr = st.selectbox("Discrimination", ["detection", "classification", "recognition", "identification"], index=0)
+
+        try:
+            res = assess_target_acquisition(
+                criteria=family,  # type: ignore[arg-type]
+                discrimination=discr,  # type: ignore[arg-type]
+                system=ImagingSystem(horizontal_pixels=hpx, vertical_pixels=vpx, horizontal_fov_deg=hfov, vertical_fov_deg=vfov),
+                target=Target(width_m=target_w, height_m=target_h),
+                range_m=range_m,
+                critical_dimension=crit_dim,  # type: ignore[arg-type]
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("Cycles on target (N)", f"{res.cycles_on_target:.2f}")
+                st.metric("Required N50 cycles", f"{res.required_cycles_n50:.2f}")
+                st.metric("N / N50", f"{res.ratio_to_n50:.2f}")
+                st.metric("Meets N50 (≈50% criterion)", "Yes" if res.meets_n50 else "No")
+                st.caption(
+                    "Note: This is a geometric sampling criterion. Real-world acquisition also depends on contrast, noise, atmosphere, clutter, and user factors."
+                )
+
+            with st.expander("References (cycle criteria source)", expanded=False):
+                st.markdown(
+                    "- [Sjaardema et al. (2015) SAND2015-6368 (Johnson & ACQUIRE summaries)](https://www.osti.gov/servlets/purl/1222446)"
+                )
+
+    elif tool == "Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)":
+        st.markdown("### 🪑 Whole-Body Vibration (WBV): A(8) + VDV(8)")
+
+        neutral_box(
+            "**Scope**: This calculator assumes you already have **frequency-weighted** r.m.s. accelerations per axis "
+            "(a_wx, a_wy, a_wz). It **does not** implement ISO frequency weighting filters.\n\n"
+            "It computes combined a_w, **A(8)** scaling, optional **VDV(8)** scaling, and compares against commonly cited "
+            "HGCZ bounds (as quoted in published literature)."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Inputs (frequency-weighted)**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                awx = float(st.number_input("a_wx (m/s²)", min_value=0.0, value=0.20, step=0.01, format="%.3f"))
+            with c2:
+                awy = float(st.number_input("a_wy (m/s²)", min_value=0.0, value=0.20, step=0.01, format="%.3f"))
+            with c3:
+                awz = float(st.number_input("a_wz (m/s²)", min_value=0.0, value=0.30, step=0.01, format="%.3f"))
+            with c4:
+                exposure_h = float(st.number_input("Exposure duration (hours)", min_value=0.01, value=2.0, step=0.25))
+
+        with crystal_container(border=True):
+            st.markdown("**Optional: VDV input**")
+            vdv_enabled = bool(st.checkbox("I have a VDV measurement", value=False))
+            vdv_val = None
+            vdv_ref_s = None
+            if vdv_enabled:
+                d1, d2 = st.columns(2)
+                with d1:
+                    vdv_val = float(
+                        st.number_input("VDV (m/s^1.75) over reference window", min_value=0.0, value=10.0, step=0.1)
+                    )
+                with d2:
+                    vdv_ref_min = float(st.number_input("Reference window (minutes)", min_value=0.1, value=10.0, step=1.0))
+                    vdv_ref_s = float(vdv_ref_min * 60.0)
+
+        try:
+            out = compute_wbv_exposure(
+                WbvExposureInputs(
+                    axis_aw=WbvAxisWeightedRms(awx_m_s2=awx, awy_m_s2=awy, awz_m_s2=awz),
+                    exposure_duration_s=float(exposure_h * 3600.0),
+                    vdv_m_s1_75=vdv_val,
+                    vdv_reference_duration_s=vdv_ref_s,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Results**")
+                r1, r2, r3, r4 = st.columns(4)
+                with r1:
+                    st.metric("Combined a_w (m/s²)", f"{out.aw_combined_m_s2:.3f}")
+                with r2:
+                    st.metric("A(8) (m/s²)", f"{out.a8_m_s2:.3f}")
+                with r3:
+                    st.metric("A(8) zone", out.a8_zone.replace("_", " "))
+                with r4:
+                    st.metric("A(8) HGCZ", f"{out.a8_lower_bound_m_s2:.2f}–{out.a8_upper_bound_m_s2:.2f}")
+
+            if out.vdv8_m_s1_75 is not None and out.vdv8_zone is not None:
+                with crystal_container(border=True):
+                    v1, v2, v3 = st.columns(3)
+                    with v1:
+                        st.metric("VDV(8) (m/s^1.75)", f"{out.vdv8_m_s1_75:.2f}")
+                    with v2:
+                        st.metric("VDV(8) zone", out.vdv8_zone.replace("_", " "))
+                    with v3:
+                        st.metric("VDV(8) HGCZ", f"{out.vdv8_lower_bound_m_s1_75:.1f}–{out.vdv8_upper_bound_m_s1_75:.1f}")
+
+            with st.expander("References (methods + threshold anchors)", expanded=False):
+                st.markdown(
+                    "- Mansfield et al. (2009) *Industrial Health* (ISO 2631-1 metrics equations; frequency range discussion). "
+                    "[DOI: 10.2486/INDHEALTH.47.402](https://doi.org/10.2486/INDHEALTH.47.402)\n"
+                    "- Orelaja et al. (2019) *Journal of Healthcare Engineering* (quotes common HGCZ bounds: A(8) 0.47–0.93 m/s²; "
+                    "VDV 8.5–17 m/s^1.75). [DOI: 10.1155/2019/5723830](https://doi.org/10.1155/2019/5723830)\n"
+                    "- EU Directive 2002/44/EC (legal framework referenced in WBV literature). "
+                    "[EUR-Lex summary](https://eur-lex.europa.eu/eli/dir/2002/44/oj)"
+                )
+
+    elif tool == "Spatial Disorientation Risk Assessment":
         st.markdown("### 🧭 Spatial Disorientation (SD) Risk Assessment")
 
         neutral_box(
@@ -2425,6 +2629,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             "Two-Process Model (S & C)",
             "Jet Lag Recovery",
             "SAFTE Effectiveness (patent-derived)",
+            "Crew Duty Time Limits (FAA Part 117, unaugmented)",
         ]
     )
 
@@ -2477,6 +2682,83 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         with col2:
             st.markdown("#### Result")
             st.metric("Estimated days to adjust", f"{days:.1f} days")
+
+    elif calc_type == "Crew Duty Time Limits (FAA Part 117, unaugmented)":
+        st.markdown("### 🧾 Crew Duty Time Limits — FAA Part 117 (unaugmented)")
+
+        neutral_box(
+            "**Scope**: Implements **Table A** (max flight time) and **Table B** (max FDP) for unaugmented operations. "
+            "This does not cover reserve, split duty, augmented crews, extensions, or company/CBA-specific rules.\n\n"
+            "Primary source: official eCFR (Part 117)."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                report_time = st.text_input("Report time (acclimated local) HH:MM", value="07:00")
+            with c2:
+                segments = int(st.slider("Flight segments", 1, 8, 4, step=1))
+            with c3:
+                not_acclimated = bool(st.checkbox("Not acclimated (reduce FDP by 30 min)", value=False))
+
+        with crystal_container(border=True):
+            st.markdown("**Optional: compare a planned schedule**")
+            p1, p2 = st.columns(2)
+            with p1:
+                planned_ft = st.number_input("Planned flight time (hours)", min_value=0.0, value=6.0, step=0.1)
+            with p2:
+                planned_fdp = st.number_input("Planned FDP (hours)", min_value=0.0, value=10.0, step=0.1)
+
+        try:
+            lim = faa117_limits(
+                Faa117Inputs(
+                    report_time_local_hhmm=report_time,
+                    flight_segments=segments,
+                    not_acclimated=not_acclimated,
+                    scheduled_flight_time_hours=float(planned_ft),
+                    scheduled_fdp_hours=float(planned_fdp),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Limits (FAA Part 117 tables)**")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Max flight time (Table A)", f"{lim.max_flight_time_hours:.1f} h")
+                with m2:
+                    st.metric("Max FDP (Table B)", f"{lim.max_fdp_hours:.1f} h")
+                with m3:
+                    st.metric("Minimum rest (baseline)", f"{lim.min_rest_hours:.1f} h")
+
+            with crystal_container(border=True):
+                st.markdown("**Planned schedule check**")
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.metric(
+                        "Flight time OK?",
+                        "Yes" if lim.flight_time_ok else "No",
+                        f"margin {lim.flight_time_margin_hours:.1f} h" if lim.flight_time_margin_hours is not None else None,
+                    )
+                with c2:
+                    st.metric(
+                        "FDP OK?",
+                        "Yes" if lim.fdp_ok else "No",
+                        f"margin {lim.fdp_margin_hours:.1f} h" if lim.fdp_margin_hours is not None else None,
+                    )
+                if lim.not_acclimated_reduction_hours > 0:
+                    st.caption("Not acclimated: FDP reduced by 0.5 h per § 117.13(b).")
+
+            with st.expander("References (official)", expanded=False):
+                st.markdown(
+                    "- Table A to Part 117 (max flight time): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117)\n"
+                    "- Table B to Part 117 (max FDP): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117)\n"
+                    "- § 117.13 (not acclimated reduction): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13)"
+                )
 
     elif calc_type == "SAFTE Effectiveness (patent-derived)":
         st.markdown("### 🧠 SAFTE Effectiveness (patent-derived)")
