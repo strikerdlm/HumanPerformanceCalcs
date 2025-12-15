@@ -53,6 +53,10 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **Bühlmann ZH‑L16 (Gradient Factors) decompression planner** is now live, with a unit-tested reference schedule and neutral UI outputs.
 - **AGSM effectiveness model (+Gz)** is now live, with parameter defaults anchored to a published configuration comparison study (and all assumptions exposed in-app).
 - **Spatial Disorientation (SD) risk assessment** is now live with explicit physiology anchors (leans threshold, canal entrainment window, Coriolis threshold, somatogravic tilt physics) and in-app citations.
+- **NVG / EO target acquisition (Johnson/ACQUIRE cycles-on-target)** is now live as a resolution-based feasibility check with a public cycle-criteria reference (SAND2015-6368).
+- **Whole-body vibration exposure (ISO 2631-1 style A(8) / VDV)** is now live as a frequency-weighted exposure scaler with literature-anchored HGCZ thresholds and in-app citations.
+- **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
+- **Crew duty time limits (FAA Part 117, unaugmented)** are now live with official eCFR table lookups (Table A/Table B) and transparent scope notes.
 - **SAFTE effectiveness forecasting (patent-derived)** is now live for multi-day fatigue prediction, with equations sourced from the published patent and SAFTEr open implementation (limitations explicitly stated).
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
 - **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
