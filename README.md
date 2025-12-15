@@ -58,6 +58,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
 - **Crew duty time limits (FAA Part 117 + EASA ORO.FTL)** are now live, including FAA table lookups (Table A/Table B + cumulative limits) and a scoped EASA subset (ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps), with transparent scope notes.
 - **A–a gradient** and **oxygen delivery (CaO₂/DO₂/DO₂I)** calculators are now live for clinical/altitude physiology workflows, with explicit equations and citations.
+- **Wells scores (DVT/PE)** are now live in Clinical Calculators for structured VTE risk stratification (decision support only; citations included).
 - **SAFTE effectiveness forecasting (patent-derived)** is now live for multi-day fatigue prediction, with equations sourced from the published patent and SAFTEr open implementation (limitations explicitly stated).
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
 - **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
