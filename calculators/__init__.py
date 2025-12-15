@@ -94,6 +94,12 @@ from .wells import (  # type: ignore
     WellsPeResult,
     compute_wells_pe,
 )
+from .mssq import (  # type: ignore
+    MSSQ_SHORT_ITEMS,
+    MssqShortInputs,
+    MssqShortResult,
+    compute_mssq_short,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -227,6 +233,10 @@ __all__ = [
     "WellsPeInputs",
     "WellsPeResult",
     "compute_wells_pe",
+    "MSSQ_SHORT_ITEMS",
+    "MssqShortInputs",
+    "MssqShortResult",
+    "compute_mssq_short",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
