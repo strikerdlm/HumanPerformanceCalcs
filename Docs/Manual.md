@@ -8,6 +8,29 @@ The Streamlit app includes:
 - **Coming soon** placeholders for Phase 1 items (so planned tools are discoverable without breaking current workflows).
 - A neutral **“crystal / liquid glass”** style applied to **boxes/cards only** (no color palettes injected; compatible with dark mode).
 
+### Clinical Calculators: Wells Scores (DVT / PE)
+
+The Wells tools are available under:
+
+- Sidebar → **🩺 Clinical Calculators** → **Wells Score (DVT)** / **Wells Score (PE)**
+
+**What they compute**
+
+- Deterministic **Wells DVT** and **Wells PE** point totals
+- Both common stratifications:
+  - **3-tier** (low/moderate/high)
+  - **2-tier** (unlikely/likely)
+
+**Important limitations**
+
+- These are **clinical decision support** rules, not diagnoses.
+- D-dimer and imaging pathways depend on local protocols and assay specifics; this app reports **risk strata** only.
+
+**Primary references**
+
+- Wells et al. (2003). *New England Journal of Medicine*. https://doi.org/10.1056/NEJMoa023153
+- Wells et al. (2001). *Annals of Internal Medicine*. https://doi.org/10.7326/0003-4819-135-2-200107170-00010
+
 ### Atmospheric & Physiological: Bühlmann ZH‑L16 GF Decompression Planner
 
 The **Bühlmann ZH‑L16 GF** decompression planner is available under:
