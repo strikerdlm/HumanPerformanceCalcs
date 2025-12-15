@@ -412,8 +412,9 @@ Based on literature review, the following domains have significant potential for
 
 **References**:
 
-- Golding, J. F. (1998). Motion sickness susceptibility questionnaire revised and its relationship to other forms of sickness. *Brain Research Bulletin*, 47(5), 507-516.
-- Golding, J. F. (2006). Motion sickness susceptibility. *Autonomic Neuroscience*, 129(1-2), 67-76.
+- Golding, J. F. (1998). Motion sickness susceptibility questionnaire revised and its relationship to other forms of sickness. *Brain Research Bulletin*, 47(5), 507-516. https://doi.org/10.1016/S0361-9230(98)00091-4
+- Golding, J. F. (2006). Motion sickness susceptibility. *Autonomic Neuroscience*, 129(1-2), 67-76. https://doi.org/10.1016/j.autneu.2006.07.019
+- Rivera R., Espinosa P., Dattari D., Collado C., Espinoza S. (2022). Adaptación transcultural del cuestionario MSSQ-short para población adulta chilena. *Revista de otorrinolaringología y cirugía de cabeza y cuello*, 82(2), 172-178. https://doi.org/10.4067/S0718-48162022000200172
 - Reason, J. T., & Brand, J. J. (1975). *Motion Sickness*. Academic Press.
 
 **Key Features**:
@@ -426,6 +427,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (legacy app migration)
+**Status (App)**: Live — implemented in the Streamlit UI (📊 Risk Assessment Tools) as **Motion Sickness Susceptibility (MSSQ-short)** (raw scores + quartile band vs open pre-test sample).
 
 ---
 
