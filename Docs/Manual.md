@@ -114,6 +114,37 @@ This tool implements the FAA Part 117 **unaugmented** lookup tables:
 - eCFR Table B: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
 - eCFR § 117.13: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13
 
+### Atmospheric & Physiological: Alveolar–arterial Oxygen Gradient (A–a)
+
+This tool computes:
+
+- PAO₂ via the alveolar gas equation (already implemented elsewhere in this suite)
+- **A–a gradient** as \(A\!-\!a = P_{AO_2} - P_{aO_2}\)
+
+It also shows an optional **reference upper bound** using either:
+
+- the reported resting-cohort statistics from Filley et al. (1954) (context-specific), or
+- a clearly labeled **heuristic age-based shortcut** (provided for convenience; not treated as a primary physiologic law).
+
+**Primary references**
+
+- Filley et al. (1954). *J Clin Invest*. https://doi.org/10.1172/JCI102922
+- Harris et al. (1974). *Clinical Science*. https://doi.org/10.1042/cs0460089
+
+### Atmospheric & Physiological: Oxygen Delivery Index (DO₂I)
+
+This tool computes:
+
+- **CaO₂** from hemoglobin-bound oxygen plus dissolved oxygen
+- **DO₂** from cardiac output and CaO₂
+- **DO₂I** by indexing DO₂ to body surface area (BSA)
+
+Constants (Hüfner capacity and dissolved O₂ solubility) are exposed in the UI because different references use slightly different values.
+
+**Reference**
+
+- Filley et al. (1954). *J Clin Invest* (oxygen content/capacity concepts and measurement context). https://doi.org/10.1172/JCI102922
+
 ### Fatigue & Circadian: SAFTE Effectiveness (patent-derived)
 
 The **SAFTE Effectiveness** calculator is available under:
