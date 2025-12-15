@@ -69,6 +69,8 @@ from calculators import (
     estimate_dva_logmar_wang2024,
     Faa117Inputs,
     faa117_limits,
+    Faa117CumulativeInputs,
+    faa117_cumulative_limits,
     AaGradientInputs,
     compute_aa_gradient,
     OxygenDeliveryInputs,
@@ -2871,6 +2873,21 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             with p2:
                 planned_fdp = st.number_input("Planned FDP (hours)", min_value=0.0, value=10.0, step=0.1)
 
+        with crystal_container(border=True):
+            st.markdown("**Cumulative limits (rolling windows)**")
+            st.caption("Enter totals already accumulated in the stated windows. The checker adds the planned assignment.")
+            r1, r2, r3, r4 = st.columns(4)
+            with r1:
+                ft_672 = st.number_input("Flight time last 672h (h)", min_value=0.0, value=40.0, step=0.1)
+            with r2:
+                ft_365 = st.number_input("Flight time last 365d (h)", min_value=0.0, value=400.0, step=1.0)
+            with r3:
+                fdp_168 = st.number_input("FDP last 168h (h)", min_value=0.0, value=20.0, step=0.1)
+            with r4:
+                fdp_672 = st.number_input("FDP last 672h (h)", min_value=0.0, value=80.0, step=0.1)
+
+            had_30h_free = st.checkbox("Had ≥30 consecutive hours free from all duty in past 168h", value=True)
+
         try:
             lim = faa117_limits(
                 Faa117Inputs(
@@ -2884,6 +2901,18 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         except (TypeError, ValueError) as e:
             neutral_box(f"**Unable to compute**\n\n- {e}")
         else:
+            cum = faa117_cumulative_limits(
+                Faa117CumulativeInputs(
+                    flight_time_last_672h=float(ft_672),
+                    flight_time_last_365d=float(ft_365),
+                    fdp_last_168h=float(fdp_168),
+                    fdp_last_672h=float(fdp_672),
+                    had_30h_free_past_168h=bool(had_30h_free),
+                    planned_flight_time_hours=float(planned_ft),
+                    planned_fdp_hours=float(planned_fdp),
+                )
+            )
+
             with crystal_container(border=True):
                 st.markdown("**Limits (FAA Part 117 tables)**")
                 m1, m2, m3 = st.columns(3)
@@ -2912,6 +2941,40 @@ elif calculator_category == "🧠 Fatigue & Circadian":
                 if lim.not_acclimated_reduction_hours > 0:
                     st.caption("Not acclimated: FDP reduced by 0.5 h per § 117.13(b).")
 
+            with crystal_container(border=True):
+                st.markdown("**Cumulative limits check (§ 117.23) + day-off rule (§ 117.25)**")
+                c1, c2, c3, c4 = st.columns(4)
+                with c1:
+                    st.metric(
+                        "Flight time 672h OK?",
+                        "Yes" if cum.flight_time_672h_ok else "No",
+                        f"margin {cum.flight_time_672h_margin_hours:.1f} h",
+                    )
+                with c2:
+                    st.metric(
+                        "Flight time 365d OK?",
+                        "Yes" if cum.flight_time_365d_ok else "No",
+                        f"margin {cum.flight_time_365d_margin_hours:.1f} h",
+                    )
+                with c3:
+                    st.metric(
+                        "FDP 168h OK?",
+                        "Yes" if cum.fdp_168h_ok else "No",
+                        f"margin {cum.fdp_168h_margin_hours:.1f} h",
+                    )
+                with c4:
+                    st.metric(
+                        "FDP 672h OK?",
+                        "Yes" if cum.fdp_672h_ok else "No",
+                        f"margin {cum.fdp_672h_margin_hours:.1f} h",
+                    )
+
+                st.metric(
+                    "30h free in past 168h?",
+                    "Yes" if cum.had_30h_free_past_168h else "No",
+                    f"required {cum.required_30h_free_in_168h:.0f} h",
+                )
+
             with st.expander("References (official)", expanded=False):
                 st.markdown(
                     "- Table A to Part 117 (max flight time): "
@@ -2919,7 +2982,11 @@ elif calculator_category == "🧠 Fatigue & Circadian":
                     "- Table B to Part 117 (max FDP): "
                     "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117)\n"
                     "- § 117.13 (not acclimated reduction): "
-                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13)"
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13)\n"
+                    "- § 117.23 (cumulative limitations): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.23)\n"
+                    "- § 117.25 (rest period; 30h in 168h and 10h rest): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.25)"
                 )
 
     elif calc_type == "SAFTE Effectiveness (patent-derived)":
