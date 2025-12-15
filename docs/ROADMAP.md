@@ -316,6 +316,8 @@ Based on literature review, the following domains have significant potential for
 
 - West, J. B. (2011). *Respiratory Physiology: The Essentials* (9th ed.). Lippincott Williams & Wilkins.
 - Mellemgaard, K. (1966). The alveolar-arterial oxygen difference: its size and components in normal man. *Acta Physiologica Scandinavica*, 67(1), 10-20.
+- Filley, G. F., Grégoire, F., & Wright, G. W. (1954). Alveolar and arterial oxygen tensions and the significance of the alveolar-arterial oxygen tension difference in normal men. *Journal of Clinical Investigation*, 33(4), 517–529. https://doi.org/10.1172/JCI102922
+- Harris, E. A., et al. (1974). The Normal Alveolar-Arterial Oxygen-Tension Gradient in Man. *Clinical Science*, 46(1), 89–104. https://doi.org/10.1042/cs0460089
 
 **Key Features**:
 
@@ -327,6 +329,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical utility)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -338,6 +341,7 @@ Based on literature review, the following domains have significant potential for
 
 - Shepherd, S. J., & Pearse, R. M. (2009). Role of central and mixed venous oxygen saturation measurement in perioperative care. *Anesthesiology*, 111(3), 649-656.
 - Grocott, M. P., Martin, D. S., Levett, D. Z., et al. (2009). Arterial blood gases and oxygen content in climbers on Mount Everest. *New England Journal of Medicine*, 360(2), 140-149.
+- Filley, G. F., Grégoire, F., & Wright, G. W. (1954). *Journal of Clinical Investigation* (oxygen content/capacity concepts and measurement context). https://doi.org/10.1172/JCI102922
 
 **Key Features**:
 
@@ -349,6 +353,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical/research utility)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
