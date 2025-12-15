@@ -4,6 +4,8 @@ This module implements deterministic lookups for:
 - Maximum flight time (Table A to Part 117)
 - Maximum flight duty period (FDP) for lineholders (Table B to Part 117)
 - The "not acclimated" FDP reduction (-30 minutes) referenced by § 117.13(b)
+- Cumulative limitations (flight time and FDP) per § 117.23
+- Rest constraints per § 117.25 (10h rest with 8h sleep opportunity; 30h in 168h)
 
 Primary sources (public law / official text)
 -------------------------------------------
@@ -16,6 +18,12 @@ Primary sources (public law / official text)
 - eCFR: § 117.13 (FDP rules; not-acclimated reduction)
   https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13
 
+- eCFR: § 117.23 (cumulative limitations)
+  https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.23
+
+- eCFR: § 117.25 (rest period)
+  https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.25
+
 Notes
 -----
 - This is intentionally scoped to **unaugmented operations** and the two appendix tables.
@@ -25,6 +33,7 @@ Notes
 
 from __future__ import annotations
 
+import math
 import dataclasses
 from dataclasses import dataclass
 from typing import Final, Literal, Tuple
@@ -32,8 +41,11 @@ from typing import Final, Literal, Tuple
 __all__ = [
     "Faa117Inputs",
     "Faa117Limits",
+    "Faa117CumulativeInputs",
+    "Faa117CumulativeResult",
     "parse_hhmm",
     "faa117_limits",
+    "faa117_cumulative_limits",
 ]
 
 TimeWindowLabel = Literal[
@@ -75,6 +87,15 @@ class Faa117Limits:
 
 
 _MIN_REST_HOURS: Final[float] = 10.0
+_REQUIRED_30H_IN_168H: Final[float] = 30.0
+
+# § 117.23(b): flight time cumulative caps
+_MAX_FLIGHT_TIME_672H: Final[float] = 100.0
+_MAX_FLIGHT_TIME_365D: Final[float] = 1000.0
+
+# § 117.23(c): FDP cumulative caps
+_MAX_FDP_168H: Final[float] = 60.0
+_MAX_FDP_672H: Final[float] = 190.0
 
 # Table A to Part 117 — maximum flight time (hours) based on time of report (acclimated).
 # Source: eCFR Table A (URL in module docstring).
@@ -196,6 +217,101 @@ def faa117_limits(inputs: Faa117Inputs) -> Faa117Limits:
         fdp_ok=fdp_ok,
         flight_time_margin_hours=ft_margin,
         fdp_margin_hours=fdp_margin,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class Faa117CumulativeInputs:
+    """Cumulative-limit check inputs (rolling windows).
+
+    All hour inputs are in hours.
+
+    - `flight_time_last_672h`: total flight time in prior 672 consecutive hours
+    - `flight_time_last_365d`: total flight time in prior 365 consecutive calendar days
+    - `fdp_last_168h`: total FDP hours in prior 168 consecutive hours
+    - `fdp_last_672h`: total FDP hours in prior 672 consecutive hours
+    - `had_30h_free_past_168h`: whether the pilot had >=30 consecutive hours free from all duty in past 168h (§117.25(b))
+    - `planned_flight_time_hours`: planned flight time for the upcoming assignment
+    - `planned_fdp_hours`: planned FDP for the upcoming assignment
+    """
+
+    flight_time_last_672h: float
+    flight_time_last_365d: float
+    fdp_last_168h: float
+    fdp_last_672h: float
+    had_30h_free_past_168h: bool
+    planned_flight_time_hours: float
+    planned_fdp_hours: float
+
+
+@dataclass(frozen=True, slots=True)
+class Faa117CumulativeResult:
+    max_flight_time_672h: float
+    max_flight_time_365d: float
+    max_fdp_168h: float
+    max_fdp_672h: float
+    required_30h_free_in_168h: float
+    min_rest_hours: float
+    flight_time_672h_ok: bool
+    flight_time_365d_ok: bool
+    fdp_168h_ok: bool
+    fdp_672h_ok: bool
+    had_30h_free_past_168h: bool
+    flight_time_672h_margin_hours: float
+    flight_time_365d_margin_hours: float
+    fdp_168h_margin_hours: float
+    fdp_672h_margin_hours: float
+
+
+def faa117_cumulative_limits(inputs: Faa117CumulativeInputs) -> Faa117CumulativeResult:
+    """Check cumulative flight-time and FDP limits per §117.23 and report margins.
+
+    The comparison is done as "previous window total + planned assignment <= limit".
+    """
+    if not isinstance(inputs, Faa117CumulativeInputs):
+        raise TypeError("inputs must be Faa117CumulativeInputs")
+
+    ft672 = float(inputs.flight_time_last_672h)
+    ft365 = float(inputs.flight_time_last_365d)
+    fdp168 = float(inputs.fdp_last_168h)
+    fdp672 = float(inputs.fdp_last_672h)
+    plan_ft = float(inputs.planned_flight_time_hours)
+    plan_fdp = float(inputs.planned_fdp_hours)
+
+    for name, v in [
+        ("flight_time_last_672h", ft672),
+        ("flight_time_last_365d", ft365),
+        ("fdp_last_168h", fdp168),
+        ("fdp_last_672h", fdp672),
+        ("planned_flight_time_hours", plan_ft),
+        ("planned_fdp_hours", plan_fdp),
+    ]:
+        if not isinstance(v, (int, float)) or not math.isfinite(v):
+            raise TypeError(f"{name} must be a finite number")
+        if v < 0.0:
+            raise ValueError(f"{name} must be >= 0")
+
+    ft672_total = ft672 + plan_ft
+    ft365_total = ft365 + plan_ft
+    fdp168_total = fdp168 + plan_fdp
+    fdp672_total = fdp672 + plan_fdp
+
+    return Faa117CumulativeResult(
+        max_flight_time_672h=float(_MAX_FLIGHT_TIME_672H),
+        max_flight_time_365d=float(_MAX_FLIGHT_TIME_365D),
+        max_fdp_168h=float(_MAX_FDP_168H),
+        max_fdp_672h=float(_MAX_FDP_672H),
+        required_30h_free_in_168h=float(_REQUIRED_30H_IN_168H),
+        min_rest_hours=float(_MIN_REST_HOURS),
+        flight_time_672h_ok=ft672_total <= _MAX_FLIGHT_TIME_672H,
+        flight_time_365d_ok=ft365_total <= _MAX_FLIGHT_TIME_365D,
+        fdp_168h_ok=fdp168_total <= _MAX_FDP_168H,
+        fdp_672h_ok=fdp672_total <= _MAX_FDP_672H,
+        had_30h_free_past_168h=bool(inputs.had_30h_free_past_168h),
+        flight_time_672h_margin_hours=float(_MAX_FLIGHT_TIME_672H - ft672_total),
+        flight_time_365d_margin_hours=float(_MAX_FLIGHT_TIME_365D - ft365_total),
+        fdp_168h_margin_hours=float(_MAX_FDP_168H - fdp168_total),
+        fdp_672h_margin_hours=float(_MAX_FDP_672H - fdp672_total),
     )
 
 
