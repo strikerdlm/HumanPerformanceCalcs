@@ -575,7 +575,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             yaxis_title="Altitude (km)",
             height=400
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         st.markdown('<div class="info-box">Calculations up to 11 km assume a linear temperature lapse rate; 11–20 km is treated as isothermal, and 20–32 km uses a warming layer per ISA.</div>', unsafe_allow_html=True)
     
@@ -903,7 +903,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         fig.add_trace(go.Scatter(x=alts, y=[spo2_unacclimatized(a) for a in alts], name="Unacclimatized"))
         fig.add_trace(go.Scatter(x=alts, y=[spo2_acclimatized(a) for a in alts], name="Acclimatized"))
         fig.update_layout(title="SpO₂ vs Altitude", xaxis_title="Altitude (m)", yaxis_title="SpO₂ (%)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         with st.expander("Arterial Oxygen at Altitude (PaO₂) Estimator", expanded=False):
             colp1, colp2, colp3 = st.columns(3)
@@ -937,7 +937,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         probs = [ams_probability(x) for x in aae_vals]
         fig = go.Figure(data=[go.Scatter(x=aae_vals, y=[p*100 for p in probs], mode="lines")])
         fig.update_layout(title="AMS Probability vs AAE", xaxis_title="AAE (km·days)", yaxis_title="Probability (%)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "HAPE Risk (Suona 2023 Nomogram)":
         st.markdown("### 🫁 High-Altitude Pulmonary Edema (HAPE) Risk")
@@ -1084,7 +1084,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         cao2s = [oxygen_content(hb, s, max(0.0, p)) for s, p in zip(sao2s, pao2s)]
         fig = go.Figure(data=[go.Scatter(x=alts/0.3048, y=cao2s, mode="lines", name="CaO₂")])
         fig.update_layout(title="CaO₂ vs Altitude", xaxis_title="Altitude (ft)", yaxis_title="CaO₂ (mL/dL)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "Decompression Tissue Ratio (TR)":
         st.markdown("### 🫧 Decompression Tissue Ratio (TR)")
@@ -1108,7 +1108,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         trs = [tissue_ratio(ptissue, p) for p in p_ambs]
         fig = go.Figure(data=[go.Scatter(x=alts_ft, y=trs, mode="lines")])
         fig.update_layout(title="TR vs Altitude (fixed tissue N₂)", xaxis_title="Altitude (ft)", yaxis_title="TR", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "Bühlmann ZH-L16 GF Decompression Planner":
         st.markdown("### 🧮 Bühlmann ZH‑L16 (Gradient Factors) Decompression Planner")
@@ -1181,7 +1181,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                             df = pd.DataFrame(
                                 [{"Stop depth (m)": float(s.depth_m), "Stop time (min)": int(s.minutes)} for s in plan.stops]
                             )
-                            st.dataframe(df, use_container_width=True, hide_index=True)
+                            st.dataframe(df, width="stretch", hide_index=True)
                             st.metric("Total decompression time", f"{plan.total_decompression_minutes} min")
 
                     with crystal_container(border=True):
@@ -1253,7 +1253,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                         {"Component": "Raw sum", "ΔGz": res.raw_estimated_gz},
                     ]
                 )
-                st.dataframe(df, use_container_width=True, hide_index=True)
+                st.dataframe(df, width="stretch", hide_index=True)
 
             with crystal_container(border=True):
                 st.markdown("**Reference anchor**")
@@ -1313,7 +1313,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=xs, y=ys, mode='lines', fill='tozeroy', name='BMR'))
             fig.update_layout(title=f"BMR vs {vary}", xaxis_title=xlab, yaxis_title="BMR (kcal/day)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "Body Surface Area (4 formulas)":
         col1, col2 = st.columns([1,1])
@@ -1336,7 +1336,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             st_echarts(opts, height=360)
         else:
             fig = px.bar(x=list(values.keys()), y=list(values.values()), labels={"x": "Formula", "y": "BSA (m²)"})
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "eGFR (CKD‑EPI 2009)":
         col1, col2 = st.columns([1,1])
@@ -1364,7 +1364,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig.add_trace(go.Scatter(x=scrs, y=y, mode='lines', name='eGFR'))
             fig.add_vline(x=float(scr), line_dash='dash')
             fig.update_layout(title="eGFR vs Creatinine", xaxis_title="Scr (mg/dL)", yaxis_title="eGFR (mL/min/1.73m²)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "PaO₂/FiO₂ Ratio (P/F)":
         col1, col2 = st.columns([1,1])
@@ -1392,7 +1392,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig.add_hline(y=300, line_dash="dash")
             fig.add_hline(y=200, line_dash="dash")
             fig.add_hline(y=100, line_dash="dash")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "Oxygen Index (OI)":
         col1, col2 = st.columns([1,1])
@@ -1416,7 +1416,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             st_echarts(opts, height=300)
         else:
             fig = go.Figure(go.Indicator(mode="gauge+number", value=oi, gauge={'axis': {'range': [0, 40]}}))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "6‑Minute Walk Distance":
         col1, col2 = st.columns([1,1])
@@ -1444,7 +1444,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=ages, y=curve, mode='lines', fill='tozeroy'))
             fig.update_layout(title="6MWD vs Age", xaxis_title="Age (yr)", yaxis_title="6MWD (m)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
 
 elif calculator_category == "Occupational Health & Safety":
@@ -1568,7 +1568,7 @@ elif calculator_category == "Occupational Health & Safety":
                     go.Bar(x=periods, y=concentrations, name="Concentration"),
                 ])
                 fig.update_layout(title="Exposure Concentrations by Period", yaxis_title="Concentration")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
                 
             except ValueError as e:
                 st.error(f"Error: {e}")
@@ -2033,7 +2033,7 @@ elif calculator_category == "🔬 Environmental Monitoring":
                 yaxis_title="Core temperature (°C)",
                 height=380,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         except ValueError:
             st.warning("Unable to render profile for the current inputs.")
     
@@ -2105,7 +2105,7 @@ elif calculator_category == "🔬 Environmental Monitoring":
             yaxis_title="Permissible Time (hours)",
             yaxis_type="log"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 elif calculator_category == "📈 Visualization Studio":
     st.subheader("Visualization Studio")
@@ -2202,7 +2202,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="PAO₂ (mmHg)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 altitudes_ft = np.linspace(alt_range_ft[0], alt_range_ft[1], 80)
                 fio2_vals = np.linspace(fio2_min, fio2_max, 60)
@@ -2217,7 +2217,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Altitude (ft)", yaxis_title="FiO₂", zaxis_title="PAO₂ (mmHg)"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2251,7 +2251,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="WBGT (°C)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 80)
                 rh_vals = np.linspace(rh_min, rh_max, 60)
@@ -2265,7 +2265,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Dry-bulb (°C)", yaxis_title="RH (%)", zaxis_title="WBGT (°C)"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2300,7 +2300,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="Permissible time (hours)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 levels = np.linspace(level_range[0], level_range[1], 80)
                 exch = np.linspace(exch_min, exch_max, 60)
@@ -2315,7 +2315,7 @@ elif calculator_category == "📈 Visualization Studio":
                     xaxis_title="Noise level (dBA)", yaxis_title="Exchange rate (dB)", zaxis_title="Time (hours)",
                     zaxis_type="log"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2357,7 +2357,7 @@ elif calculator_category == "📈 Visualization Studio":
             fig.update_yaxes(title_text="Mixed Index (sum of fractions)")
             if smooth_lines:
                 fig.update_traces(line_shape="spline")
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         else:
             x_a = np.linspace(0, xa_max, 80)
             x_b = np.linspace(0, xb_max, 60)
@@ -2370,7 +2370,7 @@ elif calculator_category == "📈 Visualization Studio":
                 yaxis_title=f"{AEROSPACE_CHEMICALS[chem_b].name} ({units_b})",
                 zaxis_title="Mixed Index"
             ))
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2389,7 +2389,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="SpO₂ (%)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     elif vis_type == "AMS Probability vs AAE":
@@ -2401,7 +2401,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="Probability (%)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     elif vis_type == "CaO₂ vs PaO₂ & Hb":
@@ -2424,7 +2424,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="CaO₂ (mL/dL)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     # Export controls
@@ -2698,7 +2698,7 @@ elif calculator_category == "📊 Risk Assessment Tools":
                         {"Component": "Somatogravic (GIA tilt)", "Score": res.somatogravic_component_0_1},
                     ]
                 )
-                st.dataframe(df_sd, use_container_width=True, hide_index=True)
+                st.dataframe(df_sd, width="stretch", hide_index=True)
 
             with st.expander("References (model anchors)", expanded=False):
                 st.markdown(
@@ -2726,7 +2726,7 @@ elif calculator_category == "📊 Risk Assessment Tools":
         })
     
     df = pd.DataFrame(chem_data)
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
     
     # Summary statistics
     col1, col2, col3, col4 = st.columns(4)
@@ -2785,7 +2785,7 @@ elif calculator_category == "📊 Risk Assessment Tools":
         path=['Risk Level', 'Chemical'],
         title="Chemical Risk Distribution"
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 elif calculator_category == "🧠 Fatigue & Circadian":
     st.subheader("Fatigue & Circadian Calculators")
@@ -2819,7 +2819,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         ps = [mitler_performance(x, phi, SD, K) for x in ts]
         fig = go.Figure(data=[go.Scatter(x=ts, y=ps, mode="lines")])
         fig.update_layout(title="Mitler Performance over 24h", xaxis_title="Time (h)", yaxis_title="Performance", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "Two-Process Model (S & C)":
         st.markdown("### ⏳ Two-Process Model Components")
@@ -3242,7 +3242,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
                 height=420,
                 template=theme_template_local,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
             with st.expander("References (equation sources)", expanded=False):
                 st.markdown(
@@ -3458,7 +3458,7 @@ elif calculator_category == "🧪 Simulation Studio":
             fig.update_yaxes(title_text="% body mass", row=2, col=1)
             fig.update_yaxes(title_text="L/h", row=3, col=1)
 
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
 
             st.markdown(
                 '<div class="info-box"><strong>Interpretation:</strong> The dotted vertical line indicates the model’s calculated allowable exposure limit under the selected guardrails.</div>',
@@ -3518,7 +3518,7 @@ elif calculator_category == "🧪 Simulation Studio":
             )
             st.plotly_chart(
                 fig,
-                use_container_width=True,
+                width="stretch",
                 config={"displaylogo": False, "responsive": True, "scrollZoom": True},
             )
 

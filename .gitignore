@@ -16,3 +16,6 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Local dev artifacts / temporary notes
+Alerts to fix.md
