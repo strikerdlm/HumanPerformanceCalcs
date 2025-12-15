@@ -289,7 +289,7 @@ Based on literature review, the following domains have significant potential for
 **References**:
 
 - FAA. (2012). Flightcrew Member Duty and Rest Requirements. *14 CFR Part 117*.
-- EASA. (2016). Flight and Duty Time Limitations and Rest Requirements. *Commission Regulation (EU) No 83/2014*.
+- EASA. (2025). *Easy Access Rules for Air Operations (Regulation (EU) No 965/2012) — Revision 22 (February 2025).* (Official PDF). https://www.easa.europa.eu/en/downloads/20342/en
 - Caldwell, J. A., Mallis, M. M., Caldwell, J. L., et al. (2009). Fatigue countermeasures in aviation. *Aviation, Space, and Environmental Medicine*, 80(1), 29-59.
 - eCFR: Table A to Part 117 (max flight time): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117
 - eCFR: Table B to Part 117 (max FDP): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
@@ -304,7 +304,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (operational planning tool)
-**Status (App)**: Live — implemented for FAA Part 117 (unaugmented) in the Streamlit UI (Fatigue & Circadian). EASA ORO.FTL remains planned.
+**Status (App)**: Live — implemented for FAA Part 117 (unaugmented + cumulative limits) and a **scoped** EASA ORO.FTL subset (**ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps**) in the Streamlit UI (Fatigue & Circadian). Remaining EASA provisions remain planned.
 
 ---
 
