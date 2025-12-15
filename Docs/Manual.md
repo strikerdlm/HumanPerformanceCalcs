@@ -67,6 +67,53 @@ The **Spatial Disorientation** tool is available under:
 - StatPearls (10–20 s canal entrainment window).
 - Houben et al. (2022) for Coriolis threshold (PubMed 34924407).
 
+### Risk Assessment Tools: NVG / EO Target Acquisition (Johnson/ACQUIRE)
+
+The **NVG / EO Target Acquisition** tool estimates **cycles-on-target** for a target at range given an imaging system’s resolution + field-of-view (FOV), and compares it to published **N50** cycle criteria.
+
+- **What it’s good for**: a geometric *feasibility* sanity-check (is the target sampled finely enough for detection/recognition/identification in principle?).
+- **What it does not model**: contrast/noise, display luminance, atmospheric attenuation, clutter, gain settings, or human factors/training.
+- **Primary reference**: Sjaardema et al. (2015) *History and Evolution of the Johnson Criteria* (SAND2015-6368), which summarizes Johnson and ACQUIRE N50 cycle criteria and their limitations.
+
+### Risk Assessment Tools: Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)
+
+This tool computes ISO 2631‑style exposure metrics from **frequency-weighted** acceleration inputs:
+
+- **Combined \(a_w\)** from tri-axial weighted r.m.s. values (with x/y multiplying factors).
+- **A(8)** (8‑hour equivalent acceleration) using \(A(8) = a_w \sqrt{T/8h}\).
+- Optional **VDV(8)** scaling if you provide a VDV computed over a reference window.
+
+**Primary references / anchors**
+
+- Mansfield et al. (2009) provides the metrology equations for r.m.s. and VDV used in ISO‑2631 workflows and discusses frequency range considerations: https://doi.org/10.2486/INDHEALTH.47.402
+- Orelaja et al. (2019) quotes commonly used HGCZ bounds in published WBV risk reporting (A(8) 0.47–0.93 m/s²; VDV 8.5–17 m/s^1.75): https://doi.org/10.1155/2019/5723830
+
+### Atmospheric & Physiological: Visual Acuity at Altitude (Dynamic Visual Acuity, DVA)
+
+This tool provides an **empirical dynamic visual acuity (DVA)** estimate (LogMAR) for short-term hypobaric exposure based on a controlled chamber study. It accepts:
+
+- altitude (m)
+- time at altitude (0–30 min range from the study protocol)
+- target angular velocity (deg/s)
+
+**Reference**
+
+- Wang et al. (2024). *Influence of short-term hypoxia exposure on dynamic visual acuity*. *Frontiers in Neuroscience*, 18:1428987. https://doi.org/10.3389/fnins.2024.1428987
+
+### Fatigue & Circadian: Crew Duty Time Limits (FAA Part 117, unaugmented)
+
+This tool implements the FAA Part 117 **unaugmented** lookup tables:
+
+- **Table A**: maximum flight time based on **report time (acclimated)**.
+- **Table B**: maximum FDP based on **scheduled start time (acclimated)** and **number of flight segments**.
+- **Not acclimated**: applies the **−30 min FDP reduction** described in § 117.13.
+
+**Primary references (official)**
+
+- eCFR Table A: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117
+- eCFR Table B: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
+- eCFR § 117.13: https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13
+
 ### Fatigue & Circadian: SAFTE Effectiveness (patent-derived)
 
 The **SAFTE Effectiveness** calculator is available under:
