@@ -77,6 +77,15 @@ from .oxygen_delivery import (  # type: ignore
     compute_oxygen_delivery,
     dubois_bsa_m2,
 )
+from .easa_ftl import (  # type: ignore
+    AcclimatisationState,
+    EasaFtlFdpInputs,
+    EasaFtlFdpResult,
+    EasaOroFtl210Inputs,
+    EasaOroFtl210Result,
+    easa_max_daily_fdp,
+    easa_oroflt_210_cumulative_limits,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -197,6 +206,13 @@ __all__ = [
     "OxygenDeliveryResult",
     "compute_oxygen_delivery",
     "dubois_bsa_m2",
+    "AcclimatisationState",
+    "EasaFtlFdpInputs",
+    "EasaFtlFdpResult",
+    "EasaOroFtl210Inputs",
+    "EasaOroFtl210Result",
+    "easa_max_daily_fdp",
+    "easa_oroflt_210_cumulative_limits",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
