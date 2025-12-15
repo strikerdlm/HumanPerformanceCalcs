@@ -49,8 +49,20 @@ This suite provides **research-grade computational tools** for aerospace medicin
 
 ### ✨ **December 2025 Update**
 - **ISO 7933 Predicted Heat Strain (PHS)** calculator delivers core-temperature, sweat-rate, and hydration guardrails aligned with the Phase 1 roadmap.
+- **Universal Thermal Climate Index (UTCI)** calculator adds outdoor thermal “feels-like” assessment with standardized stress categories.
+- **Bühlmann ZH‑L16 (Gradient Factors) decompression planner** is now live, with a unit-tested reference schedule and neutral UI outputs.
+- **AGSM effectiveness model (+Gz)** is now live, with parameter defaults anchored to a published configuration comparison study (and all assumptions exposed in-app).
+- **Spatial Disorientation (SD) risk assessment** is now live with explicit physiology anchors (leans threshold, canal entrainment window, Coriolis threshold, somatogravic tilt physics) and in-app citations.
+- **NVG / EO target acquisition (Johnson/ACQUIRE cycles-on-target)** is now live as a resolution-based feasibility check with a public cycle-criteria reference (SAND2015-6368).
+- **Whole-body vibration exposure (ISO 2631-1 style A(8) / VDV)** is now live as a frequency-weighted exposure scaler with literature-anchored HGCZ thresholds and in-app citations.
+- **Motion sickness susceptibility (MSSQ-short)** is now live as a questionnaire-based susceptibility screen (raw score + quartile band against an open pre-test sample; limitations explicit).
+- **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
+- **Crew duty time limits (FAA Part 117 + EASA ORO.FTL)** are now live, including FAA table lookups (Table A/Table B + cumulative limits) and a scoped EASA subset (ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps), with transparent scope notes.
+- **A–a gradient** and **oxygen delivery (CaO₂/DO₂/DO₂I)** calculators are now live for clinical/altitude physiology workflows, with explicit equations and citations.
+- **Wells scores (DVT/PE)** are now live in Clinical Calculators for structured VTE risk stratification (decision support only; citations included).
+- **SAFTE effectiveness forecasting (patent-derived)** is now live for multi-day fatigue prediction, with equations sourced from the published patent and SAFTEr open implementation (limitations explicitly stated).
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
-- **Modern glassmorphic UI** for the Streamlit home page with hero panel, mission cards, and roadmap chips highlighting live and upcoming features.
+- **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
 - **Thermal stress studio refresh** with interactive plots that visualize core temperature trajectories and highlight the most restrictive limit (core temperature vs. dehydration).
 
 ---
@@ -502,7 +514,7 @@ We maintain a comprehensive development roadmap based on scientific literature r
 - **Predicted Heat Strain (PHS) Model** — ISO 7933:2023 standard
 - **Simulation Studio** — interactive forward trajectories and scientific “what happens next” forecasting for time-steppable calculators (see `Docs/Manual.md`)
 - **Universal Thermal Climate Index (UTCI)** — Outdoor thermal comfort
-- **Cold Water Immersion Survival Time** — Hayward-Tikuisis models
+- **Cold Water Immersion Survival Time** — Cold-water immersion survival guidance (hypothermia-limited; see notes in-app)
 - **Bühlmann ZH-L16 Decompression Algorithm** — Industry-standard DCS prediction
 - **Anti-G Straining Maneuver (AGSM) Effectiveness** — G-tolerance enhancement
 - **Spatial Disorientation Risk Assessment** — Vestibular conflict modeling

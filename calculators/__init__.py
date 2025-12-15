@@ -14,6 +14,92 @@ from .tuc import estimate_tuc  # type: ignore
 from .g_force import g_loc_time  # type: ignore
 from .radiation import dose_rate  # type: ignore
 from .wbgt import wbgt_indoor, wbgt_outdoor, heat_stress_index  # type: ignore
+from .utci import utci, utci_category  # type: ignore
+from .buhlmann import plan_zh_l16_gf, GasMix, BuhlmannPlan, DecompressionStop  # type: ignore
+from .agsm import AgsmInputs, AgsmResult, estimate_gz_tolerance_with_agsm  # type: ignore
+from .spatial_disorientation import (  # type: ignore
+    SpatialDisorientationInputs,
+    SpatialDisorientationResult,
+    spatial_disorientation_risk,
+)
+from .safte import (  # type: ignore
+    SafteParameters,
+    SleepEpisode,
+    SafteInputs,
+    SaftePoint,
+    SafteSeries,
+    simulate_safte,
+)
+from .nvg import (  # type: ignore
+    ImagingSystem,
+    Target,
+    NvgAcquisitionResult,
+    cycles_on_target,
+    range_for_required_cycles,
+    assess_target_acquisition,
+)
+from .wbv import (  # type: ignore
+    WbvAxisWeightedRms,
+    WbvExposureInputs,
+    WbvExposureResult,
+    WbvZone,
+    combine_axes_iso2631,
+    a8_from_aw,
+    vdv8_from_vdv,
+    time_to_reach_a8,
+    time_to_reach_vdv8,
+    classify_hgcz_a8,
+    classify_hgcz_vdv8,
+    compute_wbv_exposure,
+)
+from .vision_altitude import (  # type: ignore
+    DvaEstimate,
+    estimate_dva_logmar_wang2024,
+    logmar_to_snellen_denominator,
+)
+from .duty_time import (  # type: ignore
+    Faa117Inputs,
+    Faa117Limits,
+    parse_hhmm,
+    faa117_limits,
+    Faa117CumulativeInputs,
+    Faa117CumulativeResult,
+    faa117_cumulative_limits,
+)
+from .aa_gradient import (  # type: ignore
+    AaGradientInputs,
+    AaGradientResult,
+    compute_aa_gradient,
+)
+from .oxygen_delivery import (  # type: ignore
+    OxygenDeliveryInputs,
+    OxygenDeliveryResult,
+    compute_oxygen_delivery,
+    dubois_bsa_m2,
+)
+from .easa_ftl import (  # type: ignore
+    AcclimatisationState,
+    EasaFtlFdpInputs,
+    EasaFtlFdpResult,
+    EasaOroFtl210Inputs,
+    EasaOroFtl210Result,
+    easa_max_daily_fdp,
+    easa_oroflt_210_cumulative_limits,
+)
+from .wells import (  # type: ignore
+    WellsDvtInputs,
+    WellsDvtResult,
+    compute_wells_dvt,
+    WellsPeInputs,
+    WellsPeResult,
+    compute_wells_pe,
+)
+from .mssq import (  # type: ignore
+    MSSQ_SHORT_ITEMS,
+    MssqShortInputs,
+    MssqShortResult,
+    compute_mssq_short,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -37,6 +123,12 @@ from .circadian import (  # type: ignore
     jet_lag_days_to_adjust,
 )
 from .cold import peak_shivering_intensity  # type: ignore
+from .cold_water_survival import (  # type: ignore
+    cold_water_survival,
+    cold_water_survival_hayward_1975_minutes,
+    cold_water_survival_golden_lifejacket_hours,
+    ColdWaterSurvivalEstimate,
+)
 from .decompression import tissue_ratio, interpret_tr  # type: ignore
 from .clinical import (  # type: ignore
     bmr_mifflin_st_jeor,
@@ -79,6 +171,76 @@ __all__ = [
     "wbgt_indoor",
     "wbgt_outdoor",
     "heat_stress_index",
+    "utci",
+    "utci_category",
+    "plan_zh_l16_gf",
+    "GasMix",
+    "BuhlmannPlan",
+    "DecompressionStop",
+    "AgsmInputs",
+    "AgsmResult",
+    "estimate_gz_tolerance_with_agsm",
+    "SpatialDisorientationInputs",
+    "SpatialDisorientationResult",
+    "spatial_disorientation_risk",
+    "SafteParameters",
+    "SleepEpisode",
+    "SafteInputs",
+    "SaftePoint",
+    "SafteSeries",
+    "simulate_safte",
+    "ImagingSystem",
+    "Target",
+    "NvgAcquisitionResult",
+    "cycles_on_target",
+    "range_for_required_cycles",
+    "assess_target_acquisition",
+    "WbvAxisWeightedRms",
+    "WbvExposureInputs",
+    "WbvExposureResult",
+    "WbvZone",
+    "combine_axes_iso2631",
+    "a8_from_aw",
+    "vdv8_from_vdv",
+    "time_to_reach_a8",
+    "time_to_reach_vdv8",
+    "classify_hgcz_a8",
+    "classify_hgcz_vdv8",
+    "compute_wbv_exposure",
+    "DvaEstimate",
+    "estimate_dva_logmar_wang2024",
+    "logmar_to_snellen_denominator",
+    "Faa117Inputs",
+    "Faa117Limits",
+    "parse_hhmm",
+    "faa117_limits",
+    "Faa117CumulativeInputs",
+    "Faa117CumulativeResult",
+    "faa117_cumulative_limits",
+    "AaGradientInputs",
+    "AaGradientResult",
+    "compute_aa_gradient",
+    "OxygenDeliveryInputs",
+    "OxygenDeliveryResult",
+    "compute_oxygen_delivery",
+    "dubois_bsa_m2",
+    "AcclimatisationState",
+    "EasaFtlFdpInputs",
+    "EasaFtlFdpResult",
+    "EasaOroFtl210Inputs",
+    "EasaOroFtl210Result",
+    "easa_max_daily_fdp",
+    "easa_oroflt_210_cumulative_limits",
+    "WellsDvtInputs",
+    "WellsDvtResult",
+    "compute_wells_dvt",
+    "WellsPeInputs",
+    "WellsPeResult",
+    "compute_wells_pe",
+    "MSSQ_SHORT_ITEMS",
+    "MssqShortInputs",
+    "MssqShortResult",
+    "compute_mssq_short",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
@@ -98,6 +260,10 @@ __all__ = [
     "circadian_component",
     "jet_lag_days_to_adjust",
     "peak_shivering_intensity",
+    "cold_water_survival",
+    "cold_water_survival_hayward_1975_minutes",
+    "cold_water_survival_golden_lifejacket_hours",
+    "ColdWaterSurvivalEstimate",
     "tissue_ratio",
     "interpret_tr",
     # Clinical calculators

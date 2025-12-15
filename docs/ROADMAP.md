@@ -53,6 +53,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (extends existing WBGT capability)
+**Status (App)**: Live — implemented in the Streamlit UI (Environmental Monitoring + Simulation Studio)
 
 ---
 
@@ -74,6 +75,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: High (complements WBGT for outdoor assessment)
+**Status (App)**: Live — implemented in the Streamlit UI (Environmental Monitoring)
 
 ---
 
@@ -97,6 +99,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (critical for aviation safety planning)
+**Status (App)**: Live — implemented in the Streamlit UI (Environmental Monitoring)
 
 ---
 
@@ -120,6 +123,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: Medium (extends existing tissue ratio calculator)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -143,6 +147,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (critical for fighter pilot operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -155,6 +160,9 @@ Based on literature review, the following domains have significant potential for
 - Benson, A. J. (1999). Spatial disorientation—common illusions. In: Ernsting, J., Nicholson, A. N., & Rainford, D. J. (Eds.), *Aviation Medicine* (3rd ed., pp. 437-454). Butterworth-Heinemann.
 - Previc, F. H., & Ercoline, W. R. (2004). *Spatial Disorientation in Aviation*. Progress in Astronautics and Aeronautics, Vol. 203. AIAA.
 - Cheung, B. (2013). Spatial disorientation: more than just illusion. *Aviation, Space, and Environmental Medicine*, 84(11), 1211-1214.
+- Federal Aviation Administration (FAA). Spatial Disorientation — Airman Education Programs. https://www.faa.gov/pilots/training/airman_education/topics_of_interest/spatial_disorientation
+- Houben, M. M. J., Meskers, A. J. H., Bos, J. E., & Groen, E. L. (2022). The perception threshold of the vestibular Coriolis illusion. *Journal of Vestibular Research*. (PubMed: 34924407)
+- StatPearls. Physiology of Spatial Orientation. NCBI Bookshelf. https://www.ncbi.nlm.nih.gov/books/NBK518976/
 
 **Key Features**:
 
@@ -166,6 +174,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: High (addresses major cause of aviation mishaps)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
@@ -179,6 +188,9 @@ Based on literature review, the following domains have significant potential for
 
 - Hursh, S. R., Redmond, D. P., Johnson, M. L., et al. (2004). Fatigue models for applied research in warfighting. *Aviation, Space, and Environmental Medicine*, 75(3), A44-A53.
 - Van Dongen, H. P. A., Maislin, G., Mullington, J. M., & Dinges, D. F. (2003). The cumulative cost of additional wakefulness: dose-response effects on neurobehavioral functions and sleep physiology from chronic sleep restriction and total sleep deprivation. *Sleep*, 26(2), 117-126.
+- WO2012015383A1. Method and apparatus for mitigating aviation risk by analyzing and modeling air crew fatigue. (SAFTE patent equations; includes explicit formula set). https://patents.google.com/patent/WO2012015383A1/en
+- SAFTEr (open-source). Institute for Behavior Resources. (R implementation rebuilt from patent equations). https://github.com/InstituteBehaviorResources/SAFTEr
+- Frontiers in Public Health / PMC. Forecasting crew fatigue risk on international flights (context + parameter reporting in operational study). https://pmc.ncbi.nlm.nih.gov/articles/PMC9623177/
 
 **Key Features**:
 
@@ -190,6 +202,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: High
 **Integration Priority**: Medium (extends existing circadian models)
+**Status (App)**: Live — implemented in the Streamlit UI (Fatigue & Circadian)
 
 ---
 
@@ -202,6 +215,7 @@ Based on literature review, the following domains have significant potential for
 - Rash, C. E., Verona, R. W., & Crowley, J. S. (1990). Human factors and safety considerations of night vision systems flight using thermal imaging systems. *USAARL Technical Report*, 90-10.
 - Pinkus, A. R., & Task, H. L. (1998). Display system image quality metrics. *Human Factors Engineering Technical Advisory Group Report*.
 - McLean, W. E. (2014). *Night Vision Manual for the Flight Surgeon*. USAFSAM Special Report.
+- Sjaardema, T. A., Smith, C. S., & Birch, G. C. (2015). *History and Evolution of the Johnson Criteria* (SAND2015-6368). OSTI. https://www.osti.gov/servlets/purl/1222446
 
 **Key Features**:
 
@@ -213,6 +227,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (specialized but critical for rotary-wing operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
@@ -225,6 +240,8 @@ Based on literature review, the following domains have significant potential for
 - ISO 2631-1:1997 — *Mechanical vibration and shock — Evaluation of human exposure to whole-body vibration — Part 1: General requirements*
 - Griffin, M. J. (2012). *Handbook of Human Vibration*. Academic Press.
 - Mansfield, N. J. (2005). *Human Response to Vibration*. CRC Press.
+- Mansfield, N. J., Newell, G. S., & Notini, L. (2009). Earth moving machine whole-body vibration and the contribution of sub-1Hz components to ISO 2631-1 metrics. *Industrial Health*, 47(4), 402–410. https://doi.org/10.2486/INDHEALTH.47.402
+- Orelaja, O. A., Wang, X., Ibrahim, D. S., & Sharif, U. (2019). Evaluation of Health Risk Level of Hand-Arm and Whole-Body Vibrations... *Journal of Healthcare Engineering*, 2019. https://doi.org/10.1155/2019/5723830
 
 **Key Features**:
 
@@ -236,6 +253,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (important for helicopter and ground vehicle operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
@@ -248,6 +266,7 @@ Based on literature review, the following domains have significant potential for
 - Kobrick, J. L., & Appleton, B. (1971). Effects of extended hypoxia on visual performance and retinal vascular state. *Journal of Applied Physiology*, 31(3), 357-362.
 - Connolly, D. M., & Hosking, S. L. (2008). Oxygenation and visual function. *Aviation, Space, and Environmental Medicine*, 79(7), 735-743.
 - Connolly, D. M., Barbur, J. L., Hosking, S. L., & Moorhead, I. R. (2008). Mild hypoxia impairs chromatic sensitivity in the mesopic range. *Investigative Ophthalmology & Visual Science*, 49(2), 820-827.
+- Wang, Y., et al. (2024). Influence of short-term hypoxia exposure on dynamic visual acuity. *Frontiers in Neuroscience*, 18:1428987. https://doi.org/10.3389/fnins.2024.1428987
 
 **Key Features**:
 
@@ -259,6 +278,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (extends altitude physiology capabilities)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -269,8 +289,10 @@ Based on literature review, the following domains have significant potential for
 **References**:
 
 - FAA. (2012). Flightcrew Member Duty and Rest Requirements. *14 CFR Part 117*.
-- EASA. (2016). Flight and Duty Time Limitations and Rest Requirements. *Commission Regulation (EU) No 83/2014*.
+- EASA. (2025). *Easy Access Rules for Air Operations (Regulation (EU) No 965/2012) — Revision 22 (February 2025).* (Official PDF). https://www.easa.europa.eu/en/downloads/20342/en
 - Caldwell, J. A., Mallis, M. M., Caldwell, J. L., et al. (2009). Fatigue countermeasures in aviation. *Aviation, Space, and Environmental Medicine*, 80(1), 29-59.
+- eCFR: Table A to Part 117 (max flight time): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117
+- eCFR: Table B to Part 117 (max FDP): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
 
 **Key Features**:
 
@@ -282,6 +304,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (operational planning tool)
+**Status (App)**: Live — implemented for FAA Part 117 (unaugmented + cumulative limits) and a **scoped** EASA ORO.FTL subset (**ORO.FTL.205 basic max daily FDP + ORO.FTL.210 cumulative duty/flight-time caps**) in the Streamlit UI (Fatigue & Circadian). Remaining EASA provisions remain planned.
 
 ---
 
@@ -293,6 +316,8 @@ Based on literature review, the following domains have significant potential for
 
 - West, J. B. (2011). *Respiratory Physiology: The Essentials* (9th ed.). Lippincott Williams & Wilkins.
 - Mellemgaard, K. (1966). The alveolar-arterial oxygen difference: its size and components in normal man. *Acta Physiologica Scandinavica*, 67(1), 10-20.
+- Filley, G. F., Grégoire, F., & Wright, G. W. (1954). Alveolar and arterial oxygen tensions and the significance of the alveolar-arterial oxygen tension difference in normal men. *Journal of Clinical Investigation*, 33(4), 517–529. https://doi.org/10.1172/JCI102922
+- Harris, E. A., et al. (1974). The Normal Alveolar-Arterial Oxygen-Tension Gradient in Man. *Clinical Science*, 46(1), 89–104. https://doi.org/10.1042/cs0460089
 
 **Key Features**:
 
@@ -304,6 +329,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical utility)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -315,6 +341,7 @@ Based on literature review, the following domains have significant potential for
 
 - Shepherd, S. J., & Pearse, R. M. (2009). Role of central and mixed venous oxygen saturation measurement in perioperative care. *Anesthesiology*, 111(3), 649-656.
 - Grocott, M. P., Martin, D. S., Levett, D. Z., et al. (2009). Arterial blood gases and oxygen content in climbers on Mount Everest. *New England Journal of Medicine*, 360(2), 140-149.
+- Filley, G. F., Grégoire, F., & Wright, G. W. (1954). *Journal of Clinical Investigation* (oxygen content/capacity concepts and measurement context). https://doi.org/10.1172/JCI102922
 
 **Key Features**:
 
@@ -326,6 +353,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical/research utility)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -384,8 +412,9 @@ Based on literature review, the following domains have significant potential for
 
 **References**:
 
-- Golding, J. F. (1998). Motion sickness susceptibility questionnaire revised and its relationship to other forms of sickness. *Brain Research Bulletin*, 47(5), 507-516.
-- Golding, J. F. (2006). Motion sickness susceptibility. *Autonomic Neuroscience*, 129(1-2), 67-76.
+- Golding, J. F. (1998). Motion sickness susceptibility questionnaire revised and its relationship to other forms of sickness. *Brain Research Bulletin*, 47(5), 507-516. https://doi.org/10.1016/S0361-9230(98)00091-4
+- Golding, J. F. (2006). Motion sickness susceptibility. *Autonomic Neuroscience*, 129(1-2), 67-76. https://doi.org/10.1016/j.autneu.2006.07.019
+- Rivera R., Espinosa P., Dattari D., Collado C., Espinoza S. (2022). Adaptación transcultural del cuestionario MSSQ-short para población adulta chilena. *Revista de otorrinolaringología y cirugía de cabeza y cuello*, 82(2), 172-178. https://doi.org/10.4067/S0718-48162022000200172
 - Reason, J. T., & Brand, J. J. (1975). *Motion Sickness*. Academic Press.
 
 **Key Features**:
@@ -398,6 +427,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (legacy app migration)
+**Status (App)**: Live — implemented in the Streamlit UI (📊 Risk Assessment Tools) as **Motion Sickness Susceptibility (MSSQ-short)** (raw scores + quartile band vs open pre-test sample).
 
 ---
 
@@ -430,8 +460,8 @@ Based on literature review, the following domains have significant potential for
 
 **References**:
 
-- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2003). Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. *New England Journal of Medicine*, 349(13), 1227-1235.
-- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2001). Excluding pulmonary embolism at the bedside without diagnostic imaging: management of patients with suspected pulmonary embolism presenting to the emergency department by using a simple clinical model and D-dimer. *Annals of Internal Medicine*, 135(2), 98-107.
+- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2003). Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. *New England Journal of Medicine*, 349(13), 1227-1235. https://doi.org/10.1056/NEJMoa023153
+- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2001). Excluding pulmonary embolism at the bedside without diagnostic imaging: management of patients with suspected pulmonary embolism presenting to the emergency department by using a simple clinical model and D-dimer. *Annals of Internal Medicine*, 135(2), 98-107. https://doi.org/10.7326/0003-4819-135-2-200107170-00010
 
 **Key Features**:
 
@@ -443,6 +473,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical utility for travel medicine)
+**Status (App)**: Live — implemented in the Streamlit UI (🩺 Clinical Calculators) as **Wells Score (DVT)** and **Wells Score (PE)**.
 
 ---
 

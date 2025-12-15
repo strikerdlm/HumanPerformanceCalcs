@@ -7,6 +7,7 @@ from datetime import datetime
 import math
 import numpy as np
 import io
+from contextlib import contextmanager
 
 from calculators import (
     standard_atmosphere,
@@ -26,6 +27,8 @@ from calculators import (
     wbgt_indoor,
     wbgt_outdoor,
     heat_stress_index,
+    utci,
+    utci_category,
     noise_dose_osha,
     noise_dose_niosh,
     permissible_duration,
@@ -41,6 +44,7 @@ from calculators import (
     circadian_component,
     jet_lag_days_to_adjust,
     peak_shivering_intensity,
+    cold_water_survival,
     AEROSPACE_CHEMICALS,
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -48,6 +52,42 @@ from calculators import (
     simulate_mitler_trajectory,
     sweep_phs_metric_1d,
     sweep_phs_metric_2d,
+    plan_zh_l16_gf,
+    GasMix,
+    AgsmInputs,
+    estimate_gz_tolerance_with_agsm,
+    SpatialDisorientationInputs,
+    spatial_disorientation_risk,
+    SafteInputs,
+    SafteParameters,
+    SleepEpisode,
+    simulate_safte,
+    ImagingSystem,
+    Target,
+    assess_target_acquisition,
+    WbvAxisWeightedRms,
+    WbvExposureInputs,
+    compute_wbv_exposure,
+    estimate_dva_logmar_wang2024,
+    Faa117Inputs,
+    faa117_limits,
+    Faa117CumulativeInputs,
+    faa117_cumulative_limits,
+    AaGradientInputs,
+    compute_aa_gradient,
+    OxygenDeliveryInputs,
+    compute_oxygen_delivery,
+    EasaFtlFdpInputs,
+    easa_max_daily_fdp,
+    EasaOroFtl210Inputs,
+    easa_oroflt_210_cumulative_limits,
+    WellsDvtInputs,
+    compute_wells_dvt,
+    WellsPeInputs,
+    compute_wells_pe,
+    MSSQ_SHORT_ITEMS,
+    MssqShortInputs,
+    compute_mssq_short,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -287,215 +327,221 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional styling with light/dark support
-st.markdown("""
+# Neutral “crystal / liquid glass” styling (no injected colors; works in light/dark mode)
+# Note: Streamlit doesn't provide stable per-component class hooks, so we apply this to:
+# - `.info-box` style callouts already used throughout the app
+# - `neutral_box()` containers via a marker element + `:has()` selector (supported in modern Chromium/Edge)
+st.markdown(
+    """
 <style>
-    :root {
-        --color-primary: #2563eb; /* indigo-600 */
-        --color-accent: #7c3aed;  /* violet-600 */
-        --color-sky: #0ea5e9;     /* sky-500 */
-        --color-success: #22c55e; /* green-500 */
-        --color-warning: #f59e0b; /* amber-500 */
-        --color-danger: #ef4444;  /* red-500 */
-        /* Light theme defaults */
-        --color-text: #111827;    /* gray-900 */
-        --color-muted: #6b7280;   /* gray-500 */
-        --surface: #ffffff;
-        --surface-2: #f8fafc;     /* slate-50 */
-        --border: #e5e7eb;        /* gray-200 */
-    }
+  /* Hide the marker node (used only to target crystal containers). */
+  .crystal-box-marker {
+    display: none;
+  }
 
-    body, .stApp {
-        background: radial-gradient(circle at top, rgba(59,130,246,0.22), transparent 55%),
-                    radial-gradient(circle at 20% 20%, rgba(14,165,233,0.28), transparent 40%),
-                    linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-        font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
-        color: var(--color-text);
-    }
+  /* Crystal callouts (used by existing HTML blocks). */
+  .info-box, .warning-box, .danger-box, .success-box {
+    border-radius: 16px;
+    padding: 0.95rem 1.05rem;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+  }
 
-    .hero-panel {
-        padding: 2.4rem;
-        border-radius: 1.5rem;
-        border: 1px solid rgba(255,255,255,0.4);
-        background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(14,165,233,0.08));
-        box-shadow: 0 30px 60px rgba(15,23,42,0.15);
-        position: relative;
-        overflow: hidden;
-    }
+  /* Crystal containers created via neutral_box(). */
+  div[data-testid="stContainer"]:has(.crystal-box-marker) {
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.10);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+  }
 
-    .hero-panel:after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 40% 0%, rgba(255,255,255,0.35), transparent 60%);
-        pointer-events: none;
-    }
-
-    .hero-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6rem;
-        margin: 1rem 0 1.25rem 0;
-    }
-
-    .hero-badge {
-        padding: 0.35rem 0.9rem;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.85);
-        color: #0f172a;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .glass-panel {
-        padding: 1.2rem;
-        border-radius: 1rem;
-        background: rgba(255,255,255,0.75);
-        border: 1px solid rgba(148,163,184,0.35);
-        box-shadow: 0 20px 40px rgba(15,23,42,0.12);
-        backdrop-filter: blur(16px);
-    }
-
-    .roadmap-chip {
-        padding: 0.65rem 1rem;
-        border-radius: 12px;
-        background: rgba(37,99,235,0.08);
-        border: 1px solid rgba(37,99,235,0.2);
-        margin-bottom: 0.8rem;
-    }
-
-    .roadmap-chip strong {
-        display: block;
-        font-size: 0.95rem;
-    }
-
-    .status-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 0.45rem;
-    }
-
-    .stat-card {
-        padding: 1rem 1.2rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(226,232,240,0.6);
-        background: rgba(248,250,252,0.85);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
-    }
-
-    /* Override variables automatically when user prefers dark scheme */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --color-text: #e5e7eb;    /* slate-200 */
-        --color-muted: #9ca3af;   /* gray-400 */
-        --surface: #0f172a;       /* slate-900 */
-        --surface-2: #111827;     /* gray-900 */
-        --border: #334155;        /* slate-600 */
-      }
-    }
-
-    .main-header {
-        font-size: 2.6rem;
-        font-weight: 800;
-        color: var(--color-text);
-        text-align: center;
-        margin-bottom: 2rem;
-        padding: 1.2rem;
-        background: linear-gradient(135deg, rgba(14,165,233,0.12), rgba(99,102,241,0.12));
-        border-radius: 14px;
-        border: 1px solid var(--border);
-    }
-
-    .section-header {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: var(--color-text);
-        margin: 1.2rem 0 0.8rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--border);
-    }
-
+  /* Dark mode: keep it neutral (no hues), just invert translucency and borders. */
+  @media (prefers-color-scheme: dark) {
     .info-box, .warning-box, .danger-box, .success-box {
-        padding: 1rem 1.2rem;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: var(--surface);
-        color: var(--color-text);          /* ensure readable text in both themes */
-        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
     }
 
-    .info-box { border-left: 5px solid var(--color-sky); }
-    .warning-box { border-left: 5px solid var(--color-warning); }
-    .danger-box { border-left: 5px solid var(--color-danger); }
-    .success-box { border-left: 5px solid var(--color-success); }
-
-    .metric-card {
-        background: var(--surface);
-        padding: 1.2rem 1.3rem;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        box-shadow: 0 5px 18px rgba(2,6,23,0.06);
-        margin: 0.5rem 0;
+    div[data-testid="stContainer"]:has(.crystal-box-marker) {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
     }
-
-    .stButton > button {
-        background: linear-gradient(135deg, var(--color-sky), var(--color-accent));
-        color: white;
-        border-radius: 10px;
-        border: none;
-        padding: 0.6rem 1.1rem;
-        font-weight: 700;
-        letter-spacing: 0.2px;
-        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
-        box-shadow: 0 8px 20px rgba(99,102,241,0.25);
-    }
-
-    .stButton > button:hover { transform: translateY(-1px); filter: brightness(1.02); }
-
-    .stSelectbox label, .stSlider label, .stRadio label, .stNumberInput label {
-        font-weight: 600; color: var(--color-text);
-    }
+  }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
+@contextmanager
+def crystal_container(*, in_sidebar: bool = False, border: bool = True):
+    """Create a neutral 'crystal' container for card/box UI.
+
+    Notes
+    - The crystal look is applied via CSS to containers that include the hidden marker.
+    - This intentionally avoids any colored styling so it stays compatible with dark mode.
+    """
+    if not isinstance(in_sidebar, bool):
+        raise TypeError("in_sidebar must be a bool")
+    if not isinstance(border, bool):
+        raise TypeError("border must be a bool")
+
+    target = st.sidebar if in_sidebar else st
+    box = target.container(border=border)
+    with box:
+        st.markdown('<span class="crystal-box-marker"></span>', unsafe_allow_html=True)
+        yield
+
+def neutral_box(markdown_text: str, *, in_sidebar: bool = False) -> None:
+    """Render a neutral, theme-safe bordered callout (styled via crystal CSS)."""
+    if not isinstance(markdown_text, str):
+        raise TypeError("markdown_text must be a str")
+    text = markdown_text.strip()
+    if not text:
+        raise ValueError("markdown_text must be non-empty")
+
+    with crystal_container(in_sidebar=in_sidebar, border=True):
+        st.markdown(text)
 
 ROADMAP_PHASE_ONE = [
     {
         "name": "ISO 7933 Predicted Heat Strain",
         "status": "Live",
         "description": "Core temperature + hydration guardrails",
-        "tone": "#22c55e",
     },
     {
         "name": "Simulation Studio",
         "status": "Live",
         "description": "Forward trajectories + next-step forecasts",
-        "tone": "#38bdf8",
     },
     {
         "name": "Universal Thermal Climate Index",
-        "status": "Next",
+        "status": "Live",
         "description": "Outdoor thermal comfort envelope",
-        "tone": "#f97316",
     },
     {
         "name": "Cold Water Immersion Survival",
-        "status": "Planned",
+        "status": "Live",
         "description": "Hayward–Tikuisis survival curves",
-        "tone": "#0ea5e9",
+    },
+    {
+        "name": "Bühlmann ZH-L16 Decompression Algorithm",
+        "status": "Live",
+        "description": "16-compartment decompression + gradient factors",
+    },
+    {
+        "name": "AGSM Effectiveness Model",
+        "status": "Live",
+        "description": "Quantify anti-G straining and suit benefit",
+    },
+    {
+        "name": "Spatial Disorientation Risk Assessment",
+        "status": "Live",
+        "description": "Vestibular + flight condition risk scoring",
     },
 ]
 
+# Minimal per-item details (lifted from docs/ROADMAP.md) for "coming soon" pages.
+# Keep this neutral and informational; do not inject color styling here.
+ROADMAP_ITEM_DETAILS: dict[str, dict[str, object]] = {
+    "Universal Thermal Climate Index": {
+        "phase": "Phase 1",
+        "references": [
+            "Jendritzky, G., de Dear, R., & Havenith, G. (2012). UTCI—why another thermal index? International Journal of Biometeorology, 56(3), 421–428.",
+            "Bröde, P., Fiala, D., Błażejczyk, K., et al. (2012). Deriving the operational procedure for the Universal Thermal Climate Index (UTCI). International Journal of Biometeorology, 56(3), 481–494.",
+        ],
+    },
+    "Cold Water Immersion Survival": {
+        "phase": "Phase 1",
+        "references": [
+            "Tikuisis, P. (1997). Prediction of survival time at sea based on observed body cooling rates. Aviation, Space, and Environmental Medicine, 68(5), 441–448.",
+            "Hayward, J. S., Eckerson, J. D., & Collis, M. L. (1975). Effect of behavioral variables on cooling rate of man in cold water. Journal of Applied Physiology, 38(6), 1073–1077.",
+            "Xu, X., Tikuisis, P., & Giesbrecht, G. (2005). A mathematical model for human brain cooling during cold-water near-drowning. Journal of Applied Physiology, 99(4), 1428–1435.",
+        ],
+    },
+    "Bühlmann ZH-L16 Decompression Algorithm": {
+        "phase": "Phase 1",
+        "references": [
+            "Bühlmann, A. A. (1984). Decompression-Decompression Sickness. Springer-Verlag.",
+            "Bühlmann, A. A. (2002). Tauchmedizin: Barotrauma, Gasembolie, Dekompression, Dekompressionskrankheit (5th ed.). Springer.",
+            "Gerth, W. A., & Doolette, D. J. (2007). VVal-18 and VVal-18M thalmann algorithm-based air decompression tables and procedures. NEDU TR 07-09.",
+        ],
+    },
+    "AGSM Effectiveness Model": {
+        "phase": "Phase 1",
+        "references": [
+            "Wood, E. H., Lambert, E. H., Baldes, E. J., & Code, C. F. (1946). Effects of acceleration in relation to aviation. Federation Proceedings, 5, 327–344.",
+            "Whinnery, J. E. (1991). Methods for describing and quantifying +Gz-induced loss of consciousness. Aviation, Space, and Environmental Medicine, 62(8), 738–742.",
+            "Eiken, O., & Mekjavic, I. B. (2016). Ischaemia-reperfusion and G-LOC: a review of the pathophysiology. Aviation, Space, and Environmental Medicine, 87(6), 584–594.",
+        ],
+    },
+    "Spatial Disorientation Risk Assessment": {
+        "phase": "Phase 1",
+        "references": [
+            "Benson, A. J. (1999). Spatial disorientation—common illusions. In Aviation Medicine (3rd ed.). Butterworth-Heinemann.",
+            "Previc, F. H., & Ercoline, W. R. (2004). Spatial Disorientation in Aviation. AIAA.",
+            "Cheung, B. (2013). Spatial disorientation: more than just illusion. Aviation, Space, and Environmental Medicine, 84(11), 1211–1214.",
+        ],
+    },
+}
+
+
+def _coming_soon_label(item_name: str) -> str:
+    """Build a stable navigation label for roadmap items that are not yet live."""
+    if not isinstance(item_name, str):
+        raise TypeError("item_name must be a str")
+    name = item_name.strip()
+    if not name:
+        raise ValueError("item_name must be non-empty")
+    return f"🚧 {name} (Coming soon)"
+
+
+COMING_SOON_NAV: dict[str, dict[str, object]] = {}
+for _item in ROADMAP_PHASE_ONE:
+    if _item.get("status") != "Live":
+        _name = str(_item.get("name", "")).strip()
+        if _name:
+            COMING_SOON_NAV[_coming_soon_label(_name)] = {
+                "name": _name,
+                "status": str(_item.get("status", "Planned")),
+                "description": str(_item.get("description", "")),
+            }
+
+
+def _request_navigation(target: str) -> None:
+    """Request navigation to a new sidebar selection on the next rerun.
+
+    Streamlit forbids mutating a session_state key after the widget with that key is
+    instantiated in the same run. We therefore write to a separate key and apply it
+    before the selectbox is created.
+    """
+    if not isinstance(target, str):
+        raise TypeError("target must be a str")
+    nav_target = target.strip()
+    if not nav_target:
+        raise ValueError("target must be non-empty")
+    st.session_state["nav_to"] = nav_target
+
 # Main header
-st.markdown('<div class="main-header">🚀 Aerospace Physiology & Occupational Health Calculators</div>', unsafe_allow_html=True)
+st.title("🚀 Aerospace Physiology & Occupational Health Calculators")
 
 # Sidebar navigation
 st.sidebar.markdown("## 📋 Navigation")
+if "nav_to" in st.session_state:
+    # Apply pending navigation BEFORE the selectbox is instantiated.
+    st.session_state["calculator_category"] = st.session_state.pop("nav_to")
 calculator_category = st.sidebar.selectbox(
     "Select Calculator Category",
     [
         "🏠 Home",
+        "🗺️ Roadmap",
+        *list(COMING_SOON_NAV.keys()),
         "🌍 Atmospheric & Physiological",
         "🩺 Clinical Calculators",
         "Occupational Health & Safety",
@@ -504,75 +550,45 @@ calculator_category = st.sidebar.selectbox(
         "🧪 Simulation Studio",
         "📈 Visualization Studio",
         "📊 Risk Assessment Tools"
-    ]
+    ],
+    key="calculator_category",
 )
 
 # Disclaimer
 st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div class="info-box">
-<strong>Important Disclaimer</strong><br>
-These calculators are for educational and research purposes only. 
-Do not use for operational decision-making without professional validation.
-</div>
-""", unsafe_allow_html=True)
+neutral_box(
+    "**Important Disclaimer**\n\n"
+    "These calculators are for educational and research purposes only.\n"
+    "Do not use for operational decision-making without professional validation.",
+    in_sidebar=True,
+)
 
 if calculator_category == "🏠 Home":
     hero_left, hero_right = st.columns([2.2, 1.2])
 
     with hero_left:
-        st.markdown(
-            """
-            <div class="hero-panel">
-                <p style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 0.75rem; opacity: 0.8;">
-                    Aerospace Medicine Ops Suite
-                </p>
-                <h1 style="font-size: 2.6rem; margin: 0.35rem 0 1rem 0;">
-                    Modern, elegant calculators for extreme environments
-                </h1>
-                <p style="font-size: 1.05rem; max-width: 640px;">
-                    Run atmospheric physiology, occupational exposure, circadian, and risk assessment workflows inside a cohesive
-                    mission UI. Every model is referenced, vetted, and tuned for aerospace realities.
-                </p>
-                <div class="hero-badges">
-                    <span class="hero-badge">New · ISO 7933 Predicted Heat Strain</span>
-                    <span class="hero-badge">ACGIH TLV® + BEI 2024</span>
-                    <span class="hero-badge">Plotly + ECharts visual lab</span>
-                </div>
-                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0;">
-                    Roadmap momentum → Phase 1 item \"Predicted Heat Strain\" is now live in-app.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.caption("Aerospace Medicine Ops Suite")
+        st.header("Modern calculators for extreme environments")
+        st.write(
+            "Run atmospheric physiology, occupational exposure, circadian, and risk assessment workflows in one place. "
+            "Models are referenced, vetted, and tuned for aerospace realities."
         )
+        neutral_box(
+            "- New: ISO 7933 Predicted Heat Strain\n"
+            "- ACGIH TLV® + BEI 2024\n"
+            "- Plotly + ECharts visual lab"
+        )
+        st.caption('Roadmap momentum → Phase 1 item "Predicted Heat Strain" is now live in-app.')
 
     with hero_right:
-        st.markdown(
-            f"""
-            <div class="glass-panel">
-                <p style="font-weight:700; margin-bottom:0.8rem;">Mission-ready snapshot</p>
-                <div class="stat-card" style="margin-bottom:0.8rem;">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Calculators</div>
-                    <div style="font-size:1.8rem; font-weight:700;">29+</div>
-                    <small>Heat, hypoxia, circadian, clinical, exposure</small>
-                </div>
-                <div class="stat-card" style="margin-bottom:0.8rem;">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Chemical DB</div>
-                    <div style="font-size:1.8rem; font-weight:700;">{len(AEROSPACE_CHEMICALS)}</div>
-                    <small>Aerospace-specific TLV®/BEI references</small>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.6;">Compliance</div>
-                    <div style="font-size:1.4rem; font-weight:700;">ACGIH 2024</div>
-                    <small>Noise · heat · chemicals · biological monitoring</small>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with crystal_container(border=True):
+            st.markdown("**Mission-ready snapshot**")
+            st.metric("Calculators", "29+")
+            st.metric("Chemical DB", f"{len(AEROSPACE_CHEMICALS)}")
+            st.metric("Compliance", "ACGIH 2024")
+            st.caption("Noise · heat · chemicals · biological monitoring")
 
-    st.markdown('<div class="section-header">Mission-ready focus areas</div>', unsafe_allow_html=True)
+    st.subheader("Mission-ready focus areas")
     mission_cols = st.columns(3)
     mission_descriptions = [
         ("🌍 Physiology & Atmosphere", ["ISA layers & hypoxia cascade", "TUC + decompression guardrails", "Cosmic radiation planning"]),
@@ -580,38 +596,124 @@ if calculator_category == "🏠 Home":
         ("🧠 Fatigue & Performance", ["Circadian performance envelopes", "Two-process sleep modelling", "Jet lag + Mitler vigilance"]),
     ]
     for col, (title, bullets) in zip(mission_cols, mission_descriptions):
-        bullet_html = "".join(f"<li>{b}</li>" for b in bullets)
-        col.markdown(
-            f"""
-            <div class="glass-panel">
-                <h4 style="margin-bottom:0.4rem;">{title}</h4>
-                <ul style="padding-left:1.1rem; margin-bottom:0;">{bullet_html}</ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with col:
+            neutral_box("**" + title + "**\n\n" + "\n".join(f"- {b}" for b in bullets))
 
-    st.markdown('<div class="section-header">Roadmap momentum</div>', unsafe_allow_html=True)
-    roadmap_cols = st.columns(len(ROADMAP_PHASE_ONE))
-    for info, col in zip(ROADMAP_PHASE_ONE, roadmap_cols):
-        col.markdown(
-            f"""
-            <div class="roadmap-chip">
-                <span class="status-dot" style="background:{info['tone']};"></span>
-                <strong>{info['name']}</strong>
-                <small>{info['status']} · {info['description']}</small>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    st.subheader("Roadmap momentum")
+    roadmap_cols = st.columns(4)
+    for idx, info in enumerate(ROADMAP_PHASE_ONE[:4]):
+        col = roadmap_cols[idx % 4]
+        with col:
+            neutral_box(f"**{info['name']}**\n\n{info['status']} · {info['description']}")
 
-    st.markdown(
-        '<div class="info-box">Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots.</div>',
-        unsafe_allow_html=True,
+    st.markdown("#### Quick launch")
+    launch_cols = st.columns(4)
+    launch_targets = [
+        ("🌍 Physiology", "🌍 Atmospheric & Physiological", "Atmosphere, hypoxia, decompression, radiation"),
+        ("🩺 Clinical", "🩺 Clinical Calculators", "Bedside indices and clinical physiology tools"),
+        ("🛡️ Occupational", "Occupational Health & Safety", "Noise, chemicals, TLVs/BEIs and reporting"),
+        ("🧪 Simulation", "🧪 Simulation Studio", "Forward trajectories (PHS, circadian envelopes)"),
+    ]
+    for i, (label, target, subtitle) in enumerate(launch_targets):
+        with launch_cols[i]:
+            with crystal_container(border=True):
+                st.markdown(f"**{label}**")
+                st.caption(subtitle)
+                st.button(
+                    "Open",
+                    key=f"quick_launch_{i}",
+                    on_click=_request_navigation,
+                    args=(target,),
+                )
+
+    neutral_box(
+        "Need a specific calculator fast? Use the sidebar navigation or jump into the Visualization Studio for bespoke plots."
     )
 
+elif calculator_category == "🗺️ Roadmap":
+    st.subheader("Roadmap")
+    st.caption("Derived from `docs/ROADMAP.md` (Phase 1 highlighted).")
+
+    with crystal_container(border=True):
+        st.markdown("**Phase 1 — High-Priority Additions (0–6 months)**")
+        for item in ROADMAP_PHASE_ONE:
+            st.markdown(f"- **{item['name']}** — {item['status']} · {item['description']}")
+
+    st.markdown("#### Phase 1: coming soon")
+    soon_cols = st.columns(3)
+    soon_items = [v for v in COMING_SOON_NAV.values()]
+    for idx, item in enumerate(soon_items):
+        col = soon_cols[idx % 3]
+        with col:
+            with crystal_container(border=True):
+                st.markdown(f"**{item['name']}**")
+                st.caption(f"{item['status']} · {item['description']}")
+                st.button(
+                    "Open preview",
+                    key=f"roadmap_open_preview_{idx}",
+                    on_click=_request_navigation,
+                    args=(_coming_soon_label(str(item["name"])),),
+                )
+
+    with st.expander("View full roadmap (from docs/ROADMAP.md)", expanded=False):
+        try:
+            with open("docs/ROADMAP.md", "r", encoding="utf-8") as f:
+                roadmap_md = f.read()
+        except OSError as e:
+            st.error(f"Unable to read docs/ROADMAP.md: {e}")
+        else:
+            st.markdown(roadmap_md)
+
+elif calculator_category in COMING_SOON_NAV:
+    item = COMING_SOON_NAV[calculator_category]
+    name = str(item["name"])
+    status = str(item["status"])
+    description = str(item["description"])
+    details = ROADMAP_ITEM_DETAILS.get(name, {})
+    phase = str(details.get("phase", "Phase 1"))
+    refs = details.get("references", [])
+    if not isinstance(refs, list):
+        refs = []
+
+    st.subheader(f"{name} — coming soon")
+    st.caption(f"{phase} · Status: {status}")
+
+    with crystal_container(border=True):
+        st.markdown("**What you’ll get**")
+        st.markdown(f"- {description}" if description else "- Roadmap item (details pending)")
+
+    with crystal_container(border=True):
+        st.markdown("**Why this is on the roadmap**")
+        st.markdown(
+            "This section is a placeholder UI preview so users can see what’s planned and why, "
+            "without breaking the current calculators."
+        )
+
+    if refs:
+        with crystal_container(border=True):
+            st.markdown("**Key references (from `docs/ROADMAP.md`)**")
+            for r in refs:
+                if isinstance(r, str) and r.strip():
+                    st.markdown(f"- {r.strip()}")
+
+    col_back1, col_back2 = st.columns([1, 1])
+    with col_back1:
+        st.button(
+            "Back to Roadmap",
+            key="coming_soon_back_to_roadmap",
+            on_click=_request_navigation,
+            args=("🗺️ Roadmap",),
+        )
+    with col_back2:
+        st.button(
+            "Back to Home",
+            key="coming_soon_back_to_home",
+            on_click=_request_navigation,
+            args=("🏠 Home",),
+        )
+
 elif calculator_category == "🌍 Atmospheric & Physiological":
-    st.markdown('<div class="section-header">Atmospheric & Physiological Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Atmospheric & Physiological Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -619,10 +721,15 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             "Standard Atmosphere Properties",
             "Alveolar Oxygen Pressure", 
             "Altitude & Hypoxia Predictions",
+            "Visual Acuity at Altitude (DVA, Wang 2024)",
             "Acute Mountain Sickness Risk",
             "HAPE Risk (Suona 2023 Nomogram)",
             "Oxygen Cascade",
+            "Alveolar-arterial Oxygen Gradient (A–a)",
+            "Oxygen Delivery Index (DO₂I)",
             "Decompression Tissue Ratio (TR)",
+            "Bühlmann ZH-L16 GF Decompression Planner",
+            "AGSM Effectiveness (Anti-G +Gz)",
             "Time of Useful Consciousness",
             "G-Force Tolerance",
             "Cosmic Radiation Dose"
@@ -657,7 +764,6 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                 y=profile["alt_m"] / 1000.0,
                 mode="lines",
                 name="Temperature",
-                line=dict(color="red"),
             )
         )
         fig.update_layout(
@@ -666,7 +772,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
             yaxis_title="Altitude (km)",
             height=400
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         
         st.markdown('<div class="info-box">Calculations up to 11 km assume a linear temperature lapse rate; 11–20 km is treated as isothermal, and 20–32 km uses a warming layer per ISA.</div>', unsafe_allow_html=True)
     
@@ -697,6 +803,202 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
                 st.markdown('<div class="info-box"><strong>Assessment:</strong> PAO₂ within typical range</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="info-box"><strong>Formula:</strong> PAO₂ = FiO₂·(Pb − PH₂O) − PaCO₂/R</div>', unsafe_allow_html=True)
+
+    elif calc_type == "Visual Acuity at Altitude (DVA, Wang 2024)":
+        st.markdown("### 👁️ Visual Acuity at Altitude (Dynamic Visual Acuity, LogMAR)")
+
+        neutral_box(
+            "**Model type**: empirical interpolation from a hypobaric chamber study (short-term exposure).\n\n"
+            "Source: Wang et al. (2024) *Influence of short-term hypoxia exposure on dynamic visual acuity* (Frontiers in Neuroscience). "
+            "Outputs are **group-mean DVA (LogMAR)** under the study protocol; not a personalized clinical prediction."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                alt_m = float(st.slider("Altitude (m)", 0.0, 4500.0, 3500.0, step=100.0))
+            with c2:
+                t_min = float(st.slider("Time at altitude (min)", 0.0, 30.0, 0.0, step=1.0))
+            with c3:
+                vel = float(st.slider("Target angular velocity (deg/s)", 20.0, 80.0, 40.0, step=5.0))
+
+        try:
+            est = estimate_dva_logmar_wang2024(
+                altitude_m=alt_m,
+                time_at_altitude_min=t_min,
+                angular_velocity_deg_s=vel,
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("DVA (LogMAR)", f"{est.logmar:.2f}")
+                with o2:
+                    st.metric("Approx Snellen", f"20/{est.snellen_denominator_20ft:d}")
+                with o3:
+                    st.metric("Inputs used (clamped)", f"{est.altitude_m:.0f} m, {est.time_at_altitude_min:.0f} min, {est.angular_velocity_deg_s:.0f}°/s")
+
+            with st.expander("References (empirical anchor)", expanded=False):
+                st.markdown("- Wang et al. (2024). *Frontiers in Neuroscience*. [DOI: 10.3389/fnins.2024.1428987](https://doi.org/10.3389/fnins.2024.1428987)")
+
+    elif calc_type == "Alveolar-arterial Oxygen Gradient (A–a)":
+        st.markdown("### 🫁↔️🩸 Alveolar–arterial Oxygen Gradient (A–a)")
+
+        neutral_box(
+            "**Definition**: A–a = PAO₂ − PaO₂. PAO₂ is computed using the alveolar gas equation.\n\n"
+            "Primary reference (normal cohort + methodology discussion): Filley et al. (1954) J Clin Invest. "
+            "[DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)"
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                alt_ft = st.slider("Altitude (ft)", 0, 40_000, 0, step=500)
+                alt_m = float(alt_ft * 0.3048)
+            with c2:
+                pao2 = float(st.number_input("PaO₂ (mmHg)", min_value=0.0, value=90.0, step=1.0))
+            with c3:
+                paco2 = float(st.number_input("PaCO₂ (mmHg)", min_value=0.0, value=40.0, step=1.0))
+            with c4:
+                fio2 = float(st.number_input("FiO₂ (fraction)", min_value=0.0, max_value=1.0, value=0.21, step=0.01))
+
+        with crystal_container(border=True):
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                rq = float(st.number_input("RQ (dimensionless)", min_value=0.1, max_value=1.5, value=0.8, step=0.05))
+            with m2:
+                normal_model = st.selectbox(
+                    "Reference normal model",
+                    ["filley1954_rest_air_1600ft", "heuristic_age_over4_plus4"],
+                    index=0,
+                )
+            with m3:
+                age = None
+                if normal_model == "heuristic_age_over4_plus4":
+                    age = float(st.number_input("Age (years) for heuristic", min_value=0.0, value=30.0, step=1.0))
+                else:
+                    _ = st.caption("Filley 1954 cohort reference (rest, air-breathing, ~1600 ft).")
+
+        try:
+            res = compute_aa_gradient(
+                AaGradientInputs(
+                    altitude_m=alt_m,
+                    pao2_mmHg=pao2,
+                    paco2_mmHg=paco2,
+                    fio2=fio2,
+                    rq=rq,
+                    age_years=age,
+                    normal_model=normal_model,  # type: ignore[arg-type]
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("PAO₂ (calc, mmHg)", f"{res.pao2_calc_mmHg:.1f}")
+                with o2:
+                    st.metric("A–a gradient (mmHg)", f"{res.aa_gradient_mmHg:.1f}")
+                with o3:
+                    if res.normal_upper_approx_mmHg is not None:
+                        st.metric("Ref upper (approx, mmHg)", f"{res.normal_upper_approx_mmHg:.1f}")
+                if res.normal_upper_approx_mmHg is not None:
+                    st.caption(
+                        "Reference bounds are context-dependent; interpret with FiO₂, altitude, and clinical scenario."
+                    )
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Filley et al. (1954) *J Clin Invest* (A–a definition + methodology; normal cohort stats). "
+                    "[DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)\n"
+                    "- Harris et al. (1974) *Clinical Science* (age and FiO₂ dependence of normal A–a). "
+                    "[DOI: 10.1042/cs0460089](https://doi.org/10.1042/cs0460089)"
+                )
+
+    elif calc_type == "Oxygen Delivery Index (DO₂I)":
+        st.markdown("### 🫀🩸 Oxygen Delivery (CaO₂ / DO₂ / DO₂I)")
+
+        neutral_box(
+            "**Core equations**: CaO₂ = (Hüfner·Hb·SaO₂) + (α·PaO₂); DO₂ = CO·CaO₂·10; DO₂I = DO₂/BSA.\n\n"
+            "Constants vary by convention; this UI exposes Hüfner and α as editable parameters."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                hb = float(st.number_input("Hemoglobin Hb (g/dL)", min_value=0.0, value=15.0, step=0.1))
+            with c2:
+                sao2_pct = float(st.number_input("SaO₂ (%)", min_value=0.0, max_value=100.0, value=98.0, step=0.5))
+            with c3:
+                pao2 = float(st.number_input("PaO₂ (mmHg)", min_value=0.0, value=90.0, step=1.0))
+            with c4:
+                co = float(st.number_input("Cardiac output CO (L/min)", min_value=0.1, value=5.0, step=0.1))
+
+        with crystal_container(border=True):
+            bsa_mode = st.selectbox("Indexing mode", ["Provide BSA directly", "Estimate BSA (DuBois)"], index=1)
+            bsa = None
+            height_cm = None
+            weight_kg = None
+            if bsa_mode == "Provide BSA directly":
+                bsa = float(st.number_input("BSA (m²)", min_value=0.5, value=1.9, step=0.01))
+            else:
+                h1, w1 = st.columns(2)
+                with h1:
+                    height_cm = float(st.number_input("Height (cm)", min_value=50.0, value=180.0, step=1.0))
+                with w1:
+                    weight_kg = float(st.number_input("Weight (kg)", min_value=10.0, value=80.0, step=1.0))
+
+        with crystal_container(border=True):
+            k1, k2 = st.columns(2)
+            with k1:
+                hufner = float(st.number_input("Hüfner constant (mL O₂/g Hb)", min_value=1.0, max_value=1.5, value=1.34, step=0.01))
+            with k2:
+                alpha = float(st.number_input("α dissolved O₂ (mL O₂/dL/mmHg)", min_value=0.0, max_value=0.01, value=0.003, step=0.0001, format="%.4f"))
+
+        try:
+            out = compute_oxygen_delivery(
+                OxygenDeliveryInputs(
+                    hb_g_dl=hb,
+                    sao2_frac=float(sao2_pct / 100.0),
+                    pao2_mmhg=pao2,
+                    cardiac_output_l_min=co,
+                    bsa_m2=bsa,
+                    height_cm=height_cm,
+                    weight_kg=weight_kg,
+                    hufner_ml_per_g=hufner,
+                    alpha_ml_per_dl_per_mmhg=alpha,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                o1, o2, o3, o4 = st.columns(4)
+                with o1:
+                    st.metric("CaO₂ (mL/dL)", f"{out.cao2_ml_o2_dl:.2f}")
+                with o2:
+                    st.metric("O₂ bound (mL/dL)", f"{out.o2_bound_ml_o2_dl:.2f}")
+                with o3:
+                    st.metric("O₂ dissolved (mL/dL)", f"{out.o2_dissolved_ml_o2_dl:.2f}")
+                with o4:
+                    st.metric("DO₂ (mL/min)", f"{out.do2_ml_o2_min:.0f}")
+                if out.do2i_ml_o2_min_m2 is not None:
+                    st.metric("DO₂I (mL/min/m²)", f"{out.do2i_ml_o2_min_m2:.0f}")
+                else:
+                    st.caption("Provide BSA (or height+weight) to compute DO₂I.")
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Oxygen content/capacity concepts and measurement context are discussed in: "
+                    "Filley et al. (1954) *J Clin Invest*. [DOI: 10.1172/JCI102922](https://doi.org/10.1172/JCI102922)\n"
+                    "- Alveolar gas equation reference used elsewhere in this suite: West, J.B. (Respiratory Physiology)."
+                )
     
     elif calc_type == "Time of Useful Consciousness":
         st.markdown("### ⏱️ Time of Useful Consciousness (TUC)")
@@ -798,7 +1100,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         fig.add_trace(go.Scatter(x=alts, y=[spo2_unacclimatized(a) for a in alts], name="Unacclimatized"))
         fig.add_trace(go.Scatter(x=alts, y=[spo2_acclimatized(a) for a in alts], name="Acclimatized"))
         fig.update_layout(title="SpO₂ vs Altitude", xaxis_title="Altitude (m)", yaxis_title="SpO₂ (%)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         with st.expander("Arterial Oxygen at Altitude (PaO₂) Estimator", expanded=False):
             colp1, colp2, colp3 = st.columns(3)
@@ -832,7 +1134,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         probs = [ams_probability(x) for x in aae_vals]
         fig = go.Figure(data=[go.Scatter(x=aae_vals, y=[p*100 for p in probs], mode="lines")])
         fig.update_layout(title="AMS Probability vs AAE", xaxis_title="AAE (km·days)", yaxis_title="Probability (%)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "HAPE Risk (Suona 2023 Nomogram)":
         st.markdown("### 🫁 High-Altitude Pulmonary Edema (HAPE) Risk")
@@ -979,7 +1281,7 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         cao2s = [oxygen_content(hb, s, max(0.0, p)) for s, p in zip(sao2s, pao2s)]
         fig = go.Figure(data=[go.Scatter(x=alts/0.3048, y=cao2s, mode="lines", name="CaO₂")])
         fig.update_layout(title="CaO₂ vs Altitude", xaxis_title="Altitude (ft)", yaxis_title="CaO₂ (mL/dL)", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "Decompression Tissue Ratio (TR)":
         st.markdown("### 🫧 Decompression Tissue Ratio (TR)")
@@ -1003,10 +1305,162 @@ elif calculator_category == "🌍 Atmospheric & Physiological":
         trs = [tissue_ratio(ptissue, p) for p in p_ambs]
         fig = go.Figure(data=[go.Scatter(x=alts_ft, y=trs, mode="lines")])
         fig.update_layout(title="TR vs Altitude (fixed tissue N₂)", xaxis_title="Altitude (ft)", yaxis_title="TR", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
+
+    elif calc_type == "Bühlmann ZH-L16 GF Decompression Planner":
+        st.markdown("### 🧮 Bühlmann ZH‑L16 (Gradient Factors) Decompression Planner")
+
+        neutral_box(
+            "**Research/education use only.** Deterministic Bühlmann ZH‑L16 GF planner (ZH‑L16C/B), "
+            "unit-tested against an external reference stop schedule.\n\n"
+            "It does not model bubble dynamics or individual susceptibility."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Profile inputs**")
+            col_a, col_b, col_c = st.columns(3)
+            with col_a:
+                depth_m = float(st.slider("Max depth (m)", 0.0, 100.0, 40.0, step=1.0))
+                profile_minutes = float(st.slider("“for X minutes” (min)", 1.0, 240.0, 35.0, step=1.0))
+            with col_b:
+                gf_low = float(st.slider("GF Low", 0.05, 1.00, 0.30, step=0.01))
+                gf_high = float(st.slider("GF High", 0.10, 1.00, 0.85, step=0.01))
+            with col_c:
+                descent_rate = float(st.slider("Descent rate (m/min)", 5.0, 40.0, 20.0, step=1.0))
+                ascent_rate = float(st.slider("Ascent rate (m/min)", 3.0, 20.0, 10.0, step=1.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Gas + environment**")
+            col_g1, col_g2, col_g3 = st.columns(3)
+            with col_g1:
+                o2_percent = float(st.slider("O₂ (%)", 10.0, 100.0, 21.0, step=1.0))
+                he_percent = float(st.slider("He (%)", 0.0, 80.0, 0.0, step=1.0))
+            with col_g2:
+                model_variant = st.selectbox("Model variant", ["zh-l16c-gf", "zh-l16b-gf"], index=0)
+                include_descent = st.checkbox(
+                    "Interpret “for X minutes” as runtime at max depth (includes descent)",
+                    value=True,
+                    help=(
+                        "If enabled, time at depth is computed as max(0, X − descent_time). "
+                        "This matches the convention used by some planners and the external reference schedule."
+                    ),
+                )
+            with col_g3:
+                surface_pressure_mbar = float(st.slider("Surface pressure (mbar)", 800.0, 1050.0, 1013.25, step=1.0))
+
+        n2_percent = 100.0 - o2_percent - he_percent
+        if n2_percent <= 0.0:
+            neutral_box("Gas mix invalid: O₂% + He% must be < 100%.")
+        else:
+            if st.button("Compute decompression plan", type="primary"):
+                try:
+                    plan = plan_zh_l16_gf(
+                        max_depth_m=depth_m,
+                        bottom_time_min=profile_minutes,
+                        gas=GasMix(o2=o2_percent / 100.0, he=he_percent / 100.0),
+                        include_descent_in_bottom_time=bool(include_descent),
+                        gf_low=gf_low,
+                        gf_high=gf_high,
+                        model=model_variant,  # type: ignore[arg-type]
+                        surface_pressure_bar=surface_pressure_mbar / 1000.0,
+                        descent_rate_m_per_min=descent_rate,
+                        ascent_rate_m_per_min=ascent_rate,
+                        stop_step_m=3.0,
+                    )
+                except (ValueError, TypeError, RuntimeError) as e:
+                    neutral_box(f"**Unable to compute plan**\n\n- {e}")
+                else:
+                    with crystal_container(border=True):
+                        st.markdown("**Decompression stops (3 m increments)**")
+                        if not plan.stops:
+                            st.markdown("- No decompression stops required for this profile (per model settings).")
+                        else:
+                            df = pd.DataFrame(
+                                [{"Stop depth (m)": float(s.depth_m), "Stop time (min)": int(s.minutes)} for s in plan.stops]
+                            )
+                            st.dataframe(df, width="stretch", hide_index=True)
+                            st.metric("Total decompression time", f"{plan.total_decompression_minutes} min")
+
+                    with crystal_container(border=True):
+                        st.markdown("**Model notes**")
+                        st.markdown(
+                            "- Tissue loading uses the Schreiner equation.\n"
+                            "- Ascent ceilings use Bühlmann ZH‑L16 A/B coefficients with Erik Baker Gradient Factors.\n"
+                            "- Depth↔pressure conversion uses 0.09985 bar/m (OSTC/DecoTengu convention)."
+                        )
+
+    elif calc_type == "AGSM Effectiveness (Anti-G +Gz)":
+        st.markdown("### 🛡️ AGSM Effectiveness Model (+Gz)")
+
+        neutral_box(
+            "**Research/education use only.** This tool estimates how anti‑G equipment and AGSM quality can shift +Gz tolerance.\n\n"
+            "Default deltas are anchored to a published comparative study of configurations (no suit, suit, suit+PBG, suit+AGSM, suit+PBG+AGSM)."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Inputs**")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                baseline = float(st.slider("Baseline relaxed tolerance (Gz)", 1.0, 8.0, 3.4, step=0.1))
+                agsm_quality = float(st.slider("AGSM quality (0–100%)", 0.0, 100.0, 100.0, step=1.0))
+            with col2:
+                anti_g_suit = st.checkbox("Anti‑G suit (AGS) worn", value=True)
+                pbg = st.checkbox("Pressure breathing for G (PBG/PBfG)", value=False, disabled=not anti_g_suit)
+            with col3:
+                max_cap = float(st.slider("Physiologic/equipment cap (Gz)", 6.0, 12.0, 9.0, step=0.1))
+
+        with crystal_container(border=True):
+            st.markdown("**Model parameters (advanced; defaults from literature anchor)**")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                suit_delta = float(st.slider("Suit delta (Gz)", 0.0, 6.0, 3.1, step=0.1))
+            with c2:
+                pbg_delta = float(st.slider("PBG delta (Gz)", 0.0, 4.0, 1.5, step=0.1))
+            with c3:
+                agsm_delta = float(st.slider("AGSM delta at 100% (Gz)", 0.0, 6.0, 2.4, step=0.1))
+
+        try:
+            res = estimate_gz_tolerance_with_agsm(
+                AgsmInputs(
+                    baseline_relaxed_gz=baseline,
+                    anti_g_suit=bool(anti_g_suit),
+                    pressure_breathing_for_g=bool(pbg),
+                    agsm_quality=float(agsm_quality / 100.0),
+                    suit_delta_gz=suit_delta,
+                    pbg_delta_gz=pbg_delta,
+                    agsm_delta_gz=agsm_delta,
+                    max_system_gz=max_cap,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("Estimated +Gz tolerance", f"{res.capped_estimated_gz:.2f} Gz")
+                if res.was_capped:
+                    st.caption("Capped at the configured max (represents saturation/limits of the protection ensemble).")
+
+                df = pd.DataFrame(
+                    [
+                        {"Component": "Baseline (relaxed)", "ΔGz": res.baseline_relaxed_gz},
+                        {"Component": "Anti‑G suit", "ΔGz": res.suit_component_gz},
+                        {"Component": "Pressure breathing (PBG)", "ΔGz": res.pbg_component_gz},
+                        {"Component": "AGSM (quality‑scaled)", "ΔGz": res.agsm_component_gz},
+                        {"Component": "Raw sum", "ΔGz": res.raw_estimated_gz},
+                    ]
+                )
+                st.dataframe(df, width="stretch", hide_index=True)
+
+            with crystal_container(border=True):
+                st.markdown("**Reference anchor**")
+                st.markdown(
+                    "- Study comparing configurations during rapid-onset +Gz profiles: `PubMed 17484342`.\n"
+                    "- Default parameters mirror those reported condition values (and are user-adjustable)."
+                )
 
 elif calculator_category == "🩺 Clinical Calculators":
-    st.markdown('<div class="section-header">Clinical Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Clinical Calculators")
     use_echarts = st.toggle("Use ECharts for plots", value=ECHARTS_AVAILABLE, help="Enhance plots with ECharts if available")
 
     tool = st.selectbox(
@@ -1017,7 +1471,9 @@ elif calculator_category == "🩺 Clinical Calculators":
             "eGFR (CKD‑EPI 2009)",
             "PaO₂/FiO₂ Ratio (P/F)",
             "Oxygen Index (OI)",
-            "6‑Minute Walk Distance"
+            "6‑Minute Walk Distance",
+            "Wells Score (DVT)",
+            "Wells Score (PE)",
         ]
     )
 
@@ -1056,7 +1512,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=xs, y=ys, mode='lines', fill='tozeroy', name='BMR'))
             fig.update_layout(title=f"BMR vs {vary}", xaxis_title=xlab, yaxis_title="BMR (kcal/day)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "Body Surface Area (4 formulas)":
         col1, col2 = st.columns([1,1])
@@ -1079,7 +1535,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             st_echarts(opts, height=360)
         else:
             fig = px.bar(x=list(values.keys()), y=list(values.values()), labels={"x": "Formula", "y": "BSA (m²)"})
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "eGFR (CKD‑EPI 2009)":
         col1, col2 = st.columns([1,1])
@@ -1105,9 +1561,9 @@ elif calculator_category == "🩺 Clinical Calculators":
         else:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=scrs, y=y, mode='lines', name='eGFR'))
-            fig.add_vline(x=float(scr), line_dash='dash', line_color='red')
+            fig.add_vline(x=float(scr), line_dash='dash')
             fig.update_layout(title="eGFR vs Creatinine", xaxis_title="Scr (mg/dL)", yaxis_title="eGFR (mL/min/1.73m²)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "PaO₂/FiO₂ Ratio (P/F)":
         col1, col2 = st.columns([1,1])
@@ -1122,7 +1578,7 @@ elif calculator_category == "🩺 Clinical Calculators":
                 "tooltip": {"show": True},
                 "xAxis": {"type": "category", "data": ["Ratio"]},
                 "yAxis": {"type": "value", "name": "mmHg"},
-                "series": [{"type": "bar", "data": [float(ratio)], "itemStyle": {"color": "#0ea5e9", "borderRadius": [6,6,0,0]}}],
+                "series": [{"type": "bar", "data": [float(ratio)], "itemStyle": {"borderRadius": [6,6,0,0]}}],
                 "markLine": {"data": [
                     {"yAxis": 300, "lineStyle": {"type": "dashed"}},
                     {"yAxis": 200, "lineStyle": {"type": "dashed"}},
@@ -1135,7 +1591,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig.add_hline(y=300, line_dash="dash")
             fig.add_hline(y=200, line_dash="dash")
             fig.add_hline(y=100, line_dash="dash")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "Oxygen Index (OI)":
         col1, col2 = st.columns([1,1])
@@ -1159,7 +1615,7 @@ elif calculator_category == "🩺 Clinical Calculators":
             st_echarts(opts, height=300)
         else:
             fig = go.Figure(go.Indicator(mode="gauge+number", value=oi, gauge={'axis': {'range': [0, 40]}}))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     elif tool == "6‑Minute Walk Distance":
         col1, col2 = st.columns([1,1])
@@ -1187,11 +1643,135 @@ elif calculator_category == "🩺 Clinical Calculators":
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=ages, y=curve, mode='lines', fill='tozeroy'))
             fig.update_layout(title="6MWD vs Age", xaxis_title="Age (yr)", yaxis_title="6MWD (m)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
+
+    elif tool == "Wells Score (DVT)":
+        st.markdown("### 🩺 Wells Score — Suspected DVT")
+        neutral_box(
+            "**Clinical decision support only.** Implements the Wells DVT point system and reports both "
+            "**3-tier** (low/moderate/high) and **2-tier** (unlikely/likely) strata.\n\n"
+            "Primary reference: Wells et al. (2003) *NEJM*."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria**")
+            c1, c2 = st.columns(2)
+            with c1:
+                active_cancer = st.checkbox("Active cancer (treatment ongoing, within 6 months, or palliative)", value=False)
+                paralysis = st.checkbox("Paralysis/paresis or recent plaster immobilization of lower extremity", value=False)
+                bedridden = st.checkbox("Recently bedridden >3 days OR major surgery within 12 weeks", value=False)
+                tenderness = st.checkbox("Localized tenderness along deep venous system", value=False)
+                entire_leg = st.checkbox("Entire leg swollen", value=False)
+            with c2:
+                pitting = st.checkbox("Pitting edema confined to symptomatic leg", value=False)
+                collateral = st.checkbox("Collateral superficial veins (non-varicose)", value=False)
+                alt_dx = st.checkbox("Alternative diagnosis as likely as DVT (−2 points)", value=False)
+                calf_mode = st.radio("Calf swelling criterion", ["Enter difference (cm)", "Manual yes/no"], horizontal=True)
+                calf_diff_cm = None
+                calf_gt_3 = None
+                if calf_mode == "Enter difference (cm)":
+                    calf_diff_cm = st.number_input("Calf circumference difference (cm; symptomatic − asymptomatic)", min_value=0.0, value=0.0, step=0.1)
+                else:
+                    calf_gt_3 = st.checkbox("Calf swelling > 3 cm compared to asymptomatic leg", value=False)
+
+        try:
+            res = compute_wells_dvt(
+                WellsDvtInputs(
+                    active_cancer=bool(active_cancer),
+                    paralysis_paresis_or_recent_plaster_immobilization=bool(paralysis),
+                    recently_bedridden_gt3d_or_major_surgery_within_12w=bool(bedridden),
+                    localized_tenderness_along_deep_venous_system=bool(tenderness),
+                    entire_leg_swollen=bool(entire_leg),
+                    calf_diff_cm=float(calf_diff_cm) if calf_diff_cm is not None else None,
+                    calf_swelling_gt_3cm_compared_to_asymptomatic_leg=bool(calf_gt_3) if calf_gt_3 is not None else None,
+                    pitting_edema_confined_to_symptomatic_leg=bool(pitting),
+                    collateral_superficial_veins_nonvaricose=bool(collateral),
+                    alternative_diagnosis_as_likely_as_dvt=bool(alt_dx),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Result**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("Wells DVT score", f"{res.total_points:.1f}")
+                with o2:
+                    st.metric("3-tier stratum", res.three_tier)
+                with o3:
+                    st.metric("2-tier stratum", res.two_tier)
+                st.caption(f"Calf swelling >3 cm: {'Yes' if res.calf_swelling_gt_3cm else 'No'}")
+
+        with st.expander("References", expanded=False):
+            st.markdown(
+                "- Wells et al. (2003). *New England Journal of Medicine*, 349(13), 1227–1235. "
+                "[DOI: 10.1056/NEJMoa023153](https://doi.org/10.1056/NEJMoa023153)"
+            )
+
+    elif tool == "Wells Score (PE)":
+        st.markdown("### 🩺 Wells Score — Suspected Pulmonary Embolism (PE)")
+        neutral_box(
+            "**Clinical decision support only.** Implements the Wells PE point system and reports both "
+            "**3-tier** (low/moderate/high) and **2-tier** (unlikely/likely) strata.\n\n"
+            "Primary reference: Wells et al. (2001) *Ann Intern Med*."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria**")
+            c1, c2 = st.columns(2)
+            with c1:
+                signs_dvt = st.checkbox("Clinical signs and symptoms of DVT", value=False)
+                pe_most_likely = st.checkbox("PE is the most likely diagnosis (alt dx less likely)", value=False)
+                immob = st.checkbox("Immobilization ≥3 days OR surgery within 4 weeks", value=False)
+                prev = st.checkbox("Previous DVT/PE", value=False)
+            with c2:
+                hemoptysis = st.checkbox("Hemoptysis", value=False)
+                malignancy = st.checkbox("Malignancy (on treatment, within 6 months, or palliative)", value=False)
+                hr_mode = st.radio("Heart rate criterion", ["Enter HR (bpm)", "Manual yes/no"], horizontal=True)
+                hr_bpm = None
+                hr_gt_100 = None
+                if hr_mode == "Enter HR (bpm)":
+                    hr_bpm = st.number_input("Heart rate (bpm)", min_value=0.0, value=80.0, step=1.0)
+                else:
+                    hr_gt_100 = st.checkbox("Heart rate > 100 bpm", value=False)
+
+        try:
+            res = compute_wells_pe(
+                WellsPeInputs(
+                    clinical_signs_dvt=bool(signs_dvt),
+                    pe_most_likely_diagnosis=bool(pe_most_likely),
+                    heart_rate_bpm=float(hr_bpm) if hr_bpm is not None else None,
+                    heart_rate_bpm_gt_100=bool(hr_gt_100) if hr_gt_100 is not None else None,
+                    immobilization_ge3d_or_surgery_within_4w=bool(immob),
+                    previous_dvt_or_pe=bool(prev),
+                    hemoptysis=bool(hemoptysis),
+                    malignancy_on_treatment_or_within_6m_or_palliative=bool(malignancy),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Result**")
+                o1, o2, o3 = st.columns(3)
+                with o1:
+                    st.metric("Wells PE score", f"{res.total_points:.1f}")
+                with o2:
+                    st.metric("3-tier stratum", res.three_tier)
+                with o3:
+                    st.metric("2-tier stratum", res.two_tier)
+                st.caption(f"Heart rate >100 bpm: {'Yes' if res.heart_rate_gt_100 else 'No'}")
+
+        with st.expander("References", expanded=False):
+            st.markdown(
+                "- Wells et al. (2001). *Annals of Internal Medicine*, 135(2), 98–107. "
+                "[DOI: 10.7326/0003-4819-135-2-200107170-00010](https://doi.org/10.7326/0003-4819-135-2-200107170-00010)"
+            )
 
 
 elif calculator_category == "Occupational Health & Safety":
-    st.markdown('<div class="section-header">Occupational Health & Safety Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Occupational Health & Safety Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -1311,7 +1891,7 @@ elif calculator_category == "Occupational Health & Safety":
                     go.Bar(x=periods, y=concentrations, name="Concentration"),
                 ])
                 fig.update_layout(title="Exposure Concentrations by Period", yaxis_title="Concentration")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
                 
             except ValueError as e:
                 st.error(f"Error: {e}")
@@ -1509,11 +2089,13 @@ elif calculator_category == "Occupational Health & Safety":
                 )
 
 elif calculator_category == "🔬 Environmental Monitoring":
-    st.markdown('<div class="section-header">Environmental Monitoring Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Environmental Monitoring Calculators")
     
     calc_type = st.selectbox(
         "Choose Calculator",
         [
+            "Universal Thermal Climate Index (UTCI)",
+            "Cold Water Immersion Survival Time",
             "Heat Stress Index (WBGT)",
             "Heat Stress Index (HSI)",
             "Predicted Heat Strain (ISO 7933)",
@@ -1522,6 +2104,87 @@ elif calculator_category == "🔬 Environmental Monitoring":
         ]
     )
     
+    if calc_type == "Universal Thermal Climate Index (UTCI)":
+        st.markdown("### 🧊 Universal Thermal Climate Index (UTCI)")
+        st.caption("Outdoor ‘feels-like’ equivalent temperature (polynomial approximation).")
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            ta_c = st.number_input("Air temperature Ta (°C)", -50.0, 60.0, 20.0, step=0.5)
+            tr_c = st.number_input("Mean radiant temperature Tr (°C)", -50.0, 90.0, 20.0, step=0.5)
+            wind_10m = st.number_input("Wind speed at 10 m (m/s)", 0.0, 30.0, 2.0, step=0.1)
+            rh = st.slider("Relative humidity (%)", 0, 100, 50, step=1)
+            strict = st.checkbox(
+                "Strict validity bounds",
+                value=False,
+                help="If enabled, raises an error when inputs are outside common UTCI_approx validity bounds.",
+            )
+
+        with col2:
+            st.markdown("#### Results")
+            try:
+                utci_c = utci(
+                    air_temperature_c=float(ta_c),
+                    mean_radiant_temperature_c=float(tr_c),
+                    wind_speed_10m_m_s=float(wind_10m),
+                    relative_humidity_percent=float(rh),
+                    strict=bool(strict),
+                    clamp_wind=True,
+                )
+            except ValueError as e:
+                st.error(f"Input out of bounds: {e}")
+            else:
+                st.metric("UTCI (equivalent temperature)", f"{utci_c:.2f} °C", utci_category(utci_c))
+                neutral_box(
+                    "**Interpretation**\n\n"
+                    "UTCI is categorized on a 10-level thermal stress scale (heat/cold stress). "
+                    "This value is intended for outdoor thermal assessment; it is not a substitute "
+                    "for operational risk management without context and validation."
+                )
+
+    elif calc_type == "Cold Water Immersion Survival Time":
+        st.markdown("### 🌊 Cold Water Immersion Survival Time")
+        st.caption("Hypothermia-limited guidance for immersion in cold water (does not model cold shock or swim failure).")
+
+        model_choice = st.radio(
+            "Model",
+            [
+                "Hayward et al. (1975) — temperature-only equation",
+                "Golden (1996) cited in TP 13822 — fully clothed + lifejacket (5–15°C)",
+            ],
+            horizontal=False,
+        )
+        model = "hayward_1975" if model_choice.startswith("Hayward") else "golden_lifejacket_tp13822"
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            water_temp_c = st.number_input("Water temperature (°C)", -2.0, 30.0, 10.0, step=0.5)
+            strict = st.checkbox(
+                "Strict validity bounds",
+                value=True,
+                help="If enabled, raises an error when inputs are outside the supported ranges for the chosen model.",
+            )
+
+            neutral_box(
+                "**Important**\n\n"
+                "- **Cold shock** can be fatal in ~3–5 minutes.\n"
+                "- **Swimming failure** can occur in under ~30 minutes.\n"
+                "- These estimates are **hypothermia-limited** only; drowning risk can dominate earlier."
+            )
+
+        with col2:
+            st.markdown("#### Results")
+            try:
+                est = cold_water_survival(float(water_temp_c), model=model, strict=bool(strict))
+            except ValueError as e:
+                st.error(f"Input out of bounds: {e}")
+            else:
+                st.metric("Estimated survival time", f"{est.survival_time_hours:.2f} hours", f"{est.survival_time_minutes:.0f} min")
+                with crystal_container(border=True):
+                    st.markdown("**Model notes**")
+                    for n in est.notes:
+                        st.markdown(f"- {n}")
+
     if calc_type == "Heat Stress Index (WBGT)":
         st.markdown("### 🌡️ Wet Bulb Globe Temperature (WBGT)")
         
@@ -1683,18 +2346,17 @@ elif calculator_category == "🔬 Environmental Monitoring":
                     x=timeline,
                     y=temps,
                     mode="lines",
-                    line=dict(color="#2563eb"),
                     name="Core temp",
                 )
             )
-            fig.add_hline(y=core_limit, line_dash="dash", line_color="#ef4444", annotation_text="Core limit")
+            fig.add_hline(y=core_limit, line_dash="dash", annotation_text="Core limit")
             fig.update_layout(
                 title="Predicted core temperature trajectory",
                 xaxis_title="Exposure time (minutes)",
                 yaxis_title="Core temperature (°C)",
                 height=380,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
         except ValueError:
             st.warning("Unable to render profile for the current inputs.")
     
@@ -1758,56 +2420,27 @@ elif calculator_category == "🔬 Environmental Monitoring":
         ]
         
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=levels, y=osha_times, mode='lines+markers', name='OSHA', line=dict(color='blue')))
-        fig.add_trace(go.Scatter(x=levels, y=niosh_times, mode='lines+markers', name='NIOSH', line=dict(color='red')))
+        fig.add_trace(go.Scatter(x=levels, y=osha_times, mode='lines+markers', name='OSHA'))
+        fig.add_trace(go.Scatter(x=levels, y=niosh_times, mode='lines+markers', name='NIOSH'))
         fig.update_layout(
             title="Permissible Exposure Time vs Noise Level",
             xaxis_title="Noise Level (dBA)",
             yaxis_title="Permissible Time (hours)",
             yaxis_type="log"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 elif calculator_category == "📈 Visualization Studio":
-    st.markdown('<div class="section-header">Visualization Studio</div>', unsafe_allow_html=True)
+    st.subheader("Visualization Studio")
 
-    # Display controls
+    # Display controls (neutral + theme-safe: no manual palette or custom colors)
     with st.container():
-        col_theme, col_palette, col_height = st.columns([1, 1, 1])
+        col_theme, col_height = st.columns([1, 1])
 
-        # Theme selection with auto detection from Streamlit theme
         theme_base = st.get_option("theme.base") or "light"
-        theme_default = "plotly_dark" if theme_base == "dark" else "plotly_white"
-        theme_choice = col_theme.selectbox(
-            "Plot Theme",
-            ["Auto", "Light", "Dark", "Seaborn", "Simple White", "GGPlot2", "Presentation"],
-            help="Choose a visual theme. 'Auto' follows the app's light/dark mode."
-        )
-        theme_template = {
-            "Auto": theme_default,
-            "Light": "plotly_white",
-            "Dark": "plotly_dark",
-            "Seaborn": "seaborn",
-            "Simple White": "simple_white",
-            "GGPlot2": "ggplot2",
-            "Presentation": "presentation",
-        }[theme_choice]
+        theme_template = "plotly_dark" if theme_base == "dark" else "plotly_white"
+        col_theme.caption(f"Plot theme: **{theme_template}** (auto)")
 
-        # Palette selection
-        palette_options = {
-            "Auto": None,
-            "Plotly": px.colors.qualitative.Plotly,
-            "D3": px.colors.qualitative.D3,
-            "Bold": px.colors.qualitative.Bold,
-            "Pastel": px.colors.qualitative.Pastel,
-            "Set2": px.colors.qualitative.Set2,
-            "Dark24": px.colors.qualitative.Dark24,
-            "Vivid": px.colors.qualitative.Vivid,
-        }
-        palette_name = col_palette.selectbox("Color Palette", list(palette_options.keys()), index=0)
-        colorway_selected = palette_options[palette_name]
-
-        # Resizable height
         plot_height = col_height.slider("Plot Height", min_value=420, max_value=900, value=640, step=20)
 
         col_style1, col_style2, col_style3 = st.columns([1, 1, 1])
@@ -1822,7 +2455,6 @@ elif calculator_category == "📈 Visualization Studio":
             template=theme_template,
             font=dict(family="Inter, system-ui, sans-serif", size=14),
             height=plot_height,
-            colorway=colorway_selected if colorway_selected else None,
             margin=dict(l=50, r=30, t=60, b=50),
             showlegend=show_legend,
         )
@@ -1893,7 +2525,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="PAO₂ (mmHg)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 altitudes_ft = np.linspace(alt_range_ft[0], alt_range_ft[1], 80)
                 fio2_vals = np.linspace(fio2_min, fio2_max, 60)
@@ -1908,7 +2540,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Altitude (ft)", yaxis_title="FiO₂", zaxis_title="PAO₂ (mmHg)"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -1942,7 +2574,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="WBGT (°C)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 tdb_vals = np.linspace(tdb_range[0], tdb_range[1], 80)
                 rh_vals = np.linspace(rh_min, rh_max, 60)
@@ -1956,7 +2588,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_layout(scene=dict(
                     xaxis_title="Dry-bulb (°C)", yaxis_title="RH (%)", zaxis_title="WBGT (°C)"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -1991,7 +2623,7 @@ elif calculator_category == "📈 Visualization Studio":
                 fig.update_yaxes(title_text="Permissible time (hours)")
                 if smooth_lines:
                     fig.update_traces(line_shape="spline")
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
             else:
                 levels = np.linspace(level_range[0], level_range[1], 80)
                 exch = np.linspace(exch_min, exch_max, 60)
@@ -2006,7 +2638,7 @@ elif calculator_category == "📈 Visualization Studio":
                     xaxis_title="Noise level (dBA)", yaxis_title="Exchange rate (dB)", zaxis_title="Time (hours)",
                     zaxis_type="log"
                 ))
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2048,7 +2680,7 @@ elif calculator_category == "📈 Visualization Studio":
             fig.update_yaxes(title_text="Mixed Index (sum of fractions)")
             if smooth_lines:
                 fig.update_traces(line_shape="spline")
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         else:
             x_a = np.linspace(0, xa_max, 80)
             x_b = np.linspace(0, xb_max, 60)
@@ -2061,7 +2693,7 @@ elif calculator_category == "📈 Visualization Studio":
                 yaxis_title=f"{AEROSPACE_CHEMICALS[chem_b].name} ({units_b})",
                 zaxis_title="Mixed Index"
             ))
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True})
+            st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
         fig_to_save = fig if 'fig' in locals() else None
 
@@ -2080,7 +2712,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="SpO₂ (%)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     elif vis_type == "AMS Probability vs AAE":
@@ -2092,7 +2724,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="Probability (%)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     elif vis_type == "CaO₂ vs PaO₂ & Hb":
@@ -2115,7 +2747,7 @@ elif calculator_category == "📈 Visualization Studio":
         fig.update_yaxes(title_text="CaO₂ (mL/dL)")
         if smooth_lines:
             fig.update_traces(line_shape="spline")
-        st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "responsive": True, "scrollZoom": True})
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True, "scrollZoom": True})
         fig_to_save = fig
 
     # Export controls
@@ -2151,12 +2783,330 @@ elif calculator_category == "📈 Visualization Studio":
             )
 
 elif calculator_category == "📊 Risk Assessment Tools":
-    st.markdown('<div class="section-header">Risk Assessment Tools</div>', unsafe_allow_html=True)
-    
-    st.markdown("### 📋 Quick Risk Assessment Dashboard")
-    
-    # Chemical database overview
-    st.markdown("#### Aerospace Chemical Database Overview")
+    st.subheader("Risk Assessment Tools")
+    tool = st.selectbox(
+        "Choose Tool",
+        [
+            "Aerospace Chemical Risk Dashboard",
+            "Spatial Disorientation Risk Assessment",
+            "NVG/EO Target Acquisition (Johnson/ACQUIRE)",
+            "Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)",
+            "Motion Sickness Susceptibility (MSSQ-short)",
+        ],
+        index=0,
+    )
+
+    if tool == "Motion Sickness Susceptibility (MSSQ-short)":
+        st.markdown("### 🤢 Motion Sickness Susceptibility (MSSQ-short)")
+        neutral_box(
+            "**Clinical/research decision support only.** This computes **MSSQ-short raw sums** for Section A (childhood) "
+            "and Section B (adulthood), plus a simple quartile band relative to an open pre-test sample.\n\n"
+            "Primary concept references: Golding (1998, 2006). Scoring scale reference: Rivera et al. (2022, open)."
+        )
+
+        st.caption("Response scale (per Rivera et al. 2022): 0=Never, 1=Almost never, 2=Sometimes, 3=Frequently.")
+
+        with crystal_container(border=True):
+            st.markdown("**Section A — Childhood**")
+            a_scores: list[int] = []
+            for i, item in enumerate(MSSQ_SHORT_ITEMS):
+                a_scores.append(
+                    int(
+                        st.select_slider(
+                            f"A{i+1}. {item}",
+                            options=[0, 1, 2, 3],
+                            value=0,
+                            key=f"mssq_a_{i}",
+                        )
+                    )
+                )
+
+        with crystal_container(border=True):
+            st.markdown("**Section B — Adulthood**")
+            b_scores: list[int] = []
+            for i, item in enumerate(MSSQ_SHORT_ITEMS):
+                b_scores.append(
+                    int(
+                        st.select_slider(
+                            f"B{i+1}. {item}",
+                            options=[0, 1, 2, 3],
+                            value=0,
+                            key=f"mssq_b_{i}",
+                        )
+                    )
+                )
+
+        try:
+            res = compute_mssq_short(
+                MssqShortInputs(
+                    section_a_scores_0_3=tuple(a_scores),
+                    section_b_scores_0_3=tuple(b_scores),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Results**")
+                c1, c2, c3, c4 = st.columns(4)
+                with c1:
+                    st.metric("Section A (0–27)", f"{res.section_a_sum_0_27:d}")
+                with c2:
+                    st.metric("Section B (0–27)", f"{res.section_b_sum_0_27:d}")
+                with c3:
+                    st.metric("Total (0–54)", f"{res.total_sum_0_54:d}")
+                with c4:
+                    p25, p50, p75 = res.rivera_2022_reference
+                    st.metric("Quartile band (Rivera 2022)", res.rivera_2022_percentile_band, f"P25={p25:.2f}, P50={p50:.1f}, P75={p75:.1f}")
+
+            with st.expander("References", expanded=False):
+                st.markdown(
+                    "- Rivera R. et al. (2022). *Revista de otorrinolaringología y cirugía de cabeza y cuello* (open SciELO). "
+                    "[DOI: 10.4067/S0718-48162022000200172](https://doi.org/10.4067/S0718-48162022000200172)\n"
+                    "- Golding (1998). *Brain Research Bulletin*. [DOI: 10.1016/S0361-9230(98)00091-4](https://doi.org/10.1016/S0361-9230(98)00091-4)\n"
+                    "- Golding (2006). *Autonomic Neuroscience*. [DOI: 10.1016/j.autneu.2006.07.019](https://doi.org/10.1016/j.autneu.2006.07.019)"
+                )
+
+    if tool == "NVG/EO Target Acquisition (Johnson/ACQUIRE)":
+        st.markdown("### 🌙 NVG / Electro-Optical Target Acquisition (Cycles-on-target)")
+
+        neutral_box(
+            "**Research/education use only.** This is a resolution-based (cycles-on-target) feasibility estimator.\n\n"
+            "Primary source: Sjaardema et al. (2015) *History and Evolution of the Johnson Criteria* (SAND2015-6368), "
+            "which summarizes Johnson and ACQUIRE N50 cycle criteria and their limitations."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Imaging system**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                hpx = int(st.slider("Horizontal pixels", 128, 4096, 1024, step=32))
+            with c2:
+                vpx = int(st.slider("Vertical pixels", 128, 4096, 768, step=32))
+            with c3:
+                hfov = float(st.slider("Horizontal FOV (deg)", 5.0, 120.0, 40.0, step=1.0))
+            with c4:
+                vfov = float(st.slider("Vertical FOV (deg)", 5.0, 120.0, 30.0, step=1.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Target + range**")
+            t1, t2, t3, t4 = st.columns(4)
+            with t1:
+                target_h = float(st.slider("Target height (m)", 0.1, 10.0, 1.8, step=0.1))
+            with t2:
+                target_w = float(st.slider("Target width (m)", 0.1, 10.0, 0.5, step=0.1))
+            with t3:
+                range_m = float(st.slider("Range (m)", 10.0, 10000.0, 300.0, step=10.0))
+            with t4:
+                crit_dim = st.selectbox("Critical dimension", ["height", "width"], index=0)
+
+        with crystal_container(border=True):
+            st.markdown("**Criteria family**")
+            f1, f2 = st.columns(2)
+            with f1:
+                family = st.selectbox("Family", ["johnson", "acquire"], index=0)
+            with f2:
+                if family == "johnson":
+                    discr = st.selectbox("Discrimination", ["detection", "orientation", "recognition", "identification"], index=0)
+                else:
+                    discr = st.selectbox("Discrimination", ["detection", "classification", "recognition", "identification"], index=0)
+
+        try:
+            res = assess_target_acquisition(
+                criteria=family,  # type: ignore[arg-type]
+                discrimination=discr,  # type: ignore[arg-type]
+                system=ImagingSystem(horizontal_pixels=hpx, vertical_pixels=vpx, horizontal_fov_deg=hfov, vertical_fov_deg=vfov),
+                target=Target(width_m=target_w, height_m=target_h),
+                range_m=range_m,
+                critical_dimension=crit_dim,  # type: ignore[arg-type]
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("Cycles on target (N)", f"{res.cycles_on_target:.2f}")
+                st.metric("Required N50 cycles", f"{res.required_cycles_n50:.2f}")
+                st.metric("N / N50", f"{res.ratio_to_n50:.2f}")
+                st.metric("Meets N50 (≈50% criterion)", "Yes" if res.meets_n50 else "No")
+                st.caption(
+                    "Note: This is a geometric sampling criterion. Real-world acquisition also depends on contrast, noise, atmosphere, clutter, and user factors."
+                )
+
+            with st.expander("References (cycle criteria source)", expanded=False):
+                st.markdown(
+                    "- [Sjaardema et al. (2015) SAND2015-6368 (Johnson & ACQUIRE summaries)](https://www.osti.gov/servlets/purl/1222446)"
+                )
+
+    elif tool == "Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)":
+        st.markdown("### 🪑 Whole-Body Vibration (WBV): A(8) + VDV(8)")
+
+        neutral_box(
+            "**Scope**: This calculator assumes you already have **frequency-weighted** r.m.s. accelerations per axis "
+            "(a_wx, a_wy, a_wz). It **does not** implement ISO frequency weighting filters.\n\n"
+            "It computes combined a_w, **A(8)** scaling, optional **VDV(8)** scaling, and compares against commonly cited "
+            "HGCZ bounds (as quoted in published literature)."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Inputs (frequency-weighted)**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                awx = float(st.number_input("a_wx (m/s²)", min_value=0.0, value=0.20, step=0.01, format="%.3f"))
+            with c2:
+                awy = float(st.number_input("a_wy (m/s²)", min_value=0.0, value=0.20, step=0.01, format="%.3f"))
+            with c3:
+                awz = float(st.number_input("a_wz (m/s²)", min_value=0.0, value=0.30, step=0.01, format="%.3f"))
+            with c4:
+                exposure_h = float(st.number_input("Exposure duration (hours)", min_value=0.01, value=2.0, step=0.25))
+
+        with crystal_container(border=True):
+            st.markdown("**Optional: VDV input**")
+            vdv_enabled = bool(st.checkbox("I have a VDV measurement", value=False))
+            vdv_val = None
+            vdv_ref_s = None
+            if vdv_enabled:
+                d1, d2 = st.columns(2)
+                with d1:
+                    vdv_val = float(
+                        st.number_input("VDV (m/s^1.75) over reference window", min_value=0.0, value=10.0, step=0.1)
+                    )
+                with d2:
+                    vdv_ref_min = float(st.number_input("Reference window (minutes)", min_value=0.1, value=10.0, step=1.0))
+                    vdv_ref_s = float(vdv_ref_min * 60.0)
+
+        try:
+            out = compute_wbv_exposure(
+                WbvExposureInputs(
+                    axis_aw=WbvAxisWeightedRms(awx_m_s2=awx, awy_m_s2=awy, awz_m_s2=awz),
+                    exposure_duration_s=float(exposure_h * 3600.0),
+                    vdv_m_s1_75=vdv_val,
+                    vdv_reference_duration_s=vdv_ref_s,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Results**")
+                r1, r2, r3, r4 = st.columns(4)
+                with r1:
+                    st.metric("Combined a_w (m/s²)", f"{out.aw_combined_m_s2:.3f}")
+                with r2:
+                    st.metric("A(8) (m/s²)", f"{out.a8_m_s2:.3f}")
+                with r3:
+                    st.metric("A(8) zone", out.a8_zone.replace("_", " "))
+                with r4:
+                    st.metric("A(8) HGCZ", f"{out.a8_lower_bound_m_s2:.2f}–{out.a8_upper_bound_m_s2:.2f}")
+
+            if out.vdv8_m_s1_75 is not None and out.vdv8_zone is not None:
+                with crystal_container(border=True):
+                    v1, v2, v3 = st.columns(3)
+                    with v1:
+                        st.metric("VDV(8) (m/s^1.75)", f"{out.vdv8_m_s1_75:.2f}")
+                    with v2:
+                        st.metric("VDV(8) zone", out.vdv8_zone.replace("_", " "))
+                    with v3:
+                        st.metric("VDV(8) HGCZ", f"{out.vdv8_lower_bound_m_s1_75:.1f}–{out.vdv8_upper_bound_m_s1_75:.1f}")
+
+            with st.expander("References (methods + threshold anchors)", expanded=False):
+                st.markdown(
+                    "- Mansfield et al. (2009) *Industrial Health* (ISO 2631-1 metrics equations; frequency range discussion). "
+                    "[DOI: 10.2486/INDHEALTH.47.402](https://doi.org/10.2486/INDHEALTH.47.402)\n"
+                    "- Orelaja et al. (2019) *Journal of Healthcare Engineering* (quotes common HGCZ bounds: A(8) 0.47–0.93 m/s²; "
+                    "VDV 8.5–17 m/s^1.75). [DOI: 10.1155/2019/5723830](https://doi.org/10.1155/2019/5723830)\n"
+                    "- EU Directive 2002/44/EC (legal framework referenced in WBV literature). "
+                    "[EUR-Lex summary](https://eur-lex.europa.eu/eli/dir/2002/44/oj)"
+                )
+
+    elif tool == "Spatial Disorientation Risk Assessment":
+        st.markdown("### 🧭 Spatial Disorientation (SD) Risk Assessment")
+
+        neutral_box(
+            "**Research/education use only.** This tool computes a transparent SD Risk Index (0–100) from "
+            "physiology-grounded components (leans threshold, canal entrainment window, Coriolis threshold, "
+            "somatogravic tilt from GIA).\n\n"
+            "It is not a calibrated mishap probability."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Flight conditions**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                imc = st.checkbox("IMC", value=True)
+            with c2:
+                night = st.checkbox("Night", value=False)
+            with c3:
+                nvg = st.checkbox("NVG", value=False)
+            with c4:
+                time_no_horizon = float(st.slider("Time since horizon reference (s)", 0.0, 180.0, 45.0, step=5.0))
+
+        with crystal_container(border=True):
+            st.markdown("**Maneuver / motion**")
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                yaw_rate = float(st.slider("Yaw/turn rate (deg/s)", 0.0, 60.0, 1.0, step=0.5))
+                turn_dur = float(st.slider("Sustained turn duration (s)", 0.0, 120.0, 60.0, step=5.0))
+            with m2:
+                head_move = st.checkbox("Head movement during turn (Coriolis trigger)", value=False)
+                workload = float(st.slider("Workload (0–100%)", 0.0, 100.0, 50.0, step=5.0))
+            with m3:
+                # Somatogravic: forward linear acceleration produces an apparent pitch tilt (GIA).
+                forward_accel_g = float(st.slider("Forward acceleration (g)", -0.30, 1.00, 0.00, step=0.02))
+
+        try:
+            res = spatial_disorientation_risk(
+                SpatialDisorientationInputs(
+                    imc=bool(imc),
+                    night=bool(night),
+                    nvg=bool(nvg),
+                    time_since_horizon_reference_s=time_no_horizon,
+                    yaw_rate_deg_s=yaw_rate,
+                    sustained_turn_duration_s=turn_dur,
+                    head_movement_during_turn=bool(head_move),
+                    forward_accel_m_s2=forward_accel_g * 9.80665,
+                    workload=float(workload / 100.0),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            with crystal_container(border=True):
+                st.markdown("**Outputs**")
+                st.metric("SD Risk Index (0–100)", f"{res.risk_index_0_100:.1f}")
+                st.metric("Risk level", res.risk_level)
+                st.metric("Somatogravic tilt (deg)", f"{res.somatogravic_tilt_deg:.1f}")
+
+                if res.likely_illusions:
+                    st.markdown("**Likely illusion types (scenario-based)**")
+                    for it in res.likely_illusions:
+                        st.markdown(f"- {it}")
+
+            with crystal_container(border=True):
+                st.markdown("**Component breakdown (0–1)**")
+                df_sd = pd.DataFrame(
+                    [
+                        {"Component": "Cue deprivation", "Score": res.cue_deprivation_component_0_1},
+                        {"Component": "Leans (below ~2°/s)", "Score": res.leans_risk_component_0_1},
+                        {"Component": "Canal entrainment (~10–20s)", "Score": res.canal_entraintment_component_0_1},
+                        {"Component": "Coriolis (head movement; >~10°/s)", "Score": res.coriolis_component_0_1},
+                        {"Component": "Somatogravic (GIA tilt)", "Score": res.somatogravic_component_0_1},
+                    ]
+                )
+                st.dataframe(df_sd, width="stretch", hide_index=True)
+
+            with st.expander("References (model anchors)", expanded=False):
+                st.markdown(
+                    "- [FAA: Spatial Disorientation (Airman Education Programs)](https://www.faa.gov/pilots/training/airman_education/topics_of_interest/spatial_disorientation)\n"
+                    "- [StatPearls: Physiology of Spatial Orientation (NCBI Bookshelf)](https://www.ncbi.nlm.nih.gov/books/NBK518976/)\n"
+                    "- [Houben et al. (2022): Coriolis illusion threshold (PubMed 34924407)](https://pubmed.ncbi.nlm.nih.gov/34924407/)\n"
+                    "- [Somatogravic demonstration: 0.58 g ≈ 30° (PubMed 9491247)](https://pubmed.ncbi.nlm.nih.gov/9491247/)"
+                )
+
+    else:
+        st.markdown("### 📋 Quick Risk Assessment Dashboard")
+        # Chemical database overview
+        st.markdown("#### Aerospace Chemical Database Overview")
     
     # Create DataFrame for display
     chem_data = []
@@ -2171,7 +3121,7 @@ elif calculator_category == "📊 Risk Assessment Tools":
         })
     
     df = pd.DataFrame(chem_data)
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
     
     # Summary statistics
     col1, col2, col3, col4 = st.columns(4)
@@ -2230,10 +3180,10 @@ elif calculator_category == "📊 Risk Assessment Tools":
         path=['Risk Level', 'Chemical'],
         title="Chemical Risk Distribution"
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 elif calculator_category == "🧠 Fatigue & Circadian":
-    st.markdown('<div class="section-header">Fatigue & Circadian Calculators</div>', unsafe_allow_html=True)
+    st.subheader("Fatigue & Circadian Calculators")
 
     calc_type = st.selectbox(
         "Choose Calculator",
@@ -2241,6 +3191,9 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             "Circadian Performance (Mitler)",
             "Two-Process Model (S & C)",
             "Jet Lag Recovery",
+            "SAFTE Effectiveness (patent-derived)",
+            "Crew Duty Time Limits (FAA Part 117, unaugmented)",
+            "Crew Duty Time Limits (EASA ORO.FTL, basic)",
         ]
     )
 
@@ -2261,7 +3214,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
         ps = [mitler_performance(x, phi, SD, K) for x in ts]
         fig = go.Figure(data=[go.Scatter(x=ts, y=ps, mode="lines")])
         fig.update_layout(title="Mitler Performance over 24h", xaxis_title="Time (h)", yaxis_title="Performance", height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     elif calc_type == "Two-Process Model (S & C)":
         st.markdown("### ⏳ Two-Process Model Components")
@@ -2294,8 +3247,407 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             st.markdown("#### Result")
             st.metric("Estimated days to adjust", f"{days:.1f} days")
 
+    elif calc_type == "Crew Duty Time Limits (FAA Part 117, unaugmented)":
+        st.markdown("### 🧾 Crew Duty Time Limits — FAA Part 117 (unaugmented)")
+
+        neutral_box(
+            "**Scope**: Implements **Table A** (max flight time) and **Table B** (max FDP) for unaugmented operations. "
+            "This does not cover reserve, split duty, augmented crews, extensions, or company/CBA-specific rules.\n\n"
+            "Primary source: official eCFR (Part 117)."
+        )
+
+        with crystal_container(border=True):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                report_time = st.text_input("Report time (acclimated local) HH:MM", value="07:00")
+            with c2:
+                segments = int(st.slider("Flight segments", 1, 8, 4, step=1))
+            with c3:
+                not_acclimated = bool(st.checkbox("Not acclimated (reduce FDP by 30 min)", value=False))
+
+        with crystal_container(border=True):
+            st.markdown("**Optional: compare a planned schedule**")
+            p1, p2 = st.columns(2)
+            with p1:
+                planned_ft = st.number_input("Planned flight time (hours)", min_value=0.0, value=6.0, step=0.1)
+            with p2:
+                planned_fdp = st.number_input("Planned FDP (hours)", min_value=0.0, value=10.0, step=0.1)
+
+        with crystal_container(border=True):
+            st.markdown("**Cumulative limits (rolling windows)**")
+            st.caption("Enter totals already accumulated in the stated windows. The checker adds the planned assignment.")
+            r1, r2, r3, r4 = st.columns(4)
+            with r1:
+                ft_672 = st.number_input("Flight time last 672h (h)", min_value=0.0, value=40.0, step=0.1)
+            with r2:
+                ft_365 = st.number_input("Flight time last 365d (h)", min_value=0.0, value=400.0, step=1.0)
+            with r3:
+                fdp_168 = st.number_input("FDP last 168h (h)", min_value=0.0, value=20.0, step=0.1)
+            with r4:
+                fdp_672 = st.number_input("FDP last 672h (h)", min_value=0.0, value=80.0, step=0.1)
+
+            had_30h_free = st.checkbox("Had ≥30 consecutive hours free from all duty in past 168h", value=True)
+
+        try:
+            lim = faa117_limits(
+                Faa117Inputs(
+                    report_time_local_hhmm=report_time,
+                    flight_segments=segments,
+                    not_acclimated=not_acclimated,
+                    scheduled_flight_time_hours=float(planned_ft),
+                    scheduled_fdp_hours=float(planned_fdp),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            cum = faa117_cumulative_limits(
+                Faa117CumulativeInputs(
+                    flight_time_last_672h=float(ft_672),
+                    flight_time_last_365d=float(ft_365),
+                    fdp_last_168h=float(fdp_168),
+                    fdp_last_672h=float(fdp_672),
+                    had_30h_free_past_168h=bool(had_30h_free),
+                    planned_flight_time_hours=float(planned_ft),
+                    planned_fdp_hours=float(planned_fdp),
+                )
+            )
+
+            with crystal_container(border=True):
+                st.markdown("**Limits (FAA Part 117 tables)**")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Max flight time (Table A)", f"{lim.max_flight_time_hours:.1f} h")
+                with m2:
+                    st.metric("Max FDP (Table B)", f"{lim.max_fdp_hours:.1f} h")
+                with m3:
+                    st.metric("Minimum rest (baseline)", f"{lim.min_rest_hours:.1f} h")
+
+            with crystal_container(border=True):
+                st.markdown("**Planned schedule check**")
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.metric(
+                        "Flight time OK?",
+                        "Yes" if lim.flight_time_ok else "No",
+                        f"margin {lim.flight_time_margin_hours:.1f} h" if lim.flight_time_margin_hours is not None else None,
+                    )
+                with c2:
+                    st.metric(
+                        "FDP OK?",
+                        "Yes" if lim.fdp_ok else "No",
+                        f"margin {lim.fdp_margin_hours:.1f} h" if lim.fdp_margin_hours is not None else None,
+                    )
+                if lim.not_acclimated_reduction_hours > 0:
+                    st.caption("Not acclimated: FDP reduced by 0.5 h per § 117.13(b).")
+
+            with crystal_container(border=True):
+                st.markdown("**Cumulative limits check (§ 117.23) + day-off rule (§ 117.25)**")
+                c1, c2, c3, c4 = st.columns(4)
+                with c1:
+                    st.metric(
+                        "Flight time 672h OK?",
+                        "Yes" if cum.flight_time_672h_ok else "No",
+                        f"margin {cum.flight_time_672h_margin_hours:.1f} h",
+                    )
+                with c2:
+                    st.metric(
+                        "Flight time 365d OK?",
+                        "Yes" if cum.flight_time_365d_ok else "No",
+                        f"margin {cum.flight_time_365d_margin_hours:.1f} h",
+                    )
+                with c3:
+                    st.metric(
+                        "FDP 168h OK?",
+                        "Yes" if cum.fdp_168h_ok else "No",
+                        f"margin {cum.fdp_168h_margin_hours:.1f} h",
+                    )
+                with c4:
+                    st.metric(
+                        "FDP 672h OK?",
+                        "Yes" if cum.fdp_672h_ok else "No",
+                        f"margin {cum.fdp_672h_margin_hours:.1f} h",
+                    )
+
+                st.metric(
+                    "30h free in past 168h?",
+                    "Yes" if cum.had_30h_free_past_168h else "No",
+                    f"required {cum.required_30h_free_in_168h:.0f} h",
+                )
+
+            with st.expander("References (official)", expanded=False):
+                st.markdown(
+                    "- Table A to Part 117 (max flight time): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117)\n"
+                    "- Table B to Part 117 (max FDP): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117)\n"
+                    "- § 117.13 (not acclimated reduction): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.13)\n"
+                    "- § 117.23 (cumulative limitations): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.23)\n"
+                    "- § 117.25 (rest period; 30h in 168h and 10h rest): "
+                    "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.25)"
+                )
+
+    elif calc_type == "Crew Duty Time Limits (EASA ORO.FTL, basic)":
+        st.markdown("### 🧾 Crew Duty Time Limits — EASA ORO.FTL (scoped)")
+
+        neutral_box(
+            "**Scope**: Implements **ORO.FTL.205(b)** maximum daily FDP (Table 2 for acclimatised; Table 3/4 for unknown state) "
+            "and **ORO.FTL.210** cumulative duty/flight-time caps.\n\n"
+            "**Not covered**: standby, reserve, split duty, operator-specific FTL schemes, commander’s discretion, and full in-flight rest schemes."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Daily FDP limit (ORO.FTL.205)**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                ref_time = st.text_input("Reference time (local) HH:MM", value="07:00", key="easa_ref_time")
+            with c2:
+                sectors = int(st.slider("Flight sectors", 1, 10, 2, step=1, key="easa_sectors"))
+            with c3:
+                state = st.selectbox(
+                    "Acclimatisation state",
+                    ["acclimatised", "unknown", "unknown_frm"],
+                    index=0,
+                    key="easa_state",
+                )
+            with c4:
+                use_ext = bool(
+                    st.checkbox(
+                        "Planned extension w/o in-flight rest",
+                        value=False,
+                        help="Uses CS FTL.1.205(b) extension table (only valid for acclimatised crews and limited sectors/time bands).",
+                        key="easa_ext",
+                    )
+                )
+
+        with crystal_container(border=True):
+            st.markdown("**Planned assignment**")
+            p1, p2, p3 = st.columns(3)
+            with p1:
+                planned_fdp_h = st.number_input("Planned FDP (hours)", min_value=0.0, value=10.0, step=0.1, key="easa_planned_fdp")
+            with p2:
+                planned_duty_h = st.number_input("Planned duty (hours)", min_value=0.0, value=10.0, step=0.1, key="easa_planned_duty")
+            with p3:
+                planned_ft_h = st.number_input("Planned flight time (hours)", min_value=0.0, value=6.0, step=0.1, key="easa_planned_ft")
+
+        with crystal_container(border=True):
+            st.markdown("**Cumulative totals already accumulated (ORO.FTL.210)**")
+            r1, r2, r3 = st.columns(3)
+            with r1:
+                duty7 = st.number_input("Duty last 7 days (h)", min_value=0.0, value=30.0, step=0.5, key="easa_duty7")
+                duty14 = st.number_input("Duty last 14 days (h)", min_value=0.0, value=60.0, step=0.5, key="easa_duty14")
+            with r2:
+                duty28 = st.number_input("Duty last 28 days (h)", min_value=0.0, value=120.0, step=0.5, key="easa_duty28")
+                ft28 = st.number_input("Flight time last 28 days (h)", min_value=0.0, value=40.0, step=0.5, key="easa_ft28")
+            with r3:
+                fty = st.number_input("Flight time calendar year (h)", min_value=0.0, value=300.0, step=1.0, key="easa_fty")
+                ft12 = st.number_input("Flight time last 12 months (h)", min_value=0.0, value=350.0, step=1.0, key="easa_ft12")
+
+        try:
+            daily = easa_max_daily_fdp(
+                EasaFtlFdpInputs(
+                    reference_time_local_hhmm=ref_time,
+                    flight_sectors=sectors,
+                    acclimatisation_state=state,  # type: ignore[arg-type]
+                    request_extension_without_inflight_rest=use_ext,
+                )
+            )
+            cum = easa_oroflt_210_cumulative_limits(
+                EasaOroFtl210Inputs(
+                    duty_last_7d_hours=float(duty7),
+                    duty_last_14d_hours=float(duty14),
+                    duty_last_28d_hours=float(duty28),
+                    flight_time_last_28d_hours=float(ft28),
+                    flight_time_calendar_year_hours=float(fty),
+                    flight_time_last_12mo_hours=float(ft12),
+                    planned_duty_hours=float(planned_duty_h),
+                    planned_flight_time_hours=float(planned_ft_h),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            chosen_max_fdp = daily.extension_max_daily_fdp_hours if (use_ext and daily.extension_allowed) else daily.max_daily_fdp_hours
+            fdp_ok = float(planned_fdp_h) <= float(chosen_max_fdp)
+            with crystal_container(border=True):
+                st.markdown("**Daily FDP result**")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Max daily FDP (base)", f"{daily.max_daily_fdp_hours:.2f} h")
+                with m2:
+                    st.metric(
+                        "Max daily FDP (extension)",
+                        f"{daily.extension_max_daily_fdp_hours:.2f} h" if daily.extension_max_daily_fdp_hours is not None else "Not allowed",
+                    )
+                with m3:
+                    st.metric("Planned FDP OK?", "Yes" if fdp_ok else "No", f"limit {chosen_max_fdp:.2f} h")
+                st.caption(daily.source_table)
+
+            with crystal_container(border=True):
+                st.markdown("**Cumulative limits check (ORO.FTL.210)**")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("Duty 7d OK?", "Yes" if cum.duty_7d_ok else "No", f"margin {cum.duty_7d_margin_hours:.1f} h")
+                    st.metric("Duty 14d OK?", "Yes" if cum.duty_14d_ok else "No", f"margin {cum.duty_14d_margin_hours:.1f} h")
+                with c2:
+                    st.metric("Duty 28d OK?", "Yes" if cum.duty_28d_ok else "No", f"margin {cum.duty_28d_margin_hours:.1f} h")
+                    st.metric("Flight time 28d OK?", "Yes" if cum.flight_time_28d_ok else "No", f"margin {cum.flight_time_28d_margin_hours:.1f} h")
+                with c3:
+                    st.metric("Flight time year OK?", "Yes" if cum.flight_time_calendar_year_ok else "No", f"margin {cum.flight_time_calendar_year_margin_hours:.1f} h")
+                    st.metric("Flight time 12mo OK?", "Yes" if cum.flight_time_12mo_ok else "No", f"margin {cum.flight_time_12mo_margin_hours:.1f} h")
+
+            with st.expander("References (official)", expanded=False):
+                st.markdown(
+                    "- EASA Easy Access Rules for Air Operations (Regulation (EU) No 965/2012), Revision 22 (Feb 2025): "
+                    "[EASA document page](https://www.easa.europa.eu/en/document-library/easy-access-rules/easy-access-rules-air-operations-regulation-eu-no-9652012)\n"
+                    "- PDF download (Rev 22): "
+                    "[EASA download](https://www.easa.europa.eu/en/downloads/20342/en)"
+                )
+
+    elif calc_type == "SAFTE Effectiveness (patent-derived)":
+        st.markdown("### 🧠 SAFTE Effectiveness (patent-derived)")
+        neutral_box(
+            "**Research/education use only.** This implements the core SAFTE equations as documented in `WO2012015383A1` "
+            "(patent images Eq. 1–9). It does not include FAST-specific sleep prediction or circadian phase shifting/jet-lag logic.\n\n"
+            "If you need operational use, confirm licensing and validate against your organization’s reference tool."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Simulation window**")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                horizon_days = int(st.slider("Horizon (days)", 1, 14, 3, step=1))
+            with c2:
+                step_minutes = int(st.select_slider("Step (min)", options=[5, 10, 15, 30, 60], value=10))
+            with c3:
+                start_hour = float(st.slider("Start clock hour (local)", 0.0, 23.0, 8.0, step=0.5))
+
+        with crystal_container(border=True):
+            st.markdown("**Sleep schedule (repeating daily)**")
+            s1, s2, s3 = st.columns(3)
+            with s1:
+                sleep_start = float(st.slider("Main sleep start (hour)", 0.0, 23.5, 23.0, step=0.5))
+            with s2:
+                sleep_duration_h = float(st.slider("Main sleep duration (h)", 0.0, 12.0, 8.0, step=0.25))
+            with s3:
+                nap_enabled = st.checkbox("Add daily nap", value=False)
+
+            nap_start = 0.0
+            nap_duration_h = 0.0
+            if nap_enabled:
+                n1, n2 = st.columns(2)
+                with n1:
+                    nap_start = float(st.slider("Nap start (hour)", 0.0, 23.5, 14.0, step=0.5))
+                with n2:
+                    nap_duration_h = float(st.slider("Nap duration (h)", 0.0, 4.0, 0.5, step=0.25))
+
+        with crystal_container(border=True):
+            st.markdown("**Initial state + constants**")
+            i1, i2, i3 = st.columns(3)
+            with i1:
+                initial_reservoir_pct = float(st.slider("Initial reservoir (%)", 0.0, 100.0, 100.0, step=1.0))
+            with i2:
+                effectiveness_warn = float(st.slider("Warn threshold (%)", 0.0, 100.0, 77.0, step=1.0))
+            with i3:
+                _ = st.caption("Defaults use patent constants: Rc=2880, K=0.5 units/min, etc.")
+
+        horizon_minutes = int(horizon_days * 24 * 60)
+        start_dt = datetime(2025, 1, 1, int(start_hour) % 24, int(round((start_hour % 1.0) * 60)) % 60, 0)
+
+        def _episodes_for_day(day_index: int) -> list[SleepEpisode]:
+            base = day_index * 24.0
+            eps: list[SleepEpisode] = []
+            if sleep_duration_h > 0.0:
+                s = base + sleep_start
+                e = s + sleep_duration_h
+                # Wrap across midnight if needed.
+                if e <= base + 24.0 + 1e-12:
+                    eps.append(SleepEpisode(start_min=(s - start_hour) * 60.0, end_min=(e - start_hour) * 60.0))
+                else:
+                    # split: [start, 24) and [0, end-24)
+                    eps.append(SleepEpisode(start_min=(s - start_hour) * 60.0, end_min=((base + 24.0) - start_hour) * 60.0))
+                    eps.append(SleepEpisode(start_min=((base + 24.0) - start_hour) * 60.0, end_min=(e - start_hour) * 60.0))
+
+            if nap_enabled and nap_duration_h > 0.0:
+                ns = base + nap_start
+                ne = ns + nap_duration_h
+                if ne <= base + 24.0 + 1e-12:
+                    eps.append(SleepEpisode(start_min=(ns - start_hour) * 60.0, end_min=(ne - start_hour) * 60.0))
+                else:
+                    eps.append(SleepEpisode(start_min=(ns - start_hour) * 60.0, end_min=((base + 24.0) - start_hour) * 60.0))
+                    eps.append(SleepEpisode(start_min=((base + 24.0) - start_hour) * 60.0, end_min=(ne - start_hour) * 60.0))
+            return eps
+
+        episodes_all: list[SleepEpisode] = []
+        for d in range(horizon_days):
+            episodes_all.extend(_episodes_for_day(d))
+
+        # Sort + merge overlaps conservatively.
+        episodes_all.sort(key=lambda ep: ep.start_min)
+        merged: list[SleepEpisode] = []
+        for ep in episodes_all:
+            if not merged:
+                merged.append(ep)
+                continue
+            prev = merged[-1]
+            if ep.start_min <= prev.end_min + 1e-9:
+                merged[-1] = SleepEpisode(prev.start_min, max(prev.end_min, ep.end_min))
+            else:
+                merged.append(ep)
+
+        try:
+            params = SafteParameters()
+            initial_units = params.reservoir_capacity_rc * (initial_reservoir_pct / 100.0)
+            series = simulate_safte(
+                SafteInputs(
+                    start_datetime_local=start_dt,
+                    horizon_minutes=horizon_minutes,
+                    step_minutes=step_minutes,
+                    sleep_episodes=tuple(merged),
+                    initial_reservoir_units=initial_units,
+                    params=params,
+                )
+            )
+        except (ValueError, TypeError) as e:
+            neutral_box(f"**Unable to run SAFTE simulation**\n\n- {e}")
+        else:
+            eff = [p.effectiveness_E for p in series.points]
+            t_hours = [p.t_min / 60.0 for p in series.points]
+            asleep_flags = [p.asleep for p in series.points]
+            min_eff = min(eff) if eff else float("nan")
+
+            theme_base_local = st.get_option("theme.base") or "light"
+            theme_template_local = "plotly_dark" if theme_base_local == "dark" else "plotly_white"
+
+            with crystal_container(border=True):
+                st.markdown("**Summary**")
+                st.metric("Minimum effectiveness", f"{min_eff:.1f}%")
+                below = sum(1 for x in eff if x < effectiveness_warn)
+                st.metric("Points below threshold", f"{below} / {len(eff)}")
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=t_hours, y=eff, mode="lines", name="Effectiveness (%)"))
+            fig.add_hline(y=effectiveness_warn, line_dash="dash", opacity=0.5)
+            fig.update_layout(
+                title="SAFTE Effectiveness Forecast (patent-derived)",
+                xaxis_title="Time since start (hours)",
+                yaxis_title="Effectiveness (%)",
+                height=420,
+                template=theme_template_local,
+            )
+            st.plotly_chart(fig, width="stretch")
+
+            with st.expander("References (equation sources)", expanded=False):
+                st.markdown(
+                    "- [WO2012015383A1 (Patent equations used; Eq. 1–9)](https://patents.google.com/patent/WO2012015383A1/en)\n"
+                    "- [Frontiers/PMC operational use context (PMC9623177)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9623177/)\n"
+                    "- [SAFTEr open-source R package (patent-equation implementation)](https://github.com/InstituteBehaviorResources/SAFTEr)"
+                )
+
 elif calculator_category == "🧪 Simulation Studio":
-    st.markdown('<div class="section-header">Simulation Studio</div>', unsafe_allow_html=True)
+    st.subheader("Simulation Studio")
     st.markdown(
         '<div class="info-box"><strong>Purpose:</strong> Forward-simulate scientifically grounded calculators that naturally support time-stepping (e.g., ISO 7933 PHS, circadian envelopes). These are deterministic samplers of existing models—not new ML “black boxes”.</div>',
         unsafe_allow_html=True,
@@ -2356,6 +3708,7 @@ elif calculator_category == "🧪 Simulation Studio":
                 dehydration_limit = st.slider(
                     "Dehydration limit (% body mass)", 2.0, 7.0, 5.0, step=0.5
                 )
+        # NOTE: Deterministic tabbed workflows continue below.
 
         tabs = st.tabs(
             [
@@ -3367,9 +4720,4 @@ elif calculator_category == "🧪 Simulation Studio":
 
 # Footer
 st.markdown("---")
-st.markdown("""
-<div style=\"text-align: center; color: #666; font-size: 0.9em;\">
-    <p><strong>Aerospace Physiology & Occupational Health Calculators</strong></p>
-    <p>For educational and research purposes only • Consult qualified professionals for operational use</p>
-</div>
-""", unsafe_allow_html=True)
+st.caption("**Aerospace Physiology & Occupational Health Calculators**  \nFor educational and research purposes only • Consult qualified professionals for operational use")
