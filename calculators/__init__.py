@@ -63,6 +63,17 @@ from .duty_time import (  # type: ignore
     parse_hhmm,
     faa117_limits,
 )
+from .aa_gradient import (  # type: ignore
+    AaGradientInputs,
+    AaGradientResult,
+    compute_aa_gradient,
+)
+from .oxygen_delivery import (  # type: ignore
+    OxygenDeliveryInputs,
+    OxygenDeliveryResult,
+    compute_oxygen_delivery,
+    dubois_bsa_m2,
+)
 from .phs import (  # type: ignore
     predicted_heat_strain,
     PredictedHeatStrainResult,
@@ -173,6 +184,13 @@ __all__ = [
     "Faa117Limits",
     "parse_hhmm",
     "faa117_limits",
+    "AaGradientInputs",
+    "AaGradientResult",
+    "compute_aa_gradient",
+    "OxygenDeliveryInputs",
+    "OxygenDeliveryResult",
+    "compute_oxygen_delivery",
+    "dubois_bsa_m2",
     "predicted_heat_strain",
     "PredictedHeatStrainResult",
     "permissible_duration",
