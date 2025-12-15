@@ -57,6 +57,7 @@ This suite provides **research-grade computational tools** for aerospace medicin
 - **Whole-body vibration exposure (ISO 2631-1 style A(8) / VDV)** is now live as a frequency-weighted exposure scaler with literature-anchored HGCZ thresholds and in-app citations.
 - **Visual acuity at altitude (Dynamic Visual Acuity, LogMAR)** is now live using an empirical chamber-study anchor (Wang et al., 2024), surfaced in-app with citations.
 - **Crew duty time limits (FAA Part 117, unaugmented)** are now live with official eCFR table lookups (Table A/Table B) and transparent scope notes.
+- **A–a gradient** and **oxygen delivery (CaO₂/DO₂/DO₂I)** calculators are now live for clinical/altitude physiology workflows, with explicit equations and citations.
 - **SAFTE effectiveness forecasting (patent-derived)** is now live for multi-day fatigue prediction, with equations sourced from the published patent and SAFTEr open implementation (limitations explicitly stated).
 - **Simulation Studio** adds forward trajectories (PHS + circadian envelopes) with modern stacked plots, guardrail shading, and a “what happens next” next-step forecast.
 - **Neutral “crystal / liquid glass” UI** for cards/boxes (dark-mode safe) plus an in-app **Roadmap** view and “coming soon” previews for Phase 1 items.
