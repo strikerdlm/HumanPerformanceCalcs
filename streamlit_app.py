@@ -75,6 +75,10 @@ from calculators import (
     compute_aa_gradient,
     OxygenDeliveryInputs,
     compute_oxygen_delivery,
+    EasaFtlFdpInputs,
+    easa_max_daily_fdp,
+    EasaOroFtl210Inputs,
+    easa_oroflt_210_cumulative_limits,
 )
 from calculators import (
     bmr_mifflin_st_jeor,
@@ -2794,6 +2798,7 @@ elif calculator_category == "🧠 Fatigue & Circadian":
             "Jet Lag Recovery",
             "SAFTE Effectiveness (patent-derived)",
             "Crew Duty Time Limits (FAA Part 117, unaugmented)",
+            "Crew Duty Time Limits (EASA ORO.FTL, basic)",
         ]
     )
 
@@ -2987,6 +2992,123 @@ elif calculator_category == "🧠 Fatigue & Circadian":
                     "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.23)\n"
                     "- § 117.25 (rest period; 30h in 168h and 10h rest): "
                     "[eCFR](https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/section-117.25)"
+                )
+
+    elif calc_type == "Crew Duty Time Limits (EASA ORO.FTL, basic)":
+        st.markdown("### 🧾 Crew Duty Time Limits — EASA ORO.FTL (scoped)")
+
+        neutral_box(
+            "**Scope**: Implements **ORO.FTL.205(b)** maximum daily FDP (Table 2 for acclimatised; Table 3/4 for unknown state) "
+            "and **ORO.FTL.210** cumulative duty/flight-time caps.\n\n"
+            "**Not covered**: standby, reserve, split duty, operator-specific FTL schemes, commander’s discretion, and full in-flight rest schemes."
+        )
+
+        with crystal_container(border=True):
+            st.markdown("**Daily FDP limit (ORO.FTL.205)**")
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                ref_time = st.text_input("Reference time (local) HH:MM", value="07:00", key="easa_ref_time")
+            with c2:
+                sectors = int(st.slider("Flight sectors", 1, 10, 2, step=1, key="easa_sectors"))
+            with c3:
+                state = st.selectbox(
+                    "Acclimatisation state",
+                    ["acclimatised", "unknown", "unknown_frm"],
+                    index=0,
+                    key="easa_state",
+                )
+            with c4:
+                use_ext = bool(
+                    st.checkbox(
+                        "Planned extension w/o in-flight rest",
+                        value=False,
+                        help="Uses CS FTL.1.205(b) extension table (only valid for acclimatised crews and limited sectors/time bands).",
+                        key="easa_ext",
+                    )
+                )
+
+        with crystal_container(border=True):
+            st.markdown("**Planned assignment**")
+            p1, p2, p3 = st.columns(3)
+            with p1:
+                planned_fdp_h = st.number_input("Planned FDP (hours)", min_value=0.0, value=10.0, step=0.1, key="easa_planned_fdp")
+            with p2:
+                planned_duty_h = st.number_input("Planned duty (hours)", min_value=0.0, value=10.0, step=0.1, key="easa_planned_duty")
+            with p3:
+                planned_ft_h = st.number_input("Planned flight time (hours)", min_value=0.0, value=6.0, step=0.1, key="easa_planned_ft")
+
+        with crystal_container(border=True):
+            st.markdown("**Cumulative totals already accumulated (ORO.FTL.210)**")
+            r1, r2, r3 = st.columns(3)
+            with r1:
+                duty7 = st.number_input("Duty last 7 days (h)", min_value=0.0, value=30.0, step=0.5, key="easa_duty7")
+                duty14 = st.number_input("Duty last 14 days (h)", min_value=0.0, value=60.0, step=0.5, key="easa_duty14")
+            with r2:
+                duty28 = st.number_input("Duty last 28 days (h)", min_value=0.0, value=120.0, step=0.5, key="easa_duty28")
+                ft28 = st.number_input("Flight time last 28 days (h)", min_value=0.0, value=40.0, step=0.5, key="easa_ft28")
+            with r3:
+                fty = st.number_input("Flight time calendar year (h)", min_value=0.0, value=300.0, step=1.0, key="easa_fty")
+                ft12 = st.number_input("Flight time last 12 months (h)", min_value=0.0, value=350.0, step=1.0, key="easa_ft12")
+
+        try:
+            daily = easa_max_daily_fdp(
+                EasaFtlFdpInputs(
+                    reference_time_local_hhmm=ref_time,
+                    flight_sectors=sectors,
+                    acclimatisation_state=state,  # type: ignore[arg-type]
+                    request_extension_without_inflight_rest=use_ext,
+                )
+            )
+            cum = easa_oroflt_210_cumulative_limits(
+                EasaOroFtl210Inputs(
+                    duty_last_7d_hours=float(duty7),
+                    duty_last_14d_hours=float(duty14),
+                    duty_last_28d_hours=float(duty28),
+                    flight_time_last_28d_hours=float(ft28),
+                    flight_time_calendar_year_hours=float(fty),
+                    flight_time_last_12mo_hours=float(ft12),
+                    planned_duty_hours=float(planned_duty_h),
+                    planned_flight_time_hours=float(planned_ft_h),
+                )
+            )
+        except (TypeError, ValueError) as e:
+            neutral_box(f"**Unable to compute**\n\n- {e}")
+        else:
+            chosen_max_fdp = daily.extension_max_daily_fdp_hours if (use_ext and daily.extension_allowed) else daily.max_daily_fdp_hours
+            fdp_ok = float(planned_fdp_h) <= float(chosen_max_fdp)
+            with crystal_container(border=True):
+                st.markdown("**Daily FDP result**")
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Max daily FDP (base)", f"{daily.max_daily_fdp_hours:.2f} h")
+                with m2:
+                    st.metric(
+                        "Max daily FDP (extension)",
+                        f"{daily.extension_max_daily_fdp_hours:.2f} h" if daily.extension_max_daily_fdp_hours is not None else "Not allowed",
+                    )
+                with m3:
+                    st.metric("Planned FDP OK?", "Yes" if fdp_ok else "No", f"limit {chosen_max_fdp:.2f} h")
+                st.caption(daily.source_table)
+
+            with crystal_container(border=True):
+                st.markdown("**Cumulative limits check (ORO.FTL.210)**")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("Duty 7d OK?", "Yes" if cum.duty_7d_ok else "No", f"margin {cum.duty_7d_margin_hours:.1f} h")
+                    st.metric("Duty 14d OK?", "Yes" if cum.duty_14d_ok else "No", f"margin {cum.duty_14d_margin_hours:.1f} h")
+                with c2:
+                    st.metric("Duty 28d OK?", "Yes" if cum.duty_28d_ok else "No", f"margin {cum.duty_28d_margin_hours:.1f} h")
+                    st.metric("Flight time 28d OK?", "Yes" if cum.flight_time_28d_ok else "No", f"margin {cum.flight_time_28d_margin_hours:.1f} h")
+                with c3:
+                    st.metric("Flight time year OK?", "Yes" if cum.flight_time_calendar_year_ok else "No", f"margin {cum.flight_time_calendar_year_margin_hours:.1f} h")
+                    st.metric("Flight time 12mo OK?", "Yes" if cum.flight_time_12mo_ok else "No", f"margin {cum.flight_time_12mo_margin_hours:.1f} h")
+
+            with st.expander("References (official)", expanded=False):
+                st.markdown(
+                    "- EASA Easy Access Rules for Air Operations (Regulation (EU) No 965/2012), Revision 22 (Feb 2025): "
+                    "[EASA document page](https://www.easa.europa.eu/en/document-library/easy-access-rules/easy-access-rules-air-operations-regulation-eu-no-9652012)\n"
+                    "- PDF download (Rev 22): "
+                    "[EASA download](https://www.easa.europa.eu/en/downloads/20342/en)"
                 )
 
     elif calc_type == "SAFTE Effectiveness (patent-derived)":
