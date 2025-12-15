@@ -458,8 +458,8 @@ Based on literature review, the following domains have significant potential for
 
 **References**:
 
-- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2003). Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. *New England Journal of Medicine*, 349(13), 1227-1235.
-- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2001). Excluding pulmonary embolism at the bedside without diagnostic imaging: management of patients with suspected pulmonary embolism presenting to the emergency department by using a simple clinical model and D-dimer. *Annals of Internal Medicine*, 135(2), 98-107.
+- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2003). Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis. *New England Journal of Medicine*, 349(13), 1227-1235. https://doi.org/10.1056/NEJMoa023153
+- Wells, P. S., Anderson, D. R., Rodger, M., et al. (2001). Excluding pulmonary embolism at the bedside without diagnostic imaging: management of patients with suspected pulmonary embolism presenting to the emergency department by using a simple clinical model and D-dimer. *Annals of Internal Medicine*, 135(2), 98-107. https://doi.org/10.7326/0003-4819-135-2-200107170-00010
 
 **Key Features**:
 
@@ -471,6 +471,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (clinical utility for travel medicine)
+**Status (App)**: Live — implemented in the Streamlit UI (🩺 Clinical Calculators) as **Wells Score (DVT)** and **Wells Score (PE)**.
 
 ---
 
