@@ -1,4 +1,4 @@
-"""Universal Thermal Climate Index (UTCI).
+r"""Universal Thermal Climate Index (UTCI).
 
 Implements the standard UTCI polynomial approximation ("UTCI_approx", Oct 2009).
 
@@ -75,7 +75,7 @@ def _saturated_vapor_pressure_hpa_utci(air_temp_c: float) -> float:
 
 
 def _utci_polynomial(ta_c: float, d_tr_c: float, wind_10m_m_s: float, vapour_pressure_kpa: float) -> float:
-    """Polynomial approximation for UTCI (UTCI_approx).
+    r"""Polynomial approximation for UTCI (UTCI_approx).
 
     Parameters
     ----------

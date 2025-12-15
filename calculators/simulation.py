@@ -30,6 +30,10 @@ __all__ = [
     "simulate_phs_trajectory",
     "MitlerTrajectory",
     "simulate_mitler_trajectory",
+    "PHSSweep1D",
+    "PHSSweep2D",
+    "sweep_phs_metric_1d",
+    "sweep_phs_metric_2d",
 ]
 
 
@@ -172,21 +176,13 @@ def simulate_phs_trajectory(
     if last is None:
         raise ValueError("Internal error: trajectory generation produced no points")
 
-    # Estimate an *actual* allowable exposure under the model.
-    #
-    # predicted_heat_strain caps allowable_exposure_minutes to the requested
-    # exposure duration whenever no limits are reached. To avoid reporting
-    # "Allowable exposure == horizon" in safe conditions, probe the model at a
-    # large duration and interpret "Input duration" as unbounded in practice.
-    probe_minutes = 1_000_000.0
-    probe = predicted_heat_strain(
+    allowable, limiting_factor = _phs_allowable_exposure_minutes(
         metabolic_rate_w_m2=float(metabolic_rate_w_m2),
         air_temperature_C=float(air_temperature_C),
         mean_radiant_temperature_C=float(mean_radiant_temperature_C),
         relative_humidity_percent=float(relative_humidity_percent),
         air_velocity_m_s=float(air_velocity_m_s),
         clothing_insulation_clo=float(clothing_insulation_clo),
-        exposure_minutes=float(probe_minutes),
         mechanical_power_w_m2=float(mechanical_power_w_m2),
         body_mass_kg=float(body_mass_kg),
         body_surface_area_m2=float(body_surface_area_m2),
@@ -194,12 +190,6 @@ def simulate_phs_trajectory(
         core_temp_limit_C=float(core_temp_limit_C),
         dehydration_limit_percent=float(dehydration_limit_percent),
     )
-    if probe.limiting_factor == "Input duration":
-        allowable = float("inf")
-        limiting_factor = "No limit reached (model)"
-    else:
-        allowable = float(probe.allowable_exposure_minutes)
-        limiting_factor = str(probe.limiting_factor)
 
     return PHSTrajectory(
         times_minutes=tuple(times),
@@ -208,8 +198,8 @@ def simulate_phs_trajectory(
         required_sweat_rate_L_per_h=tuple(sw_req),
         max_sustainable_sweat_rate_L_per_h=tuple(sw_max),
         actual_sweat_rate_L_per_h=tuple(sw_act),
-        allowable_exposure_minutes=allowable,
-        limiting_factor=limiting_factor,
+        allowable_exposure_minutes=float(allowable),
+        limiting_factor=str(limiting_factor),
     )
 
 
@@ -263,3 +253,395 @@ def simulate_mitler_trajectory(
         perf.append(float(mitler_performance(float(t_i), float(phi_hours), float(SD), float(K))))
 
     return MitlerTrajectory(times_hours=tuple(times), performance=tuple(perf))
+
+
+@dataclass(slots=True, frozen=True)
+class PHSSweep1D:
+    """One-dimensional sweep for a chosen PHS-derived metric."""
+
+    parameter_name: str
+    parameter_unit: str
+    parameter_values: tuple[float, ...]
+    metric_name: str
+    metric_unit: str
+    metric_values: tuple[float, ...]
+
+
+@dataclass(slots=True, frozen=True)
+class PHSSweep2D:
+    """Two-dimensional sweep (grid) for a chosen PHS-derived metric."""
+
+    x_name: str
+    x_unit: str
+    x_values: tuple[float, ...]
+    y_name: str
+    y_unit: str
+    y_values: tuple[float, ...]
+    metric_name: str
+    metric_unit: str
+    z_values: tuple[tuple[float, ...], ...]  # shape: (len(y_values), len(x_values))
+
+
+_PHS_PARAMETER_UNITS: Final[dict[str, str]] = {
+    "metabolic_rate_w_m2": "W/m²",
+    "air_temperature_C": "°C",
+    "mean_radiant_temperature_C": "°C",
+    "relative_humidity_percent": "%",
+    "air_velocity_m_s": "m/s",
+    "clothing_insulation_clo": "clo",
+}
+
+_PHS_METRIC_UNITS: Final[dict[str, str]] = {
+    "allowable_exposure_minutes": "min",
+    "core_temperature_C_at_horizon": "°C",
+    "dehydration_percent_body_mass_at_horizon": "% body mass",
+}
+
+
+def _phs_allowable_exposure_minutes(
+    *,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    mechanical_power_w_m2: float,
+    body_mass_kg: float,
+    body_surface_area_m2: float,
+    baseline_core_temp_C: float,
+    core_temp_limit_C: float,
+    dehydration_limit_percent: float,
+    probe_minutes: float = 1_000_000.0,
+    max_probe_minutes: float = 1_000_000_000.0,
+    max_probe_steps: int = 6,
+) -> tuple[float, str]:
+    """Compute PHS allowable exposure with an unbounded/safe-case probe.
+
+    Notes
+    -----
+    ``predicted_heat_strain`` caps allowable exposure to the requested duration when
+    no limits are reached. To avoid reporting "allowable == horizon" for safe cases,
+    this function probes a very large duration and interprets the model's "Input duration"
+    limiting factor as effectively unbounded within the simplified model.
+    """
+    if probe_minutes <= 0.0:
+        raise ValueError("probe_minutes must be > 0")
+    if max_probe_minutes <= 0.0:
+        raise ValueError("max_probe_minutes must be > 0")
+    steps = int(max_probe_steps)
+    if steps < 1 or steps > 20:
+        raise ValueError("max_probe_steps must be between 1 and 20")
+
+    # Bounded multi-probe to reduce the chance of incorrectly reporting "inf"
+    # when the true limiting time is finite but very large.
+    #
+    # Strategy: probe at increasing durations until a non-"Input duration" limiting
+    # factor is observed, or until max_probe_minutes/steps are exhausted.
+    duration = float(min(float(probe_minutes), float(max_probe_minutes)))
+    last_limiting = "Input duration"
+    for _ in range(steps):
+        probe = predicted_heat_strain(
+            metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+            air_temperature_C=float(air_temperature_C),
+            mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+            relative_humidity_percent=float(relative_humidity_percent),
+            air_velocity_m_s=float(air_velocity_m_s),
+            clothing_insulation_clo=float(clothing_insulation_clo),
+            exposure_minutes=float(duration),
+            mechanical_power_w_m2=float(mechanical_power_w_m2),
+            body_mass_kg=float(body_mass_kg),
+            body_surface_area_m2=float(body_surface_area_m2),
+            baseline_core_temp_C=float(baseline_core_temp_C),
+            core_temp_limit_C=float(core_temp_limit_C),
+            dehydration_limit_percent=float(dehydration_limit_percent),
+        )
+        last_limiting = str(probe.limiting_factor)
+        if last_limiting != "Input duration":
+            return (float(probe.allowable_exposure_minutes), last_limiting)
+
+        if duration >= float(max_probe_minutes):
+            break
+        duration = float(min(duration * 10.0, float(max_probe_minutes)))
+
+    return (float("inf"), "No limit reached (model)")
+
+
+def sweep_phs_metric_1d(
+    *,
+    sweep_parameter: str,
+    start: float,
+    stop: float,
+    n_points: int,
+    metric: str,
+    # Base scenario (held constant during sweep)
+    exposure_minutes: float,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    mechanical_power_w_m2: float = 0.0,
+    body_mass_kg: float = 75.0,
+    body_surface_area_m2: float = 1.9,
+    baseline_core_temp_C: float = 37.0,
+    core_temp_limit_C: float = 38.5,
+    dehydration_limit_percent: float = 5.0,
+    max_evaluations: int = 2_500,
+) -> PHSSweep1D:
+    """Sweep a single PHS input parameter and compute a chosen metric.
+
+    Parameters
+    ----------
+    sweep_parameter:
+        One of: ``metabolic_rate_w_m2``, ``air_temperature_C``,
+        ``mean_radiant_temperature_C``, ``relative_humidity_percent``,
+        ``air_velocity_m_s``, ``clothing_insulation_clo``.
+    metric:
+        One of: ``allowable_exposure_minutes``, ``core_temperature_C_at_horizon``,
+        ``dehydration_percent_body_mass_at_horizon``.
+
+    Raises
+    ------
+    ValueError
+        On unsupported parameter/metric, invalid ranges, or if the requested sweep
+        would exceed ``max_evaluations``.
+    """
+    if sweep_parameter not in _PHS_PARAMETER_UNITS:
+        raise ValueError(f"Unsupported sweep_parameter: {sweep_parameter}")
+    if metric not in _PHS_METRIC_UNITS:
+        raise ValueError(f"Unsupported metric: {metric}")
+
+    n = int(n_points)
+    if n < 2 or n > 2_000:
+        raise ValueError("n_points must be between 2 and 2000")
+
+    if float(exposure_minutes) <= 0.0:
+        raise ValueError("exposure_minutes must be > 0")
+
+    max_eval = int(max_evaluations)
+    if max_eval < 1 or max_eval > 250_000:
+        raise ValueError("max_evaluations must be between 1 and 250000")
+    if n > max_eval:
+        raise ValueError("Requested sweep exceeds max_evaluations")
+
+    a = float(start)
+    b = float(stop)
+    if not (math.isfinite(a) and math.isfinite(b)):
+        raise ValueError("start/stop must be finite")
+
+    # Build inclusive grid.
+    if n == 2:
+        xs = (a, b)
+    else:
+        step = (b - a) / float(n - 1)
+        xs_list: list[float] = []
+        v = a
+        for i in range(n):
+            xs_list.append(float(v))
+            v = a + float(i + 1) * step
+        xs = tuple(xs_list)
+
+    results: list[float] = []
+    for x in xs:
+        kwargs = {
+            "metabolic_rate_w_m2": float(metabolic_rate_w_m2),
+            "air_temperature_C": float(air_temperature_C),
+            "mean_radiant_temperature_C": float(mean_radiant_temperature_C),
+            "relative_humidity_percent": float(relative_humidity_percent),
+            "air_velocity_m_s": float(air_velocity_m_s),
+            "clothing_insulation_clo": float(clothing_insulation_clo),
+        }
+        kwargs[sweep_parameter] = float(x)
+
+        if metric == "allowable_exposure_minutes":
+            m, _ = _phs_allowable_exposure_minutes(
+                metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
+                air_temperature_C=float(kwargs["air_temperature_C"]),
+                mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),
+                relative_humidity_percent=float(kwargs["relative_humidity_percent"]),
+                air_velocity_m_s=float(kwargs["air_velocity_m_s"]),
+                clothing_insulation_clo=float(kwargs["clothing_insulation_clo"]),
+                mechanical_power_w_m2=float(mechanical_power_w_m2),
+                body_mass_kg=float(body_mass_kg),
+                body_surface_area_m2=float(body_surface_area_m2),
+                baseline_core_temp_C=float(baseline_core_temp_C),
+                core_temp_limit_C=float(core_temp_limit_C),
+                dehydration_limit_percent=float(dehydration_limit_percent),
+            )
+            results.append(float(m))
+            continue
+
+        point = predicted_heat_strain(
+            metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
+            air_temperature_C=float(kwargs["air_temperature_C"]),
+            mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),
+            relative_humidity_percent=float(kwargs["relative_humidity_percent"]),
+            air_velocity_m_s=float(kwargs["air_velocity_m_s"]),
+            clothing_insulation_clo=float(kwargs["clothing_insulation_clo"]),
+            exposure_minutes=float(exposure_minutes),
+            mechanical_power_w_m2=float(mechanical_power_w_m2),
+            body_mass_kg=float(body_mass_kg),
+            body_surface_area_m2=float(body_surface_area_m2),
+            baseline_core_temp_C=float(baseline_core_temp_C),
+            core_temp_limit_C=float(core_temp_limit_C),
+            dehydration_limit_percent=float(dehydration_limit_percent),
+        )
+        if metric == "core_temperature_C_at_horizon":
+            results.append(float(point.predicted_core_temperature_C))
+        elif metric == "dehydration_percent_body_mass_at_horizon":
+            results.append(float(point.dehydration_percent_body_mass))
+        else:
+            raise ValueError(f"Unsupported metric: {metric}")
+
+    return PHSSweep1D(
+        parameter_name=sweep_parameter,
+        parameter_unit=_PHS_PARAMETER_UNITS[sweep_parameter],
+        parameter_values=tuple(xs),
+        metric_name=metric,
+        metric_unit=_PHS_METRIC_UNITS[metric],
+        metric_values=tuple(results),
+    )
+
+
+def sweep_phs_metric_2d(
+    *,
+    x_parameter: str,
+    x_start: float,
+    x_stop: float,
+    x_points: int,
+    y_parameter: str,
+    y_start: float,
+    y_stop: float,
+    y_points: int,
+    metric: str,
+    # Base scenario (held constant during sweep)
+    exposure_minutes: float,
+    metabolic_rate_w_m2: float,
+    air_temperature_C: float,
+    mean_radiant_temperature_C: float,
+    relative_humidity_percent: float,
+    air_velocity_m_s: float,
+    clothing_insulation_clo: float,
+    mechanical_power_w_m2: float = 0.0,
+    body_mass_kg: float = 75.0,
+    body_surface_area_m2: float = 1.9,
+    baseline_core_temp_C: float = 37.0,
+    core_temp_limit_C: float = 38.5,
+    dehydration_limit_percent: float = 5.0,
+    max_evaluations: int = 2_500,
+) -> PHSSweep2D:
+    """Compute a bounded 2D sweep grid for a chosen PHS-derived metric."""
+    if x_parameter not in _PHS_PARAMETER_UNITS:
+        raise ValueError(f"Unsupported x_parameter: {x_parameter}")
+    if y_parameter not in _PHS_PARAMETER_UNITS:
+        raise ValueError(f"Unsupported y_parameter: {y_parameter}")
+    if x_parameter == y_parameter:
+        raise ValueError("x_parameter and y_parameter must be different")
+    if metric not in _PHS_METRIC_UNITS:
+        raise ValueError(f"Unsupported metric: {metric}")
+
+    nx = int(x_points)
+    ny = int(y_points)
+    if nx < 2 or nx > 500 or ny < 2 or ny > 500:
+        raise ValueError("x_points/y_points must be between 2 and 500")
+
+    if float(exposure_minutes) <= 0.0:
+        raise ValueError("exposure_minutes must be > 0")
+
+    max_eval = int(max_evaluations)
+    if max_eval < 1 or max_eval > 250_000:
+        raise ValueError("max_evaluations must be between 1 and 250000")
+    if nx * ny > max_eval:
+        raise ValueError("Requested grid exceeds max_evaluations")
+
+    xa = float(x_start)
+    xb = float(x_stop)
+    ya = float(y_start)
+    yb = float(y_stop)
+    if not all(math.isfinite(v) for v in (xa, xb, ya, yb)):
+        raise ValueError("start/stop must be finite")
+
+    def _linspace(a: float, b: float, n: int) -> tuple[float, ...]:
+        if n == 2:
+            return (float(a), float(b))
+        step = (b - a) / float(n - 1)
+        out: list[float] = []
+        for i in range(n):
+            out.append(float(a + float(i) * step))
+        return tuple(out)
+
+    xs = _linspace(xa, xb, nx)
+    ys = _linspace(ya, yb, ny)
+
+    base_kwargs = {
+        "metabolic_rate_w_m2": float(metabolic_rate_w_m2),
+        "air_temperature_C": float(air_temperature_C),
+        "mean_radiant_temperature_C": float(mean_radiant_temperature_C),
+        "relative_humidity_percent": float(relative_humidity_percent),
+        "air_velocity_m_s": float(air_velocity_m_s),
+        "clothing_insulation_clo": float(clothing_insulation_clo),
+    }
+
+    rows: list[tuple[float, ...]] = []
+    for y in ys:
+        row: list[float] = []
+        for x in xs:
+            kwargs = dict(base_kwargs)
+            kwargs[x_parameter] = float(x)
+            kwargs[y_parameter] = float(y)
+
+            if metric == "allowable_exposure_minutes":
+                m, _ = _phs_allowable_exposure_minutes(
+                    metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
+                    air_temperature_C=float(kwargs["air_temperature_C"]),
+                    mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),
+                    relative_humidity_percent=float(kwargs["relative_humidity_percent"]),
+                    air_velocity_m_s=float(kwargs["air_velocity_m_s"]),
+                    clothing_insulation_clo=float(kwargs["clothing_insulation_clo"]),
+                    mechanical_power_w_m2=float(mechanical_power_w_m2),
+                    body_mass_kg=float(body_mass_kg),
+                    body_surface_area_m2=float(body_surface_area_m2),
+                    baseline_core_temp_C=float(baseline_core_temp_C),
+                    core_temp_limit_C=float(core_temp_limit_C),
+                    dehydration_limit_percent=float(dehydration_limit_percent),
+                )
+                row.append(float(m))
+                continue
+
+            point = predicted_heat_strain(
+                metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
+                air_temperature_C=float(kwargs["air_temperature_C"]),
+                mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),
+                relative_humidity_percent=float(kwargs["relative_humidity_percent"]),
+                air_velocity_m_s=float(kwargs["air_velocity_m_s"]),
+                clothing_insulation_clo=float(kwargs["clothing_insulation_clo"]),
+                exposure_minutes=float(exposure_minutes),
+                mechanical_power_w_m2=float(mechanical_power_w_m2),
+                body_mass_kg=float(body_mass_kg),
+                body_surface_area_m2=float(body_surface_area_m2),
+                baseline_core_temp_C=float(baseline_core_temp_C),
+                core_temp_limit_C=float(core_temp_limit_C),
+                dehydration_limit_percent=float(dehydration_limit_percent),
+            )
+            if metric == "core_temperature_C_at_horizon":
+                row.append(float(point.predicted_core_temperature_C))
+            elif metric == "dehydration_percent_body_mass_at_horizon":
+                row.append(float(point.dehydration_percent_body_mass))
+            else:
+                raise ValueError(f"Unsupported metric: {metric}")
+
+        rows.append(tuple(row))
+
+    return PHSSweep2D(
+        x_name=x_parameter,
+        x_unit=_PHS_PARAMETER_UNITS[x_parameter],
+        x_values=tuple(xs),
+        y_name=y_parameter,
+        y_unit=_PHS_PARAMETER_UNITS[y_parameter],
+        y_values=tuple(ys),
+        metric_name=metric,
+        metric_unit=_PHS_METRIC_UNITS[metric],
+        z_values=tuple(rows),
+    )
