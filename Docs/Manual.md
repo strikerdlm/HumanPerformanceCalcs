@@ -98,6 +98,30 @@ The **NVG / EO Target Acquisition** tool estimates **cycles-on-target** for a ta
 - **What it does not model**: contrast/noise, display luminance, atmospheric attenuation, clutter, gain settings, or human factors/training.
 - **Primary reference**: Sjaardema et al. (2015) *History and Evolution of the Johnson Criteria* (SAND2015-6368), which summarizes Johnson and ACQUIRE N50 cycle criteria and their limitations.
 
+### Risk Assessment Tools: Motion Sickness Susceptibility (MSSQ-short)
+
+This tool is available under:
+
+- Sidebar → **📊 Risk Assessment Tools** → **Motion Sickness Susceptibility (MSSQ-short)**
+
+**What it computes**
+
+- MSSQ-short **Section A** (childhood) raw sum (0–27)
+- MSSQ-short **Section B** (adulthood) raw sum (0–27)
+- **Total** raw sum (0–54)
+- A **quartile band** relative to the Rivera et al. (2022) open pre-test sample (reported P25/P50/P75)
+
+**Important limitations**
+
+- The quartile band is **not a universal population percentile**; it is a reference against a small study sample.
+- MSSQ variants/translations differ in recall windows and wording; validate against your program’s instrument version for operational use.
+
+**References**
+
+- Rivera R. et al. (2022). *Revista de otorrinolaringología y cirugía de cabeza y cuello*. https://doi.org/10.4067/S0718-48162022000200172
+- Golding (1998). *Brain Research Bulletin*. https://doi.org/10.1016/S0361-9230(98)00091-4
+- Golding (2006). *Autonomic Neuroscience*. https://doi.org/10.1016/j.autneu.2006.07.019
+
 ### Risk Assessment Tools: Whole-Body Vibration (ISO 2631-1 style A(8) / VDV)
 
 This tool computes ISO 2631‑style exposure metrics from **frequency-weighted** acceleration inputs:
