@@ -215,6 +215,7 @@ Based on literature review, the following domains have significant potential for
 - Rash, C. E., Verona, R. W., & Crowley, J. S. (1990). Human factors and safety considerations of night vision systems flight using thermal imaging systems. *USAARL Technical Report*, 90-10.
 - Pinkus, A. R., & Task, H. L. (1998). Display system image quality metrics. *Human Factors Engineering Technical Advisory Group Report*.
 - McLean, W. E. (2014). *Night Vision Manual for the Flight Surgeon*. USAFSAM Special Report.
+- Sjaardema, T. A., Smith, C. S., & Birch, G. C. (2015). *History and Evolution of the Johnson Criteria* (SAND2015-6368). OSTI. https://www.osti.gov/servlets/purl/1222446
 
 **Key Features**:
 
@@ -226,6 +227,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (specialized but critical for rotary-wing operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
@@ -238,6 +240,8 @@ Based on literature review, the following domains have significant potential for
 - ISO 2631-1:1997 — *Mechanical vibration and shock — Evaluation of human exposure to whole-body vibration — Part 1: General requirements*
 - Griffin, M. J. (2012). *Handbook of Human Vibration*. Academic Press.
 - Mansfield, N. J. (2005). *Human Response to Vibration*. CRC Press.
+- Mansfield, N. J., Newell, G. S., & Notini, L. (2009). Earth moving machine whole-body vibration and the contribution of sub-1Hz components to ISO 2631-1 metrics. *Industrial Health*, 47(4), 402–410. https://doi.org/10.2486/INDHEALTH.47.402
+- Orelaja, O. A., Wang, X., Ibrahim, D. S., & Sharif, U. (2019). Evaluation of Health Risk Level of Hand-Arm and Whole-Body Vibrations... *Journal of Healthcare Engineering*, 2019. https://doi.org/10.1155/2019/5723830
 
 **Key Features**:
 
@@ -249,6 +253,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (important for helicopter and ground vehicle operations)
+**Status (App)**: Live — implemented in the Streamlit UI (Risk Assessment Tools)
 
 ---
 
@@ -261,6 +266,7 @@ Based on literature review, the following domains have significant potential for
 - Kobrick, J. L., & Appleton, B. (1971). Effects of extended hypoxia on visual performance and retinal vascular state. *Journal of Applied Physiology*, 31(3), 357-362.
 - Connolly, D. M., & Hosking, S. L. (2008). Oxygenation and visual function. *Aviation, Space, and Environmental Medicine*, 79(7), 735-743.
 - Connolly, D. M., Barbur, J. L., Hosking, S. L., & Moorhead, I. R. (2008). Mild hypoxia impairs chromatic sensitivity in the mesopic range. *Investigative Ophthalmology & Visual Science*, 49(2), 820-827.
+- Wang, Y., et al. (2024). Influence of short-term hypoxia exposure on dynamic visual acuity. *Frontiers in Neuroscience*, 18:1428987. https://doi.org/10.3389/fnins.2024.1428987
 
 **Key Features**:
 
@@ -272,6 +278,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Low
 **Integration Priority**: Medium (extends altitude physiology capabilities)
+**Status (App)**: Live — implemented in the Streamlit UI (Atmospheric & Physiological)
 
 ---
 
@@ -284,6 +291,8 @@ Based on literature review, the following domains have significant potential for
 - FAA. (2012). Flightcrew Member Duty and Rest Requirements. *14 CFR Part 117*.
 - EASA. (2016). Flight and Duty Time Limitations and Rest Requirements. *Commission Regulation (EU) No 83/2014*.
 - Caldwell, J. A., Mallis, M. M., Caldwell, J. L., et al. (2009). Fatigue countermeasures in aviation. *Aviation, Space, and Environmental Medicine*, 80(1), 29-59.
+- eCFR: Table A to Part 117 (max flight time): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20A%20to%20Part%20117
+- eCFR: Table B to Part 117 (max FDP): https://www.ecfr.gov/current/title-14/chapter-I/subchapter-G/part-117/appendix-Table%20B%20to%20Part%20117
 
 **Key Features**:
 
@@ -295,6 +304,7 @@ Based on literature review, the following domains have significant potential for
 
 **Complexity**: Medium
 **Integration Priority**: Medium (operational planning tool)
+**Status (App)**: Live — implemented for FAA Part 117 (unaugmented) in the Streamlit UI (Fatigue & Circadian). EASA ORO.FTL remains planned.
 
 ---
 
