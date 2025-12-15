@@ -176,21 +176,13 @@ def simulate_phs_trajectory(
     if last is None:
         raise ValueError("Internal error: trajectory generation produced no points")
 
-    # Estimate an *actual* allowable exposure under the model.
-    #
-    # predicted_heat_strain caps allowable_exposure_minutes to the requested
-    # exposure duration whenever no limits are reached. To avoid reporting
-    # "Allowable exposure == horizon" in safe conditions, probe the model at a
-    # large duration and interpret "Input duration" as unbounded in practice.
-    probe_minutes = 1_000_000.0
-    probe = predicted_heat_strain(
+    allowable, limiting_factor = _phs_allowable_exposure_minutes(
         metabolic_rate_w_m2=float(metabolic_rate_w_m2),
         air_temperature_C=float(air_temperature_C),
         mean_radiant_temperature_C=float(mean_radiant_temperature_C),
         relative_humidity_percent=float(relative_humidity_percent),
         air_velocity_m_s=float(air_velocity_m_s),
         clothing_insulation_clo=float(clothing_insulation_clo),
-        exposure_minutes=float(probe_minutes),
         mechanical_power_w_m2=float(mechanical_power_w_m2),
         body_mass_kg=float(body_mass_kg),
         body_surface_area_m2=float(body_surface_area_m2),
@@ -198,12 +190,6 @@ def simulate_phs_trajectory(
         core_temp_limit_C=float(core_temp_limit_C),
         dehydration_limit_percent=float(dehydration_limit_percent),
     )
-    if probe.limiting_factor == "Input duration":
-        allowable = float("inf")
-        limiting_factor = "No limit reached (model)"
-    else:
-        allowable = float(probe.allowable_exposure_minutes)
-        limiting_factor = str(probe.limiting_factor)
 
     return PHSTrajectory(
         times_minutes=tuple(times),
@@ -212,8 +198,8 @@ def simulate_phs_trajectory(
         required_sweat_rate_L_per_h=tuple(sw_req),
         max_sustainable_sweat_rate_L_per_h=tuple(sw_max),
         actual_sweat_rate_L_per_h=tuple(sw_act),
-        allowable_exposure_minutes=allowable,
-        limiting_factor=limiting_factor,
+        allowable_exposure_minutes=float(allowable),
+        limiting_factor=str(limiting_factor),
     )
 
 
@@ -327,7 +313,9 @@ def _phs_allowable_exposure_minutes(
     core_temp_limit_C: float,
     dehydration_limit_percent: float,
     probe_minutes: float = 1_000_000.0,
-) -> float:
+    max_probe_minutes: float = 1_000_000_000.0,
+    max_probe_steps: int = 6,
+) -> tuple[float, str]:
     """Compute PHS allowable exposure with an unbounded/safe-case probe.
 
     Notes
@@ -339,25 +327,44 @@ def _phs_allowable_exposure_minutes(
     """
     if probe_minutes <= 0.0:
         raise ValueError("probe_minutes must be > 0")
+    if max_probe_minutes <= 0.0:
+        raise ValueError("max_probe_minutes must be > 0")
+    steps = int(max_probe_steps)
+    if steps < 1 or steps > 20:
+        raise ValueError("max_probe_steps must be between 1 and 20")
 
-    probe = predicted_heat_strain(
-        metabolic_rate_w_m2=float(metabolic_rate_w_m2),
-        air_temperature_C=float(air_temperature_C),
-        mean_radiant_temperature_C=float(mean_radiant_temperature_C),
-        relative_humidity_percent=float(relative_humidity_percent),
-        air_velocity_m_s=float(air_velocity_m_s),
-        clothing_insulation_clo=float(clothing_insulation_clo),
-        exposure_minutes=float(probe_minutes),
-        mechanical_power_w_m2=float(mechanical_power_w_m2),
-        body_mass_kg=float(body_mass_kg),
-        body_surface_area_m2=float(body_surface_area_m2),
-        baseline_core_temp_C=float(baseline_core_temp_C),
-        core_temp_limit_C=float(core_temp_limit_C),
-        dehydration_limit_percent=float(dehydration_limit_percent),
-    )
-    if probe.limiting_factor == "Input duration":
-        return float("inf")
-    return float(probe.allowable_exposure_minutes)
+    # Bounded multi-probe to reduce the chance of incorrectly reporting "inf"
+    # when the true limiting time is finite but very large.
+    #
+    # Strategy: probe at increasing durations until a non-"Input duration" limiting
+    # factor is observed, or until max_probe_minutes/steps are exhausted.
+    duration = float(min(float(probe_minutes), float(max_probe_minutes)))
+    last_limiting = "Input duration"
+    for _ in range(steps):
+        probe = predicted_heat_strain(
+            metabolic_rate_w_m2=float(metabolic_rate_w_m2),
+            air_temperature_C=float(air_temperature_C),
+            mean_radiant_temperature_C=float(mean_radiant_temperature_C),
+            relative_humidity_percent=float(relative_humidity_percent),
+            air_velocity_m_s=float(air_velocity_m_s),
+            clothing_insulation_clo=float(clothing_insulation_clo),
+            exposure_minutes=float(duration),
+            mechanical_power_w_m2=float(mechanical_power_w_m2),
+            body_mass_kg=float(body_mass_kg),
+            body_surface_area_m2=float(body_surface_area_m2),
+            baseline_core_temp_C=float(baseline_core_temp_C),
+            core_temp_limit_C=float(core_temp_limit_C),
+            dehydration_limit_percent=float(dehydration_limit_percent),
+        )
+        last_limiting = str(probe.limiting_factor)
+        if last_limiting != "Input duration":
+            return (float(probe.allowable_exposure_minutes), last_limiting)
+
+        if duration >= float(max_probe_minutes):
+            break
+        duration = float(min(duration * 10.0, float(max_probe_minutes)))
+
+    return (float("inf"), "No limit reached (model)")
 
 
 def sweep_phs_metric_1d(
@@ -449,7 +456,7 @@ def sweep_phs_metric_1d(
         kwargs[sweep_parameter] = float(x)
 
         if metric == "allowable_exposure_minutes":
-            m = _phs_allowable_exposure_minutes(
+            m, _ = _phs_allowable_exposure_minutes(
                 metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
                 air_temperature_C=float(kwargs["air_temperature_C"]),
                 mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),
@@ -586,7 +593,7 @@ def sweep_phs_metric_2d(
             kwargs[y_parameter] = float(y)
 
             if metric == "allowable_exposure_minutes":
-                m = _phs_allowable_exposure_minutes(
+                m, _ = _phs_allowable_exposure_minutes(
                     metabolic_rate_w_m2=float(kwargs["metabolic_rate_w_m2"]),
                     air_temperature_C=float(kwargs["air_temperature_C"]),
                     mean_radiant_temperature_C=float(kwargs["mean_radiant_temperature_C"]),

@@ -2613,17 +2613,20 @@ elif calculator_category == "🧪 Simulation Studio":
                     "Scenario label",
                     value=f"Scenario {len(st.session_state['phs_scenarios']) + 1}",
                     help="Saved scenarios are overlaid for direct comparison.",
+                    key="phs_scenario_label",
                 )
             with col_b:
                 scenario_palette = st.selectbox(
                     "Color palette",
                     ["Vivid", "Scientific", "Colorblind-safe"],
                     index=2,
+                    key="phs_palette",
                 )
             with col_c:
                 add_now = st.button(
                     "Add current inputs",
                     disabled=len(st.session_state["phs_scenarios"]) >= max_scenarios,
+                    key="phs_add",
                 )
 
             if add_now:
@@ -2635,7 +2638,7 @@ elif calculator_category == "🧪 Simulation Studio":
                 )
 
             if st.session_state["phs_scenarios"]:
-                if st.button("Clear scenarios"):
+                if st.button("Clear scenarios", key="phs_clear"):
                     st.session_state["phs_scenarios"] = []
 
             scenarios = list(st.session_state["phs_scenarios"])
@@ -3184,6 +3187,7 @@ elif calculator_category == "🧪 Simulation Studio":
                 label = st.text_input(
                     "Scenario label",
                     value=f"Circadian {len(st.session_state['mitler_scenarios']) + 1}",
+                    key="mitler_scenario_label",
                 )
             with c2:
                 palette = st.selectbox(
