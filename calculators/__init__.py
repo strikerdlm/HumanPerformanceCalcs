@@ -62,6 +62,9 @@ from .duty_time import (  # type: ignore
     Faa117Limits,
     parse_hhmm,
     faa117_limits,
+    Faa117CumulativeInputs,
+    Faa117CumulativeResult,
+    faa117_cumulative_limits,
 )
 from .aa_gradient import (  # type: ignore
     AaGradientInputs,
@@ -184,6 +187,9 @@ __all__ = [
     "Faa117Limits",
     "parse_hhmm",
     "faa117_limits",
+    "Faa117CumulativeInputs",
+    "Faa117CumulativeResult",
+    "faa117_cumulative_limits",
     "AaGradientInputs",
     "AaGradientResult",
     "compute_aa_gradient",
