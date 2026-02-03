@@ -59,8 +59,8 @@ export function standardAtmosphere(altitude_m: number): ISAResult {
     pressure_Pa = p_tropopause * 
       Math.exp(-GRAVITY * (altitude_m - TROPOPAUSE_M) / (GAS_CONSTANT * TROPOPAUSE_TEMP_K));
   } else if (altitude_m <= 32000) {
-    // Upper stratosphere (20-32km): warming layer
-    const STRAT_LAPSE = -0.001; // -1 K/km (warming)
+    // Upper stratosphere (20-32km): warming layer per ISO 2533
+    const STRAT_LAPSE = 0.001; // +1 K/km (temperature increases with altitude)
     const ALT_20KM = 20000;
     const TEMP_20KM = TROPOPAUSE_TEMP_K;
     
