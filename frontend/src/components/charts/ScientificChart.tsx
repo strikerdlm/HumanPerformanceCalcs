@@ -29,16 +29,12 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
 }) => {
   const chartRef = useRef<ReactECharts>(null);
 
-  // Merge with publication theme
+  // Merge with publication theme — titles are NEVER rendered on the chart canvas.
+  // Titles and subtitles are handled as HTML elements above the chart.
   const mergedOption = useMemo<EChartsOption>(() => ({
     ...PUBLICATION_THEME,
     ...option,
-    title: title ? {
-      text: title,
-      subtext: subtitle,
-      ...PUBLICATION_THEME.title,
-      ...(option.title as object),
-    } : option.title,
+    title: { show: false },
     tooltip: {
       trigger: 'axis',
       ...PUBLICATION_THEME.tooltip,
@@ -90,6 +86,18 @@ export const ScientificChart: React.FC<ScientificChartProps> = ({
 
   return (
     <div className={`publication-figure ${className}`}>
+      {(title || subtitle) && (
+        <div className="mb-2">
+          {title && (
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
+          )}
+        </div>
+      )}
       <div className="relative">
         <ReactECharts
           ref={chartRef}
