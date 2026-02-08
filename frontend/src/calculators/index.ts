@@ -67,3 +67,50 @@ export {
   type WellsDVTInputs,
   type WellsPEInputs,
 } from './clinical';
+
+// Fatigue & Circadian
+export {
+  mitlerPerformance,
+  simulateMitlerTrajectory,
+  homeostaticWaking,
+  homeostaticSleep,
+  circadianComponent,
+  simulateTwoProcess,
+  jetLagDaysToAdjust,
+  faa117Limits,
+  faa117CumulativeLimits,
+  parseHHMM,
+  easaMaxDailyFdp,
+  easaCumulativeLimits,
+  type MitlerTrajectoryPoint,
+  type TwoProcessPoint,
+  type JetLagResult,
+  type Faa117Result,
+  type Faa117CumulativeResult,
+  type AcclimatisationState,
+  type EasaFdpResult,
+  type EasaCumulativeResult,
+} from './fatigue';
+
+// Risk Assessment
+export {
+  spatialDisorientationRisk,
+  assessTargetAcquisition,
+  rangeForRequiredCycles,
+  computeWbvExposure,
+  computeMssqShort,
+  MSSQ_ITEMS,
+  type RiskLevel,
+  type SDInputs,
+  type SDResult,
+  type CriteriaFamily,
+  type DiscriminationLevel,
+  type ImagingSystem,
+  type Target,
+  type NvgAcquisitionResult,
+  type WbvZone,
+  type WbvInputs,
+  type WbvResult,
+  type MssqPercentileBand,
+  type MssqResult,
+} from './risk';
