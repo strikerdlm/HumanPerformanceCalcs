@@ -38,6 +38,13 @@ from .nvg import (  # type: ignore
     range_for_required_cycles,
     assess_target_acquisition,
 )
+from .spo2_models import (  # type: ignore
+    niermeyer_spo2,
+    alt_var_spo2,
+    tushaus_cascade_spo2,
+    compare_spo2_models,
+    SpO2Result,
+)
 from .wbv import (  # type: ignore
     WbvAxisWeightedRms,
     WbvExposureInputs,
