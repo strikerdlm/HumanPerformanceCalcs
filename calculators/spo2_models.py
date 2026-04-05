@@ -45,6 +45,19 @@ class SpO2Result:
     notes: str = ""
 
 
+def _validate_finite(name: str, value: float) -> float:
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError(f"{name} must be finite")
+    return numeric
+
+
+def _validate_range(name: str, value: float, min_value: float, max_value: float) -> float:
+    if value < min_value or value > max_value:
+        raise ValueError(f"{name} must be in [{min_value}, {max_value}], got {value}")
+    return value
+
+
 def niermeyer_spo2(altitude_m: float, sex: Literal["male", "female"]) -> SpO2Result:
     """Niermeyer et al. Linear Regression Model.
     
@@ -70,8 +83,17 @@ def niermeyer_spo2(altitude_m: float, sex: Literal["male", "female"]) -> SpO2Res
         - Does NOT account for acclimatization
         - Simple field-use model
     """
+    altitude = _validate_range(
+        "altitude_m",
+        _validate_finite("altitude_m", altitude_m),
+        0.0,
+        8848.0,
+    )
+    if sex not in ("male", "female"):
+        raise ValueError(f"sex must be 'male' or 'female', got {sex!r}")
+
     z = 0.7 if sex == "male" else 1.4
-    spo2 = 103.3 - (0.0047 * altitude_m) + z
+    spo2 = 103.3 - (0.0047 * altitude) + z
     spo2 = max(50.0, min(100.0, spo2))
     
     return SpO2Result(
@@ -113,8 +135,46 @@ def alt_var_spo2(
         - Captures acclimatization via time-lagged SpO2 and HR
         - Requires continuous monitoring data
     """
-    B0, B1, B2, B3, B4, B5 = 45.0, 0.35, 0.25, -0.08, -0.05, -0.002
-    spo2 = B0 + B1*spo2_12h + B2*spo2_24h + B3*hr_12h + B4*hr_24h + B5*altitude_m
+    altitude = _validate_range(
+        "altitude_m",
+        _validate_finite("altitude_m", altitude_m),
+        0.0,
+        8848.0,
+    )
+    spo2_prev_12 = _validate_range(
+        "spo2_12h",
+        _validate_finite("spo2_12h", spo2_12h),
+        50.0,
+        100.0,
+    )
+    spo2_prev_24 = _validate_range(
+        "spo2_24h",
+        _validate_finite("spo2_24h", spo2_24h),
+        50.0,
+        100.0,
+    )
+    hr_prev_12 = _validate_range(
+        "hr_12h",
+        _validate_finite("hr_12h", hr_12h),
+        30.0,
+        220.0,
+    )
+    hr_prev_24 = _validate_range(
+        "hr_24h",
+        _validate_finite("hr_24h", hr_24h),
+        30.0,
+        220.0,
+    )
+
+    b0, b1, b2, b3, b4, b5 = 45.0, 0.35, 0.25, -0.08, -0.05, -0.002
+    spo2 = (
+        b0
+        + b1 * spo2_prev_12
+        + b2 * spo2_prev_24
+        + b3 * hr_prev_12
+        + b4 * hr_prev_24
+        + b5 * altitude
+    )
     spo2 = max(50.0, min(100.0, spo2))
     
     return SpO2Result(
@@ -151,21 +211,40 @@ def tushaus_cascade_spo2(
         - Based on physiological first principles
         - Includes ±2% pulse oximeter tolerance
     """
+    altitude = _validate_range(
+        "altitude_m",
+        _validate_finite("altitude_m", altitude_m),
+        0.0,
+        11000.0,
+    )
+    fio2 = _validate_range(
+        "fi_o2",
+        _validate_finite("fi_o2", fi_o2),
+        0.1,
+        1.0,
+    )
+    body_temp_c = _validate_range(
+        "temp_c",
+        _validate_finite("temp_c", temp_c),
+        30.0,
+        45.0,
+    )
+
     # Barometric pressure from ISA
     p0 = 760.0  # mmHg at sea level
-    pb = p0 * (1 - 2.25577e-5 * altitude_m) ** 5.25588
+    pb = p0 * (1 - 2.25577e-5 * altitude) ** 5.25588
     
     # Water vapor pressure
-    ph2o = 6.1078 * math.exp((17.2694 * temp_c) / (temp_c + 237.3)) * 0.750062
+    ph2o = 6.1078 * math.exp((17.2694 * body_temp_c) / (body_temp_c + 237.3)) * 0.750062
     
     # Alveolar PO2
-    pao2 = fi_o2 * (pb - ph2o)
+    pao2 = fio2 * (pb - ph2o)
     
-    # Estimate SpO2 from PAO2
-    if pao2 < 40:
-        spo2 = 75 + (pao2 - 40) * 1.25
+    # Estimate SpO2 from PAO2 with a continuous transition at 60 mmHg.
+    if pao2 < 60.0:
+        spo2 = 75.0 + (pao2 - 40.0) * 0.75
     else:
-        spo2 = min(100, 90 + (pao2 - 60) * 0.25)
+        spo2 = min(100.0, 90.0 + (pao2 - 60.0) * 0.25)
     
     spo2 = max(50.0, min(100.0, spo2))
     
@@ -190,7 +269,8 @@ def compare_spo2_models(
     Returns:
         Dictionary mapping model names to SpO2Result
     """
+    altitude = _validate_finite("altitude_m", altitude_m)
     return {
-        "Niermeyer": niermeyer_spo2(altitude_m, sex),
-        "Tüshaus": tushaus_cascade_spo2(altitude_m),
+        "Niermeyer": niermeyer_spo2(altitude, sex),
+        "Tüshaus": tushaus_cascade_spo2(altitude),
     }
