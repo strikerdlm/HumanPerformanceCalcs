@@ -346,6 +346,121 @@ export function cosmicDoseRate(altitude_ft: number, isPolar: boolean = false): n
   return rate;
 }
 
+/**
+ * Predict arterial PaO₂ at altitude from ground PaO₂ and FEV₁%.
+ *
+ * Best-performing regression: PaO₂_alt = 0.453·PaO₂_ground + 0.386·FEV₁(%) + 2.44
+ *
+ * Input units: PaO₂ in mmHg, FEV₁ in percent predicted.
+ */
+export function pao2AtAltitude(PaO2_ground_mmHg: number, FEV1_percent: number): number {
+  return 0.453 * PaO2_ground_mmHg + 0.386 * FEV1_percent + 2.44;
+}
+
+/**
+ * HAPE-risk model — Suona et al. (BMJ Open 2023;13:e074161), Figure 2A nomogram.
+ *
+ * Implementation note: digitized point assignments converted to probability via a
+ * logistic calibration that matches the nomogram's "Total Points → Risk" scale.
+ * Educational/research use only.
+ */
+export type TransportMode = 'plane' | 'train' | 'vehicle';
+
+export interface HAPERiskResult {
+  /** Predicted probability of HAPE in [0, 1]. */
+  probability: number;
+  /** Nomogram total points before logistic conversion. */
+  total_points: number;
+  /** Identifier of the underlying model implementation. */
+  model_used: 'with_spo2';
+}
+
+const HAPE_AGE_POINTS: Record<string, number> = {
+  '<25': 12.0,
+  '25-34': 20.0,
+  '34-46': 0.0,
+  '>46': 10.0,
+};
+
+const HAPE_TRANSPORT_POINTS: Record<TransportMode, number> = {
+  plane: 0.0,
+  vehicle: 40.0,
+  train: 70.0,
+};
+
+const HAPE_FATIGUE_POINTS = { false: 0.0, true: 10.0 } as const;
+const HAPE_COUGH_POINTS = { false: 0.0, true: 20.0 } as const;
+const HAPE_SPUTUM_POINTS = { false: 0.0, true: 18.0 } as const;
+
+// Calibrated so 73% SpO2 → 32 pts (paper worked example).
+const HAPE_SPO2_SCALE = 32.0 / (100.0 - 73.0);
+
+// Calibrated logistic from Figure 2A bottom scale (~40 pts → 0.7, ~60 pts → 0.9).
+const HAPE_LOGIT_INTERCEPT = -1.85;
+const HAPE_LOGIT_SLOPE = 0.0675;
+
+function hapeAgeCategory(age_years: number): keyof typeof HAPE_AGE_POINTS {
+  if (age_years < 25) return '<25';
+  if (age_years < 34) return '25-34';
+  if (age_years <= 46) return '34-46';
+  return '>46';
+}
+
+function hapeSpo2ToPoints(spo2_percent: number): number {
+  return Math.max(0, (100 - spo2_percent) * HAPE_SPO2_SCALE);
+}
+
+function hapePointsToProbability(total_points: number): number {
+  const logit = HAPE_LOGIT_INTERCEPT + HAPE_LOGIT_SLOPE * total_points;
+  return 1 / (1 + Math.exp(-logit));
+}
+
+/**
+ * Estimate HAPE risk via the Suona 2023 nomogram (with SpO₂).
+ *
+ * @param age_years Age in years (study inclusion criterion: ≥14 years)
+ * @param spo2_percent Peripheral oxygen saturation at altitude (%)
+ * @param transport_mode 'plane' | 'train' | 'vehicle'
+ * @param fatigue Patient reports fatigue
+ * @param cough Patient reports cough of any kind (auto-set if sputum=true)
+ * @param sputum Patient reports coughing sputum (white or pink, foamy)
+ */
+export function hapeRiskSuona2023(
+  age_years: number,
+  spo2_percent: number,
+  transport_mode: TransportMode,
+  fatigue: boolean,
+  cough: boolean,
+  sputum: boolean
+): HAPERiskResult {
+  if (age_years < 14) {
+    throw new Error('age_years must be >= 14 (study inclusion criterion)');
+  }
+  if (!(spo2_percent > 0 && spo2_percent <= 100)) {
+    throw new Error('spo2_percent must be in (0, 100]');
+  }
+  const mode = transport_mode.trim().toLowerCase() as TransportMode;
+  if (mode !== 'plane' && mode !== 'train' && mode !== 'vehicle') {
+    throw new Error("transport_mode must be 'plane', 'train', or 'vehicle'");
+  }
+
+  // If sputum is reported, cough is implied.
+  const coughEffective = sputum ? true : cough;
+
+  const ageCat = hapeAgeCategory(age_years);
+  const ptsAge = HAPE_AGE_POINTS[ageCat];
+  const ptsTransport = HAPE_TRANSPORT_POINTS[mode];
+  const ptsFatigue = HAPE_FATIGUE_POINTS[String(fatigue) as 'true' | 'false'];
+  const ptsCough = HAPE_COUGH_POINTS[String(coughEffective) as 'true' | 'false'];
+  const ptsSputum = HAPE_SPUTUM_POINTS[String(sputum) as 'true' | 'false'];
+  const ptsSpo2 = hapeSpo2ToPoints(spo2_percent);
+
+  const totalPoints = ptsAge + ptsTransport + ptsFatigue + ptsCough + ptsSputum + ptsSpo2;
+  const probability = Math.max(0, Math.min(1, hapePointsToProbability(totalPoints)));
+
+  return { probability, total_points: totalPoints, model_used: 'with_spo2' };
+}
+
 // Utility functions
 export function metersToFeet(meters: number): number {
   return meters / 0.3048;
