@@ -647,3 +647,307 @@ export function computeOxygenDelivery(inputs: OxygenDeliveryInputs): OxygenDeliv
     do2i_ml_o2_min_m2: bsa !== null ? do2 / bsa : null,
   };
 }
+
+// ---------------------------------------------------------------------------
+// CHA₂DS₂-VASc — Lip et al. (2010) CHEST 137:263
+// ---------------------------------------------------------------------------
+
+export interface CHA2DS2VAScInputs {
+  congestive_heart_failure: boolean;
+  hypertension: boolean;
+  age_years: number;
+  diabetes: boolean;
+  stroke_tia_or_thromboembolism: boolean;
+  vascular_disease: boolean;
+  female: boolean;
+}
+
+export interface CHA2DS2VAScResult {
+  score: number;
+  stroke_risk_percent_per_year: number;
+  recommendation: string;
+}
+
+// Annual stroke risk by CHA₂DS₂-VASc score (Lip et al. 2010, Friberg 2012 refinement).
+const CHA2DS2_RISK_PERCENT: Record<number, number> = {
+  0: 0,
+  1: 1.3,
+  2: 2.2,
+  3: 3.2,
+  4: 4.0,
+  5: 6.7,
+  6: 9.8,
+  7: 9.6,
+  8: 6.7,
+  9: 15.2,
+};
+
+/**
+ * Compute the CHA₂DS₂-VASc stroke-risk score for non-valvular AF.
+ *
+ *   C  Congestive heart failure        +1
+ *   H  Hypertension                    +1
+ *   A₂ Age ≥ 75                        +2
+ *   D  Diabetes mellitus               +1
+ *   S₂ Stroke / TIA / thromboembolism  +2
+ *   V  Vascular disease (MI, PAD, aortic plaque) +1
+ *   A  Age 65–74                       +1
+ *   Sc Sex category (female)           +1
+ *
+ * Reference:
+ *   Lip G.Y.H., Nieuwlaat R., Pisters R., Lane D.A., Crijns H.J. (2010).
+ *   CHEST 137:263. https://doi.org/10.1378/chest.09-1584
+ */
+export function cha2ds2Vasc(inputs: CHA2DS2VAScInputs): CHA2DS2VAScResult {
+  if (!Number.isFinite(inputs.age_years) || inputs.age_years < 0) {
+    throw new Error('age_years must be a finite, non-negative number');
+  }
+  let score = 0;
+  if (inputs.congestive_heart_failure) score += 1;
+  if (inputs.hypertension) score += 1;
+  if (inputs.age_years >= 75) score += 2;
+  else if (inputs.age_years >= 65) score += 1;
+  if (inputs.diabetes) score += 1;
+  if (inputs.stroke_tia_or_thromboembolism) score += 2;
+  if (inputs.vascular_disease) score += 1;
+  if (inputs.female) score += 1;
+
+  const risk = CHA2DS2_RISK_PERCENT[score] ?? 15.2;
+  let recommendation: string;
+  if (score === 0) {
+    recommendation = 'No antithrombotic therapy generally required';
+  } else if (score === 1) {
+    recommendation =
+      'Consider oral anticoagulant therapy (especially in males); decision shared with patient';
+  } else {
+    recommendation = 'Oral anticoagulant therapy recommended';
+  }
+
+  return { score, stroke_risk_percent_per_year: risk, recommendation };
+}
+
+// ---------------------------------------------------------------------------
+// HAS-BLED — Pisters et al. (2010) CHEST 138:1093
+// ---------------------------------------------------------------------------
+
+export interface HasBledInputs {
+  hypertension_uncontrolled: boolean;
+  abnormal_renal_function: boolean;
+  abnormal_liver_function: boolean;
+  stroke_history: boolean;
+  bleeding_history_or_predisposition: boolean;
+  labile_inr: boolean;
+  age_years: number;
+  drugs_antiplatelet_or_nsaid: boolean;
+  alcohol_excess: boolean;
+}
+
+export interface HasBledResult {
+  score: number;
+  bleeding_risk_category: 'low' | 'moderate' | 'high';
+  bleeds_per_100_patient_years: number;
+}
+
+/**
+ * Compute HAS-BLED bleeding-risk score for AF patients on anticoagulation.
+ *
+ *   H  Hypertension (uncontrolled, SBP > 160)        +1
+ *   A  Abnormal renal function                        +1
+ *   A  Abnormal liver function                        +1
+ *   S  Stroke history                                 +1
+ *   B  Bleeding history or predisposition             +1
+ *   L  Labile INR                                     +1
+ *   E  Elderly (age > 65)                             +1
+ *   D  Drugs (antiplatelet / NSAID)                   +1
+ *   D  Alcohol excess (≥ 8 units/week)                +1
+ *
+ * Reference:
+ *   Pisters R., Lane D.A., Nieuwlaat R., et al. (2010). CHEST 138:1093.
+ *   https://doi.org/10.1378/chest.10-0134
+ */
+export function hasBled(inputs: HasBledInputs): HasBledResult {
+  if (!Number.isFinite(inputs.age_years) || inputs.age_years < 0) {
+    throw new Error('age_years must be a finite, non-negative number');
+  }
+  let score = 0;
+  if (inputs.hypertension_uncontrolled) score += 1;
+  if (inputs.abnormal_renal_function) score += 1;
+  if (inputs.abnormal_liver_function) score += 1;
+  if (inputs.stroke_history) score += 1;
+  if (inputs.bleeding_history_or_predisposition) score += 1;
+  if (inputs.labile_inr) score += 1;
+  if (inputs.age_years > 65) score += 1;
+  if (inputs.drugs_antiplatelet_or_nsaid) score += 1;
+  if (inputs.alcohol_excess) score += 1;
+
+  // Bleeds per 100 patient-years (Pisters 2010 Euro Heart Survey cohort).
+  const RISK: Record<number, number> = {
+    0: 1.13,
+    1: 1.02,
+    2: 1.88,
+    3: 3.74,
+    4: 8.7,
+    5: 12.5,
+    6: 12.5,
+    7: 12.5,
+    8: 12.5,
+    9: 12.5,
+  };
+
+  let category: HasBledResult['bleeding_risk_category'];
+  if (score < 2) category = 'low';
+  else if (score === 2) category = 'moderate';
+  else category = 'high';
+
+  return {
+    score,
+    bleeding_risk_category: category,
+    bleeds_per_100_patient_years: RISK[score] ?? 12.5,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// STOP-BANG — Chung et al. (2008) Anesthesiology 108:812
+// ---------------------------------------------------------------------------
+
+export interface StopBangInputs {
+  /** Snoring loudly. */
+  snoring: boolean;
+  /** Daytime tiredness. */
+  tired: boolean;
+  /** Observed apnea. */
+  observed_apnea: boolean;
+  /** High blood pressure (or treated for hypertension). */
+  pressure: boolean;
+  /** BMI > 35 kg/m². */
+  bmi_gt_35: boolean;
+  /** Age > 50. */
+  age_gt_50: boolean;
+  /** Neck circumference > 40 cm (16 in). */
+  neck_gt_40cm: boolean;
+  /** Male sex. */
+  male: boolean;
+}
+
+export interface StopBangResult {
+  score: number;
+  risk_category: 'low' | 'intermediate' | 'high';
+}
+
+/**
+ * Compute the STOP-BANG score for obstructive sleep apnea screening.
+ *
+ *   STOP    Snoring, Tired, Observed apnea, Pressure
+ *   BANG    BMI > 35, Age > 50, Neck > 40 cm, Gender (male)
+ *
+ * Risk stratification:
+ *   0–2 yes : low
+ *   3–4 yes : intermediate
+ *   5–8 yes : high
+ *
+ * High risk also when ≥2 STOP items + (male OR BMI > 35 OR neck > 40 cm).
+ *
+ * Reference:
+ *   Chung F., Yegneswaran B., Liao P., et al. (2008). STOP questionnaire:
+ *   a tool to screen patients for obstructive sleep apnea. Anesthesiology
+ *   108:812. https://doi.org/10.1097/ALN.0b013e31816d83e4
+ */
+export function stopBangScore(inputs: StopBangInputs): StopBangResult {
+  const stop_yes =
+    Number(inputs.snoring) + Number(inputs.tired) + Number(inputs.observed_apnea) + Number(inputs.pressure);
+  const bang_yes =
+    Number(inputs.bmi_gt_35) + Number(inputs.age_gt_50) + Number(inputs.neck_gt_40cm) + Number(inputs.male);
+  const score = stop_yes + bang_yes;
+
+  let category: StopBangResult['risk_category'];
+  if (score >= 5) category = 'high';
+  else if (score >= 3) category = 'intermediate';
+  else category = 'low';
+
+  // Refinement: 2+ STOP items + male / BMI>35 / neck>40 → reclassify intermediate as high.
+  if (
+    category !== 'high' &&
+    stop_yes >= 2 &&
+    (inputs.male || inputs.bmi_gt_35 || inputs.neck_gt_40cm)
+  ) {
+    category = 'high';
+  }
+
+  return { score, risk_category: category };
+}
+
+// ---------------------------------------------------------------------------
+// Karvonen target HR + Borg RPE
+// ---------------------------------------------------------------------------
+
+export type MaxHeartRateFormula = 'fox220' | 'tanaka2001';
+
+export interface KarvonenResult {
+  hr_max_bpm: number;
+  hr_reserve_bpm: number;
+  target_hr_low_bpm: number;
+  target_hr_high_bpm: number;
+  formula: MaxHeartRateFormula;
+}
+
+/**
+ * Karvonen (1957) heart-rate-reserve target zone.
+ *
+ *   HR_max    = 220 − age (Fox)  OR  208 − 0.7·age (Tanaka 2001)
+ *   HRR       = HR_max − HR_rest
+ *   Target HR = HR_rest + intensity·HRR
+ *
+ * Reference:
+ *   Karvonen M.J., Kentala E., Mustala O. (1957). The effects of training
+ *   on heart rate; a longitudinal study. Ann. Med. Exp. Biol. Fenn. 35:307.
+ *   Tanaka H., Monahan K.D., Seals D.R. (2001). Age-predicted maximal heart
+ *   rate revisited. J. Am. Coll. Cardiol. 37:153.
+ */
+export function karvonenTargetHR(args: {
+  age_years: number;
+  resting_hr_bpm: number;
+  intensity_low_fraction: number;
+  intensity_high_fraction: number;
+  hr_max_formula?: MaxHeartRateFormula;
+}): KarvonenResult {
+  if (!Number.isFinite(args.age_years) || args.age_years < 0) {
+    throw new Error('age_years must be a finite, non-negative number');
+  }
+  if (!Number.isFinite(args.resting_hr_bpm) || args.resting_hr_bpm <= 0) {
+    throw new Error('resting_hr_bpm must be a finite, positive number');
+  }
+  for (const f of [args.intensity_low_fraction, args.intensity_high_fraction]) {
+    if (!Number.isFinite(f) || f < 0 || f > 1) {
+      throw new Error('intensity fractions must lie in [0, 1]');
+    }
+  }
+  if (args.intensity_high_fraction < args.intensity_low_fraction) {
+    throw new Error('intensity_high_fraction must be >= intensity_low_fraction');
+  }
+
+  const formula = args.hr_max_formula ?? 'tanaka2001';
+  const hr_max = formula === 'fox220' ? 220 - args.age_years : 208 - 0.7 * args.age_years;
+  const hrr = hr_max - args.resting_hr_bpm;
+  return {
+    hr_max_bpm: hr_max,
+    hr_reserve_bpm: hrr,
+    target_hr_low_bpm: args.resting_hr_bpm + args.intensity_low_fraction * hrr,
+    target_hr_high_bpm: args.resting_hr_bpm + args.intensity_high_fraction * hrr,
+    formula,
+  };
+}
+
+/**
+ * Approximate HR for a Borg RPE rating (6–20 scale).
+ *
+ *   HR_bpm ≈ 10 · RPE
+ *
+ * Reference: Borg G.A.V. (1982). Psychophysical bases of perceived exertion.
+ * Med. Sci. Sports Exerc. 14:377.
+ */
+export function borgRPEtoHR(rpe: number): number {
+  if (!Number.isFinite(rpe) || rpe < 6 || rpe > 20) {
+    throw new Error('Borg RPE must be in [6, 20]');
+  }
+  return rpe * 10;
+}
