@@ -451,3 +451,133 @@ export function simulatePHSTrajectory(
   
   return points;
 }
+
+// ---------------------------------------------------------------------------
+// Physiological Strain Index — Moran et al. (1998)
+// ---------------------------------------------------------------------------
+
+export type PsiCategory =
+  | 'no_strain'
+  | 'low_strain'
+  | 'moderate_strain'
+  | 'high_strain'
+  | 'very_high_strain';
+
+export interface PsiResult {
+  /** PSI value on a 0–10 scale. */
+  psi: number;
+  category: PsiCategory;
+  core_component: number;
+  heart_rate_component: number;
+}
+
+/**
+ * Physiological Strain Index (PSI) — Moran, Shitzer, Pandolf (1998).
+ *
+ *   PSI = 5·(T_ct − T_c0) / (39 − T_c0) + 5·(HR_t − HR_0) / (180 − HR_0)
+ *
+ * Bounds: 0 (no strain) – 10 (extreme strain). Each component contributes
+ * up to 5 points. Asymptotes 39 °C and 180 bpm reflect typical experimental
+ * upper limits for healthy adults.
+ *
+ * Reference:
+ *   Moran D.S., Shitzer A., Pandolf K.B. (1998). A physiological strain
+ *   index to evaluate heat stress. Am. J. Physiol. 275(1):R129–R134.
+ *   https://doi.org/10.1152/ajpregu.1998.275.1.R129
+ */
+export function physiologicalStrainIndex(args: {
+  initial_core_temp_C: number;
+  final_core_temp_C: number;
+  initial_heart_rate_bpm: number;
+  final_heart_rate_bpm: number;
+}): PsiResult {
+  const { initial_core_temp_C, final_core_temp_C, initial_heart_rate_bpm, final_heart_rate_bpm } =
+    args;
+
+  for (const [name, v] of Object.entries(args)) {
+    if (!Number.isFinite(v)) {
+      throw new Error(`${name} must be a finite number`);
+    }
+  }
+  if (initial_core_temp_C >= 39) {
+    throw new Error('initial_core_temp_C must be < 39 °C (PSI asymptote)');
+  }
+  if (initial_heart_rate_bpm >= 180) {
+    throw new Error('initial_heart_rate_bpm must be < 180 bpm (PSI asymptote)');
+  }
+
+  const coreComp = (5 * (final_core_temp_C - initial_core_temp_C)) / (39 - initial_core_temp_C);
+  const hrComp =
+    (5 * (final_heart_rate_bpm - initial_heart_rate_bpm)) / (180 - initial_heart_rate_bpm);
+  const psi = Math.max(0, Math.min(10, coreComp + hrComp));
+
+  let category: PsiCategory;
+  if (psi < 2) category = 'no_strain';
+  else if (psi < 4) category = 'low_strain';
+  else if (psi < 6) category = 'moderate_strain';
+  else if (psi < 8) category = 'high_strain';
+  else category = 'very_high_strain';
+
+  return {
+    psi,
+    category,
+    core_component: coreComp,
+    heart_rate_component: hrComp,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Sweat-rate prediction — Gonzalez et al. (2009) / Sawka extension
+// ---------------------------------------------------------------------------
+
+export interface SweatRateGonzalez2009Inputs {
+  /** Required evaporation, W/m². */
+  e_req_w_m2: number;
+  /** Maximum evaporative capacity of the environment, W/m². */
+  e_max_w_m2: number;
+  /** Body surface area, m² (used to convert g·m⁻²·h⁻¹ → L/h). */
+  bsa_m2?: number;
+}
+
+export interface SweatRateGonzalez2009Result {
+  /** Mass-rate of sweat per unit body surface area, g·m⁻²·h⁻¹. */
+  m_sw_g_m2_h: number;
+  /** Whole-body sweat rate, L/h (only when `bsa_m2` is supplied). */
+  m_sw_L_h: number | null;
+}
+
+/**
+ * Whole-body sweat-rate prediction — Gonzalez et al. (2009).
+ *
+ *   m_sw (g·m⁻²·h⁻¹) = 147 + 1.527·E_req − 0.87·E_max
+ *
+ * Validated against laboratory and field exercise data including Sawka et al.
+ * later refinements; integrates required evaporation and the environment's
+ * maximum evaporative capacity.
+ *
+ * Reference:
+ *   Gonzalez R.R., Cheuvront S.N., Montain S.J., Goodman D.A., Blanchard L.A.,
+ *   Berglund L.G., Sawka M.N. (2009). Expanded prediction equations of human
+ *   sweat loss and water needs. J. Appl. Physiol. 107(2):379–388.
+ *   https://doi.org/10.1152/japplphysiol.00089.2009
+ */
+export function sweatRateGonzalez2009(
+  args: SweatRateGonzalez2009Inputs
+): SweatRateGonzalez2009Result {
+  const { e_req_w_m2, e_max_w_m2, bsa_m2 } = args;
+  if (!Number.isFinite(e_req_w_m2) || !Number.isFinite(e_max_w_m2)) {
+    throw new Error('e_req_w_m2 and e_max_w_m2 must be finite numbers');
+  }
+  const m_sw = 147 + 1.527 * e_req_w_m2 - 0.87 * e_max_w_m2;
+  const positive = Math.max(0, m_sw);
+
+  let m_sw_L_h: number | null = null;
+  if (bsa_m2 !== undefined) {
+    if (!Number.isFinite(bsa_m2) || bsa_m2 <= 0) {
+      throw new Error('bsa_m2 must be a finite, positive number');
+    }
+    m_sw_L_h = (positive * bsa_m2) / 1000;
+  }
+
+  return { m_sw_g_m2_h: positive, m_sw_L_h };
+}
