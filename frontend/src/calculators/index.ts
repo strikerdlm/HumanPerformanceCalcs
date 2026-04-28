@@ -57,6 +57,8 @@ export {
   simulatePHSTrajectory,
   physiologicalStrainIndex,
   sweatRateGonzalez2009,
+  phsHrModel,
+  ontarioSweatRate,
   type WBGTResult,
   type HeatStressIndexResult,
   type PHSResult,
@@ -66,6 +68,12 @@ export {
   type PsiResult,
   type SweatRateGonzalez2009Inputs,
   type SweatRateGonzalez2009Result,
+  type PhsHrInputs,
+  type PhsHrResult,
+  type PhsHrHeatExchanges,
+  type PhsHrTempRisk,
+  type PhsHrStrainRisk,
+  type PhsHrSweatRisk,
 } from './heatStress';
 
 // ─── PHS parameter sweeps ──────────────────────────────────────────────
