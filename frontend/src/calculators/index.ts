@@ -278,6 +278,91 @@ export {
   type ArieliPowerResult,
 } from './oxygenToxicity';
 
+// ─── Caffeine pharmacokinetics ─────────────────────────────────────────
+export {
+  caffeinePharmacokinetics,
+  caffeineSteadyState,
+  DEFAULT_CAFFEINE_PARAMS,
+  type CaffeineDose,
+  type CaffeineParameters,
+  type CaffeineSeries,
+} from './caffeine';
+
+// ─── Heat acclimatization (NIOSH 2016-106 + ACGIH 2024 TLV) ───────────
+export {
+  nioshHeatAcclimatizationDays,
+  acgihTlvWbgt,
+  wbgtWorkRestRatio,
+  type MetabolicClass,
+  type AcclimatizationStatus,
+  type WorkRestRegime,
+  type WorkFraction,
+  type WorkRestRecommendation,
+} from './acclimatization';
+
+// ─── Sleep / sleepiness questionnaires ─────────────────────────────────
+export {
+  kssScoreInterpret,
+  epworthScore,
+  psqiScore,
+  type KssLevel,
+  type KssResult,
+  type EpworthCategory,
+  type EpworthResult,
+  type PsqiCategory,
+  type PsqiComponents,
+  type PsqiResult,
+} from './sleep';
+
+// ─── Hypobaric DCS probability (Conkin / Webb logistic models) ────────
+export {
+  dcsProbabilityAltitude,
+  dcsTimeToProbability,
+  DCS_DEFAULT_COEFFS,
+  type DcsModel,
+  type DcsLogisticCoefficients,
+  type DcsProbabilityInputs,
+  type DcsProbabilityResult,
+} from './dcs_risk';
+
+// ─── Postural ergonomics — REBA + RULA ────────────────────────────────
+export {
+  rebaScore,
+  rulaScore,
+  type RebaInputs,
+  type RebaResult,
+  type RebaTrunkPosition,
+  type RebaNeckPosition,
+  type RebaLegPosition,
+  type RebaUpperArm,
+  type RebaLowerArm,
+  type RebaWrist,
+  type RebaCoupling,
+  type RulaInputs,
+  type RulaResult,
+  type RulaUpperArm,
+  type RulaLowerArm,
+  type RulaWrist,
+  type RulaWristTwist,
+  type RulaNeck,
+  type RulaTrunk,
+  type RulaLegs,
+  type RulaForceLoad,
+} from './ergonomics';
+
+// ─── Aircrew cosmic radiation dose (CARI-7-style) ─────────────────────
+export {
+  aircrewDoseRate,
+  crewCosmicDoseEstimate,
+  annualCrewDose,
+  type GeomagneticLatitudeBand,
+  type SolarPhase,
+  type CrewDoseRateInputs,
+  type CrewDoseRateResult,
+  type RouteSegment,
+  type RouteDoseResult,
+} from './aircrew_dose';
+
 // ─── Fatigue & circadian ───────────────────────────────────────────────
 export {
   mitlerPerformance,
