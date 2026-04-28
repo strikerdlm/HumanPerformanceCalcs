@@ -358,6 +358,30 @@ export function pao2AtAltitude(PaO2_ground_mmHg: number, FEV1_percent: number): 
 }
 
 /**
+ * Inverse ISA (troposphere) — altitude in metres for a given barometric
+ * pressure in hPa.
+ *
+ *   altitude_ft = (1 − (P / P0)^(1/5.255)) · 145 366.45
+ *
+ * Valid for ISA troposphere (0 – 11 km). Above 11 km the relation is no
+ * longer monotonic in the simple closed form and a numerical inverse of
+ * `standardAtmosphere` should be used.
+ */
+export function altitudeFromPressure(
+  pressure_hPa: number,
+  sea_level_pressure_hPa: number = 1013.25
+): { altitude_m: number; altitude_ft: number } {
+  if (!Number.isFinite(pressure_hPa) || pressure_hPa <= 0) {
+    throw new Error('pressure_hPa must be > 0');
+  }
+  if (!Number.isFinite(sea_level_pressure_hPa) || sea_level_pressure_hPa <= 0) {
+    throw new Error('sea_level_pressure_hPa must be > 0');
+  }
+  const altitude_ft = (1 - Math.pow(pressure_hPa / sea_level_pressure_hPa, 1 / 5.255)) * 145366.45;
+  return { altitude_ft, altitude_m: altitude_ft * 0.3048 };
+}
+
+/**
  * HAPE-risk model — Suona et al. (BMJ Open 2023;13:e074161), Figure 2A nomogram.
  *
  * Implementation note: digitized point assignments converted to probability via a
