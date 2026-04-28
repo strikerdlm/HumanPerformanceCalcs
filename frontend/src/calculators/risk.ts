@@ -214,6 +214,26 @@ export function assessTargetAcquisition(
 }
 
 /**
+ * Compute cycles-on-target along a chosen critical dimension (Nyquist: cycles ≈ pixels/2).
+ */
+export function cyclesOnTarget(args: {
+  system: ImagingSystem;
+  target: Target;
+  rangeM: number;
+  criticalDimension?: 'width' | 'height';
+}): number {
+  const criticalDimension = args.criticalDimension ?? 'height';
+  if (args.rangeM <= 0) throw new Error('rangeM must be > 0');
+  const dimM = criticalDimension === 'width' ? args.target.widthM : args.target.heightM;
+  const fovDeg = criticalDimension === 'width' ? args.system.horizontalFovDeg : args.system.verticalFovDeg;
+  const px = criticalDimension === 'width' ? args.system.horizontalPixels : args.system.verticalPixels;
+  const ifov = fovDeg / px;
+  const theta = angularSizeDeg(dimM, args.rangeM);
+  const pixOnTarget = theta / ifov;
+  return Math.max(0, pixOnTarget / 2);
+}
+
+/**
  * Compute max range for a given number of required cycles.
  */
 export function rangeForRequiredCycles(
@@ -291,6 +311,171 @@ export function computeWbvExposure(inputs: WbvInputs): WbvResult {
     a8Lower: A8_LOWER, a8Upper: A8_UPPER,
     timeToA8LowerH: timeToLowerS !== null ? timeToLowerS / 3600 : null,
     timeToA8UpperH: timeToUpperS !== null ? timeToUpperS / 3600 : null,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Whole-Body Vibration — extended ISO 2631-1 helpers (matches Python wbv module)
+// ──────────────────────────────────────────────────────────────────────
+
+export interface WbvAxisWeightedRms {
+  awx_m_s2: number;
+  awy_m_s2: number;
+  awz_m_s2: number;
+}
+
+export interface WbvExposureInputsExt {
+  axis_aw: WbvAxisWeightedRms;
+  exposure_duration_s: number;
+  vdv_m_s1_75?: number;
+  vdv_reference_duration_s?: number;
+}
+
+export interface WbvExposureResultExt {
+  aw_combined_m_s2: number;
+  a8_m_s2: number;
+  a8_zone: WbvZone;
+  a8_lower_bound_m_s2: number;
+  a8_upper_bound_m_s2: number;
+  vdv8_m_s1_75: number | null;
+  vdv8_zone: WbvZone | null;
+  vdv8_lower_bound_m_s1_75: number;
+  vdv8_upper_bound_m_s1_75: number;
+  time_to_a8_lower_s: number | null;
+  time_to_a8_upper_s: number | null;
+  time_to_vdv8_lower_s: number | null;
+  time_to_vdv8_upper_s: number | null;
+}
+
+function ensureNonNegativeFinite(name: string, value: number): number {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${name} must be a finite, non-negative number`);
+  }
+  return value;
+}
+
+function ensurePositiveFinite(name: string, value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`${name} must be a finite, positive number`);
+  }
+  return value;
+}
+
+/**
+ * Combine axis frequency-weighted r.m.s. accelerations using kx=ky=1.4, kz=1.0.
+ */
+export function combineAxesIso2631(axis_aw: WbvAxisWeightedRms): number {
+  const awx = ensureNonNegativeFinite('awx_m_s2', axis_aw.awx_m_s2);
+  const awy = ensureNonNegativeFinite('awy_m_s2', axis_aw.awy_m_s2);
+  const awz = ensureNonNegativeFinite('awz_m_s2', axis_aw.awz_m_s2);
+  return Math.sqrt(Math.pow(KX * awx, 2) + Math.pow(KY * awy, 2) + Math.pow(KZ * awz, 2));
+}
+
+/** A(8) from a frequency-weighted r.m.s. acceleration over an exposure duration. */
+export function a8FromAw(args: { aw_m_s2: number; exposure_duration_s: number }): number {
+  const aw = ensureNonNegativeFinite('aw_m_s2', args.aw_m_s2);
+  const t = ensurePositiveFinite('exposure_duration_s', args.exposure_duration_s);
+  return aw * Math.sqrt(t / HOURS_8_S);
+}
+
+/** Scale a VDV measured over `reference_duration_s` to an 8h-equivalent VDV. */
+export function vdv8FromVdv(args: {
+  vdv_m_s1_75: number;
+  reference_duration_s: number;
+  exposure_duration_s: number;
+}): number {
+  const vdv = ensureNonNegativeFinite('vdv_m_s1_75', args.vdv_m_s1_75);
+  const tRef = ensurePositiveFinite('reference_duration_s', args.reference_duration_s);
+  const tExp = ensurePositiveFinite('exposure_duration_s', args.exposure_duration_s);
+  const vdvExp = vdv * Math.pow(tExp / tRef, 0.25);
+  return vdvExp * Math.pow(HOURS_8_S / tExp, 0.25);
+}
+
+/** Solve exposure duration (s) required to reach a target A(8) at a constant aw. */
+export function timeToReachA8(args: { aw_m_s2: number; target_a8_m_s2: number }): number | null {
+  const aw = ensureNonNegativeFinite('aw_m_s2', args.aw_m_s2);
+  const target = ensurePositiveFinite('target_a8_m_s2', args.target_a8_m_s2);
+  if (aw <= 0) return null;
+  return HOURS_8_S * Math.pow(target / aw, 2);
+}
+
+/** Solve exposure duration (s) required to reach a target VDV(8). */
+export function timeToReachVdv8(args: {
+  vdv_m_s1_75: number;
+  reference_duration_s: number;
+  target_vdv8_m_s1_75: number;
+}): number | null {
+  const vdv = ensureNonNegativeFinite('vdv_m_s1_75', args.vdv_m_s1_75);
+  const tRef = ensurePositiveFinite('reference_duration_s', args.reference_duration_s);
+  const target = ensurePositiveFinite('target_vdv8_m_s1_75', args.target_vdv8_m_s1_75);
+  if (vdv <= 0) return null;
+  return tRef * Math.pow(target / Math.max(vdv, 1e-12), 4);
+}
+
+/** Classify A(8) against the Health Guidance Caution Zone (Orelaja et al., 2019). */
+export function classifyHgczA8(a8_m_s2: number): WbvZone {
+  const a8 = ensureNonNegativeFinite('a8_m_s2', a8_m_s2);
+  if (a8 < A8_LOWER) return 'below_lower';
+  if (a8 > A8_UPPER) return 'above_upper';
+  return 'within_hgcz';
+}
+
+/** Classify VDV(8) against the HGCZ thresholds (8.5 / 17 m/s^1.75). */
+export function classifyHgczVdv8(vdv8_m_s1_75: number): WbvZone {
+  const v = ensureNonNegativeFinite('vdv8_m_s1_75', vdv8_m_s1_75);
+  if (v < VDV_LOWER) return 'below_lower';
+  if (v > VDV_UPPER) return 'above_upper';
+  return 'within_hgcz';
+}
+
+/** Full WBV exposure computation matching Python `compute_wbv_exposure`. */
+export function computeWbvExposureExt(inputs: WbvExposureInputsExt): WbvExposureResultExt {
+  const aw = combineAxesIso2631(inputs.axis_aw);
+  const tExp = ensurePositiveFinite('exposure_duration_s', inputs.exposure_duration_s);
+  const a8 = a8FromAw({ aw_m_s2: aw, exposure_duration_s: tExp });
+  const a8_zone = classifyHgczA8(a8);
+
+  let vdv8: number | null = null;
+  let vdv8_zone: WbvZone | null = null;
+  let time_to_vdv8_lower_s: number | null = null;
+  let time_to_vdv8_upper_s: number | null = null;
+
+  if (inputs.vdv_m_s1_75 !== undefined) {
+    if (inputs.vdv_reference_duration_s === undefined) {
+      throw new Error('vdv_reference_duration_s is required when vdv_m_s1_75 is provided');
+    }
+    vdv8 = vdv8FromVdv({
+      vdv_m_s1_75: inputs.vdv_m_s1_75,
+      reference_duration_s: inputs.vdv_reference_duration_s,
+      exposure_duration_s: tExp,
+    });
+    vdv8_zone = classifyHgczVdv8(vdv8);
+    time_to_vdv8_lower_s = timeToReachVdv8({
+      vdv_m_s1_75: inputs.vdv_m_s1_75,
+      reference_duration_s: inputs.vdv_reference_duration_s,
+      target_vdv8_m_s1_75: VDV_LOWER,
+    });
+    time_to_vdv8_upper_s = timeToReachVdv8({
+      vdv_m_s1_75: inputs.vdv_m_s1_75,
+      reference_duration_s: inputs.vdv_reference_duration_s,
+      target_vdv8_m_s1_75: VDV_UPPER,
+    });
+  }
+
+  return {
+    aw_combined_m_s2: aw,
+    a8_m_s2: a8,
+    a8_zone,
+    a8_lower_bound_m_s2: A8_LOWER,
+    a8_upper_bound_m_s2: A8_UPPER,
+    vdv8_m_s1_75: vdv8,
+    vdv8_zone,
+    vdv8_lower_bound_m_s1_75: VDV_LOWER,
+    vdv8_upper_bound_m_s1_75: VDV_UPPER,
+    time_to_a8_lower_s: timeToReachA8({ aw_m_s2: aw, target_a8_m_s2: A8_LOWER }),
+    time_to_a8_upper_s: timeToReachA8({ aw_m_s2: aw, target_a8_m_s2: A8_UPPER }),
+    time_to_vdv8_lower_s,
+    time_to_vdv8_upper_s,
   };
 }
 
