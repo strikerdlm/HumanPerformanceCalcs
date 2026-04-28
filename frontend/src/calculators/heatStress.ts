@@ -581,3 +581,282 @@ export function sweatRateGonzalez2009(
 
   return { m_sw_g_m2_h: positive, m_sw_L_h };
 }
+
+// ---------------------------------------------------------------------------
+// PHS-HR (Predicted Heat Strain using Heart Rate) — Malchaire 2006
+// ---------------------------------------------------------------------------
+
+export type PhsHrTempRisk = 'low' | 'moderate' | 'high' | 'very_high';
+export type PhsHrStrainRisk = 'low' | 'moderate' | 'high' | 'very_high';
+export type PhsHrSweatRisk = 'low' | 'moderate' | 'high' | 'very_high';
+
+export interface PhsHrInputs {
+  /** Air temperature, °C. */
+  air_temp_C: number;
+  /** Mean radiant temperature, °C. */
+  mean_radiant_temp_C: number;
+  /** Ambient water-vapour pressure, kPa. */
+  vapor_pressure_kPa: number;
+  /** Air velocity, m/s. */
+  air_velocity_m_s: number;
+  /** Current heart rate, bpm. */
+  hr_bpm: number;
+  /** Resting heart rate, bpm. */
+  hr_rest_bpm: number;
+  /** Clothing insulation, clo. */
+  clothing_clo: number;
+  /** Age, years. */
+  age_years: number;
+  /** Body weight, kg. */
+  weight_kg: number;
+  /** Skin temperature assumption, °C (default 35.0). */
+  skin_temp_C?: number;
+  /** Exposure duration, minutes (default 60). */
+  duration_min?: number;
+}
+
+export interface PhsHrHeatExchanges {
+  metabolic_rate_W_m2: number;
+  convective_W_m2: number;
+  radiative_W_m2: number;
+  evaporative_required_W_m2: number;
+  evaporative_max_W_m2: number;
+  evaporative_actual_W_m2: number;
+  heat_storage_W_m2: number;
+  skin_temp_C: number;
+}
+
+export interface PhsHrResult {
+  heat_exchanges: PhsHrHeatExchanges;
+  core_temperature_rise_C: number;
+  predicted_core_temp_C: number;
+  heart_rate_strain: number;
+  predicted_sweat_rate_L_h: number;
+  heat_strain_index: number;
+  duration_min: number;
+  interpretation: {
+    core_temperature_risk: PhsHrTempRisk;
+    heat_strain_risk: PhsHrStrainRisk;
+    sweat_rate_risk: PhsHrSweatRisk;
+    recommendations: string[];
+  };
+}
+
+const PHS_HR_DELTA_HV_KJ_KG = 2454; // Latent heat of vaporization
+const PHS_HR_SIGMA_W_M2_K4 = 5.67e-8;
+const PHS_HR_CSP_BODY_KJ_KG_K = 3.5;
+
+function ensureRange(name: string, value: number, lo: number, hi: number): number {
+  if (!Number.isFinite(value) || value < lo || value > hi) {
+    throw new Error(`${name} must be a finite number in [${lo}, ${hi}]`);
+  }
+  return value;
+}
+
+function phsHrInterpret(result: {
+  predicted_core_temp_C: number;
+  heat_strain_index: number;
+  predicted_sweat_rate_L_h: number;
+  heat_exchanges: PhsHrHeatExchanges;
+}): PhsHrResult['interpretation'] {
+  const core = result.predicted_core_temp_C;
+  const strain = result.heat_strain_index;
+  const sweat = result.predicted_sweat_rate_L_h;
+
+  let temp_risk: PhsHrTempRisk;
+  if (core < 37.5) temp_risk = 'low';
+  else if (core < 38.0) temp_risk = 'moderate';
+  else if (core < 38.5) temp_risk = 'high';
+  else temp_risk = 'very_high';
+
+  let strain_risk: PhsHrStrainRisk;
+  if (strain < 2) strain_risk = 'low';
+  else if (strain < 4) strain_risk = 'moderate';
+  else if (strain < 6) strain_risk = 'high';
+  else strain_risk = 'very_high';
+
+  let sweat_risk: PhsHrSweatRisk;
+  if (sweat < 0.5) sweat_risk = 'low';
+  else if (sweat < 1.0) sweat_risk = 'moderate';
+  else if (sweat < 1.5) sweat_risk = 'high';
+  else sweat_risk = 'very_high';
+
+  const recs: string[] = [];
+  if (core > 38.0) recs.push('Implement active cooling measures immediately');
+  if (strain > 4) {
+    recs.push('Reduce work intensity or duration');
+    recs.push('Increase rest periods in cool environment');
+  }
+  if (sweat > 1.0) {
+    recs.push(`Ensure fluid replacement rate of at least ${(sweat * 1.5).toFixed(2)} L/h`);
+  }
+  if (
+    result.heat_exchanges.evaporative_required_W_m2 >
+    result.heat_exchanges.evaporative_max_W_m2
+  ) {
+    recs.push('Consider lighter, more breathable clothing');
+    recs.push('Increase air movement if possible');
+  }
+  return {
+    core_temperature_risk: temp_risk,
+    heat_strain_risk: strain_risk,
+    sweat_rate_risk: sweat_risk,
+    recommendations: recs,
+  };
+}
+
+/**
+ * Predicted Heat Strain using Heart Rate (PHS-HR).
+ *
+ * Heart-rate-derived metabolic rate fed into a simplified PHS-style heat
+ * balance to estimate core-temperature rise, sweat rate, and a 0–10 heat
+ * strain index. Distinct from the ISO 7933 PHS implementation in
+ * `predictedHeatStrain`, which is metabolic-rate-driven.
+ *
+ * References:
+ *   ISO 7933:2004 — Ergonomics of the thermal environment.
+ *   Malchaire J. (2006). Predicted Heat Strain Model.
+ *
+ * SCOPE: research/education. Validate site-specific assumptions before use.
+ */
+export function phsHrModel(inputs: PhsHrInputs): PhsHrResult {
+  ensureRange('air_temp_C', inputs.air_temp_C, 0, 60);
+  ensureRange('mean_radiant_temp_C', inputs.mean_radiant_temp_C, 0, 80);
+  ensureRange('vapor_pressure_kPa', inputs.vapor_pressure_kPa, 0, 10);
+  ensureRange('air_velocity_m_s', inputs.air_velocity_m_s, 0, 5);
+  ensureRange('hr_bpm', inputs.hr_bpm, 50, 200);
+  ensureRange('hr_rest_bpm', inputs.hr_rest_bpm, 40, 100);
+  ensureRange('clothing_clo', inputs.clothing_clo, 0, 3);
+  ensureRange('age_years', inputs.age_years, 18, 70);
+  ensureRange('weight_kg', inputs.weight_kg, 40, 150);
+
+  const tsk = inputs.skin_temp_C ?? 35.0;
+  const duration_min = inputs.duration_min ?? 60;
+  if (!Number.isFinite(duration_min) || duration_min <= 0) {
+    throw new Error('duration_min must be a finite, positive number');
+  }
+
+  // Heat-transfer coefficients
+  const hc = 8.3 * Math.pow(inputs.air_velocity_m_s, 0.6);
+  const he = 16.5 * hc;
+
+  // Metabolic rate from HR ratio (capped at 400 W/m²)
+  let M = 58.2; // resting baseline
+  const hr_max = 220 - inputs.age_years;
+  const hr_reserve = hr_max - inputs.hr_rest_bpm;
+  if (inputs.hr_bpm > inputs.hr_rest_bpm && hr_reserve > 0) {
+    const ratio = (inputs.hr_bpm - inputs.hr_rest_bpm) / hr_reserve;
+    M = Math.min(400, 58.2 + ratio * (300 - 58.2));
+  }
+
+  // Clothing factors
+  const Rcl = inputs.clothing_clo * 0.155; // m²·K/W
+  const permeability = 0.45 + 0.55 * Math.exp(-0.3 * inputs.clothing_clo);
+
+  // Convective heat exchange
+  const C = (hc * (tsk - inputs.air_temp_C)) / (1 + hc * Rcl);
+
+  // Linearized radiative coefficient and exchange
+  const Tmrt_K = inputs.mean_radiant_temp_C + 273.15;
+  const hr_rad =
+    (4 * PHS_HR_SIGMA_W_M2_K4 * Math.pow(Tmrt_K, 3)) /
+    (1 + Rcl * 4 * PHS_HR_SIGMA_W_M2_K4 * Math.pow(Tmrt_K, 3));
+  const R = hr_rad * (tsk - inputs.mean_radiant_temp_C);
+
+  // Required evaporation, max evaporation, actual evaporation
+  const E_req = M - C - R;
+  const psk_sat = 0.6105 * Math.exp((17.27 * tsk) / (tsk + 237.3));
+  const E_max = he * (psk_sat - inputs.vapor_pressure_kPa) * permeability;
+  const E_act = Math.min(E_req, E_max);
+
+  // Heat storage and core temperature rise
+  const S = M - C - R - E_act;
+  const dT_core =
+    (S * duration_min * 60) / (inputs.weight_kg * PHS_HR_CSP_BODY_KJ_KG_K * 1000);
+  const T_core_final = 37.0 + dT_core;
+
+  // Heart-rate strain and sweat rate
+  const hr_strain = (inputs.hr_bpm - inputs.hr_rest_bpm) / Math.max(1e-9, hr_max - inputs.hr_rest_bpm);
+  const sweat = Math.max(0, E_act / PHS_HR_DELTA_HV_KJ_KG);
+
+  // 0–10 heat strain index
+  const hsi = Math.min(
+    10,
+    Math.max(0, 5 * ((T_core_final - 37) / 2) + 5 * Math.max(0, hr_strain))
+  );
+
+  const heat_exchanges: PhsHrHeatExchanges = {
+    metabolic_rate_W_m2: M,
+    convective_W_m2: C,
+    radiative_W_m2: R,
+    evaporative_required_W_m2: E_req,
+    evaporative_max_W_m2: E_max,
+    evaporative_actual_W_m2: E_act,
+    heat_storage_W_m2: S,
+    skin_temp_C: tsk,
+  };
+
+  const partial = {
+    predicted_core_temp_C: T_core_final,
+    heat_strain_index: hsi,
+    predicted_sweat_rate_L_h: sweat,
+    heat_exchanges,
+  };
+
+  return {
+    heat_exchanges,
+    core_temperature_rise_C: dT_core,
+    predicted_core_temp_C: T_core_final,
+    heart_rate_strain: hr_strain,
+    predicted_sweat_rate_L_h: sweat,
+    heat_strain_index: hsi,
+    duration_min,
+    interpretation: phsHrInterpret(partial),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Ontario sweat-rate estimator — Malpica (legacy)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ontario sweat-rate estimator (Diego Malpica's legacy implementation).
+ *
+ *   sweat_L_h = 0.019 · BSA_m² · (Δhr · Δt) / (hr_rest · t_rest)
+ *
+ * Where Δhr = hr_exercise − hr_rest, Δt = t_exercise − t_rest, and
+ * BSA_m² is supplied by the caller (e.g. via `bsaMosteller`). Returns
+ * sweat rate in L/h (the legacy script multiplies by 1000 only for mL/h
+ * display).
+ *
+ * NOTE: this empirical estimator is included for parity with the legacy
+ * Streamlit suite. For research-grade prediction prefer `sweatRateGonzalez2009`.
+ */
+export function ontarioSweatRate(args: {
+  bsa_m2: number;
+  hr_rest_bpm: number;
+  hr_exercise_bpm: number;
+  t_rest_C: number;
+  t_exercise_C: number;
+}): { sweat_rate_L_h: number; sweat_rate_mL_h: number } {
+  const { bsa_m2, hr_rest_bpm, hr_exercise_bpm, t_rest_C, t_exercise_C } = args;
+  if (!Number.isFinite(bsa_m2) || bsa_m2 <= 0) {
+    throw new Error('bsa_m2 must be a finite, positive number');
+  }
+  if (!Number.isFinite(hr_rest_bpm) || hr_rest_bpm <= 0) {
+    throw new Error('hr_rest_bpm must be a finite, positive number');
+  }
+  if (!Number.isFinite(hr_exercise_bpm) || hr_exercise_bpm <= 0) {
+    throw new Error('hr_exercise_bpm must be a finite, positive number');
+  }
+  if (!Number.isFinite(t_rest_C) || t_rest_C === 0) {
+    throw new Error('t_rest_C must be finite and non-zero (Kelvin should be used to avoid this)');
+  }
+  if (!Number.isFinite(t_exercise_C)) {
+    throw new Error('t_exercise_C must be a finite number');
+  }
+  const dHR = hr_exercise_bpm - hr_rest_bpm;
+  const dT = t_exercise_C - t_rest_C;
+  const sweat_L_h = (0.019 * bsa_m2 * (dHR * dT)) / (hr_rest_bpm * t_rest_C);
+  return { sweat_rate_L_h: sweat_L_h, sweat_rate_mL_h: sweat_L_h * 1000 };
+}
