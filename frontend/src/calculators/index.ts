@@ -23,6 +23,7 @@ export {
   gLocTime,
   cosmicDoseRate,
   pao2AtAltitude,
+  altitudeFromPressure,
   hapeRiskSuona2023,
   metersToFeet,
   feetToMeters,
@@ -54,11 +55,17 @@ export {
   utci,
   utciCategory,
   simulatePHSTrajectory,
+  physiologicalStrainIndex,
+  sweatRateGonzalez2009,
   type WBGTResult,
   type HeatStressIndexResult,
   type PHSResult,
   type UTCIResult,
   type PHSTrajectoryPoint,
+  type PsiCategory,
+  type PsiResult,
+  type SweatRateGonzalez2009Inputs,
+  type SweatRateGonzalez2009Result,
 } from './heatStress';
 
 // ─── PHS parameter sweeps ──────────────────────────────────────────────
@@ -73,7 +80,14 @@ export {
 } from './simulationSweeps';
 
 // ─── Cold-stress physiology ────────────────────────────────────────────
-export { peakShiveringIntensity } from './coldStress';
+export {
+  peakShiveringIntensity,
+  windChillTemperature,
+  frostbiteRiskFromWindChill,
+  frostbiteTimeMinutes,
+  type FrostbiteRisk,
+  type WindChillResult,
+} from './coldStress';
 export {
   coldWaterSurvival,
   coldWaterSurvivalHayward1975Minutes,
@@ -166,6 +180,11 @@ export {
   oxygenDelivery,
   computeAaGradient,
   computeOxygenDelivery,
+  cha2ds2Vasc,
+  hasBled,
+  stopBangScore,
+  karvonenTargetHR,
+  borgRPEtoHR,
   type BMRResult,
   type BSAResults,
   type EGFRResult,
@@ -178,7 +197,86 @@ export {
   type AaNormalModel,
   type OxygenDeliveryInputs,
   type OxygenDeliveryResult,
+  type CHA2DS2VAScInputs,
+  type CHA2DS2VAScResult,
+  type HasBledInputs,
+  type HasBledResult,
+  type StopBangInputs,
+  type StopBangResult,
+  type MaxHeartRateFormula,
+  type KarvonenResult,
 } from './clinical';
+
+// ─── NIOSH lifting equation ────────────────────────────────────────────
+export {
+  recommendedWeightLimit,
+  liftingIndex,
+  compositeLiftingIndex,
+  NIOSH_LOAD_CONSTANT_KG,
+  type NioshLiftInputs,
+  type NioshLiftResult,
+  type WorkDuration,
+  type CouplingQuality,
+} from './niosh_lifting';
+
+// ─── Hand-arm vibration (ISO 5349-1 + HSE points) ──────────────────────
+export {
+  ahvFromAxes,
+  havA8FromAhv,
+  havExposurePoints,
+  totalHavExposurePoints,
+  classifyHavZone,
+  computeHavExposure,
+  HAV_EAV_M_S2,
+  HAV_ELV_M_S2,
+  type HavInputs,
+  type HavResult,
+  type HavZone,
+} from './hav';
+
+// ─── US EPA Air Quality Index (2024) ───────────────────────────────────
+export {
+  aqiFromConcentration,
+  overallAqi,
+  aqiCategory,
+  type AqiPollutant,
+  type AqiCategory,
+  type AqiSubIndex,
+  type AqiOverall,
+} from './aqi';
+
+// ─── Industrial ventilation + respirator selection ─────────────────────
+export {
+  dilutionAirflow,
+  respiratorMaximumUseConcentration,
+  ashrae62OutdoorAirflow,
+  lpsToCfm,
+  cfmToLps,
+  OSHA_ASSIGNED_PROTECTION_FACTORS,
+  ASHRAE_62_1_RATES,
+  type RespiratorClass,
+  type Ashrae62Occupancy,
+} from './ventilation';
+
+// ─── Nitrox / mixed-gas dive helpers ───────────────────────────────────
+export {
+  maxOperatingDepth,
+  equivalentAirDepth,
+  bestMix,
+  equivalentNarcoticDepth,
+  endNoOxygenNarcosis,
+  po2AtDepth,
+} from './nitrox';
+
+// ─── Oxygen toxicity (CNS / OTU / Arieli Power Equation) ───────────────
+export {
+  cnsToxicityFraction,
+  pulmonaryOTU,
+  totalPulmonaryOTU,
+  arieliPowerEquation,
+  type NoaaCnsResult,
+  type ArieliPowerResult,
+} from './oxygenToxicity';
 
 // ─── Fatigue & circadian ───────────────────────────────────────────────
 export {
