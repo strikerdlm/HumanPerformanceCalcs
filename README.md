@@ -1,5 +1,7 @@
 # Aerospace Medicine & Human Performance Calculator Suite
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19955917.svg)](https://doi.org/10.5281/zenodo.19955917)
+
 A peer-reviewed, deterministic library of aerospace medicine, industrial hygiene, and occupational health calculators — written in TypeScript, delivered as ES modules, and usable from Node, the browser, FastAPI, or Claude.
 
 > **Author:** Dr. Diego Malpica, MD — Aerospace Medicine Specialist, Universidad Nacional de Colombia · [GitHub](https://github.com/strikerdlm)
@@ -198,29 +200,6 @@ The repo deliberately uses **no runtime dependencies** in the calculator layer. 
 
 ---
 
-## Scientific basis
-
-Each module's file-level JSDoc carries a primary citation. Selected sources:
-
-- ICAO Doc 7488-CD (1993). *Manual of the ICAO Standard Atmosphere*.
-- ISO 2533:1975, ISO 5349-1:2001, ISO 7933:2004, ISO 2631-1:1997.
-- ACGIH (2024). *TLVs and BEIs*.
-- NIOSH (2016). Pub. 2016-106 *Occupational Exposure to Heat*.
-- NIOSH (1994). Pub. 94-110 *Applications Manual for the Revised NIOSH Lifting Equation*.
-- EPA AirNow (2024). Technical Assistance Document for Reporting of Daily Air Quality.
-- USAF Flight Surgeon Handbook (3rd ed., 1991).
-- Ernsting, Nicholson, Rainford (2016). *Aviation Medicine*, 4th ed.
-- West, J.B. (2012). *Respiratory Physiology: The Essentials*, 9th ed.
-- Lip et al. (2010), Pisters et al. (2010), Chung et al. (2008), Wells et al. (2003).
-- Conkin J. (2011). NASA TM-2011-216147.
-- Bardin & Lambertsen (1970); Arieli et al. (2002).
-- Hignett & McAtamney (2000); McAtamney & Corlett (1993).
-- Bühlmann (1995); Erik Baker (1998) *Gradient Factors*.
-
-The complete reference list is the union of every JSDoc citation in `frontend/src/calculators/*.ts`.
-
----
-
 ## Disclaimer
 
 For research and educational use only. **Not** intended for clinical decision-making, operational flight safety, or regulatory compliance without independent validation by qualified professionals (Certified Industrial Hygienist, Aerospace Medicine Specialist, Diving Medical Officer, etc.).
@@ -230,3 +209,87 @@ For research and educational use only. **Not** intended for clinical decision-ma
 ## License
 
 Academic use. See repository for the canonical license file.
+
+---
+
+## References
+
+All citations are drawn directly from the file-level JSDoc in `frontend/src/calculators/*.ts`. The entries below are the union of every source referenced across the 28 calculator modules.
+
+### International Standards
+
+- International Civil Aviation Organization. *Manual of the ICAO Standard Atmosphere*. Doc 7488-CD. 3rd ed. Montréal: ICAO; 1993.
+- International Organization for Standardization. *Standard Atmosphere*. ISO 2533:1975. Geneva: ISO; 1975.
+- International Organization for Standardization. *Ergonomics of the thermal environment — Assessment of heat stress using the WBGT (wet bulb globe temperature) index*. ISO 7243:2017. Geneva: ISO; 2017.
+- International Organization for Standardization. *Ergonomics of the thermal environment — Analytical determination and interpretation of heat stress using calculation of the predicted heat strain*. ISO 7933:2023. Geneva: ISO; 2023.
+- International Organization for Standardization. *Mechanical vibration — Measurement and evaluation of human exposure to hand-transmitted vibration*. ISO 5349-1:2001. Geneva: ISO; 2001.
+- International Organization for Standardization. *Mechanical vibration and shock — Evaluation of human exposure to whole-body vibration*. ISO 2631-1:1997. Geneva: ISO; 1997.
+
+### Occupational & Environmental Health Guidelines
+
+- American Conference of Governmental Industrial Hygienists. *TLVs and BEIs: Threshold Limit Values for Chemical Substances and Physical Agents and Biological Exposure Indices*. Cincinnati: ACGIH; 2024.
+- National Institute for Occupational Safety and Health. *Criteria for a Recommended Standard: Occupational Exposure to Heat and Hot Environments*. DHHS (NIOSH) Publication No. 2016-106. Cincinnati: NIOSH; 2016.
+- Waters TR, Putz-Anderson V, Garg A, Fine LJ. *Revised NIOSH Equation for the Design and Evaluation of Manual Lifting Tasks*. DHHS (NIOSH) Publication No. 94-110. Cincinnati: NIOSH; 1994.
+- US Environmental Protection Agency. *Technical Assistance Document for the Reporting of Daily Air Quality — the Air Quality Index (AQI)*. EPA-454/B-24-002. Research Triangle Park: EPA; 2024.
+
+### Aerospace & Aviation Medicine Textbooks
+
+- United States Air Force. *Flight Surgeon's Guide*. 3rd ed. Brooks Air Force Base: USAF School of Aerospace Medicine; 1991.
+- Ernsting J, Nicholson AN, Rainford DJ, editors. *Aviation Medicine*. 4th ed. London: CRC Press; 2016.
+- West JB. *Respiratory Physiology: The Essentials*. 9th ed. Philadelphia: Lippincott Williams & Wilkins; 2012.
+
+### Atmospheric & Altitude Physiology
+
+1. Stull R. Wet-bulb temperature from relative humidity and air temperature. J Appl Meteorol Climatol. 2011;50(11):2267–9. https://doi.org/10.1175/JAMC-D-11-0143.1
+
+### Heat & Thermal Stress
+
+2. Moran DS, Shitzer A, Pandolf KB. A physiological strain index to evaluate heat stress. Am J Physiol Regul Integr Comp Physiol. 1998;275(1):R129–34. https://doi.org/10.1152/ajpregu.1998.275.1.R129
+3. Belding HS, Hatch TF. Index for evaluating heat stress in terms of resulting physiological strains. Heat Pip Air Cond. 1955;27(8):129–36.
+4. Bröde P, Fiala D, Blazejczyk K, Holmér I, Jendritzky G, Kampmann B, et al. Deriving the operational procedure for the Universal Thermal Climate Index (UTCI). Int J Biometeorol. 2012;56(3):481–94. https://doi.org/10.1007/s00484-011-0454-1
+5. Gonzalez RR, Cheuvront SN, Montain SJ, Goodman DA, Blanchard LA, Berglund LG, et al. Expanded prediction equations of human sweat loss and water needs. J Appl Physiol. 2009;107(2):379–88. https://doi.org/10.1152/japplphysiol.00089.2009
+6. Malchaire J. Predicted heat strain model. Ann Occup Hyg. 2006;50(2):123–32. https://doi.org/10.1093/annhyg/mei083
+
+### Decompression & Diving
+
+7. Bühlmann AA. *Decompression — Decompression Sickness*. Berlin: Springer-Verlag; 1984.
+8. Baker EC. *Clearing Up the Confusion About "Gradient Factors"*. [Technical report on the internet]. 1998 [cited 2024]. Available from: https://www.shearwater.com/wp-content/uploads/2012/08/Gradient_Factors.pdf
+9. Bardin H, Lambertsen CJ. *A Quantitative Method for Calculating Pulmonary Toxicity: Use of the "Unit Pulmonary Toxicity Dose" (UPTD)*. Report of the Institute for Environmental Medicine. Philadelphia: University of Pennsylvania; 1970.
+10. Arieli R, Rashkovan G, Moskovitz Y, Ertracht O. PCO₂ and O₂ toxicity seizure latency in rats: the time-dose relationship. J Appl Physiol. 2002;93(3):1098–105. https://doi.org/10.1152/japplphysiol.00244.2002
+11. Webb JT, Pilmanis AA. Altitude decompression sickness between 6858 and 9144 m following a 1-h prebreathe protocol. Aviat Space Environ Med. 1993;64(4):283–8.
+12. Conkin J. *Preventing Decompression Sickness Over a Range of Ambulation and Microgravity*. NASA Technical Memorandum TM-2011-216147. Houston: NASA Johnson Space Center; 2011.
+
+### Fatigue, Circadian & Sleep
+
+13. Hursh SR, Raslear TG, Schultz T, Elliott RD. *The Fatigue Avoidance Scheduling Tool: Modeling to Minimize the Risk of Fatigue-Related Performance Failures in Transportation Operations*. International Patent WO2012015383A1. 2012.
+14. Tanaka H, Monahan KD, Seals DR. Age-predicted maximal heart rate revisited. J Am Coll Cardiol. 2001;37(1):153–6. https://doi.org/10.1016/S0735-1097(00)01054-8
+15. Karvonen MJ, Kentala E, Mustala O. The effects of training on heart rate: a longitudinal study. Ann Med Exp Biol Fenn. 1957;35(3):307–15.
+
+### Ergonomics & Industrial Hygiene
+
+16. Waters TR, Putz-Anderson V, Garg A, Fine LJ. Revised NIOSH equation for the design and evaluation of manual lifting tasks. Ergonomics. 1993;36(7):749–76. https://doi.org/10.1080/00140139308967940
+17. Hignett S, McAtamney L. Rapid entire body assessment (REBA). Appl Ergon. 2000;31(2):201–5. https://doi.org/10.1016/S0003-6870(99)00039-3
+18. McAtamney L, Corlett EN. RULA: a survey method for the investigation of work-related upper limb disorders. Appl Ergon. 1993;24(2):91–9. https://doi.org/10.1016/0003-6870(93)90080-S
+
+### Clinical & Aviation-Medical Scoring
+
+19. Mifflin MD, St Jeor ST, Hill LA, Scott BJ, Daugherty SA, Koh YO. A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr. 1990;51(2):241–7. https://doi.org/10.1093/ajcn/51.2.241
+20. Du Bois D, Du Bois EF. A formula to estimate the approximate surface area if height and weight be known. Arch Intern Med. 1916;17(6):863–71. https://doi.org/10.1001/archinte.1916.00080130002002
+21. Mosteller RD. Simplified calculation of body-surface area. N Engl J Med. 1987;317(17):1098. https://doi.org/10.1056/NEJM198710223171717
+22. Haycock GB, Schwartz GJ, Wisotsky DH. Geometric method for measuring body surface area: a height-weight formula validated in infants, children, and adults. J Pediatr. 1978;93(1):62–6. https://doi.org/10.1016/S0022-3476(78)80601-5
+23. Boyd E. *The Growth of the Surface Area of the Human Body*. Minneapolis: University of Minnesota Press; 1935.
+24. Levey AS, Stevens LA, Schmid CH, Zhang YL, Castro AF 3rd, Feldman HI, et al. A new equation to estimate glomerular filtration rate. Ann Intern Med. 2009;150(9):604–12. https://doi.org/10.7326/0003-4819-150-9-200905050-00006
+25. Enright PL, Sherrill DL. Reference equations for the six-minute walk in healthy adults. Am J Respir Crit Care Med. 1998;158(5 Pt 1):1384–7. https://doi.org/10.1164/ajrccm.158.5.9710086
+26. Wells PS, Anderson DR, Rodger M, Ginsberg JS, Kearon C, Gent M, et al. Derivation of a simple clinical model to categorize patients' probability of pulmonary embolism: increasing the models utility with the SimpliRED D-dimer. Thromb Haemost. 2001;85(3):416–20. https://doi.org/10.1055/s-0037-1615630
+27. Wells PS, Owen C, Doucette S, Fergusson D, Tran H. Does this patient have deep vein thrombosis? JAMA. 2003;295(2):199–207. https://doi.org/10.1001/jama.295.2.199
+28. Filley GF, MacIntosh DJ, Wright GW. Carbon monoxide uptake and pulmonary diffusing capacity in normal subjects at rest and during exercise. J Clin Invest. 1954;33(4):530–9. https://doi.org/10.1172/JCI102926
+29. Lip GYH, Nieuwlaat R, Pisters R, Lane DA, Crijns HJ. Refining clinical risk stratification for predicting stroke and thromboembolism in atrial fibrillation using a novel risk factor-based approach: the Euro Heart Survey on atrial fibrillation. Chest. 2010;137(2):263–72. https://doi.org/10.1378/chest.09-1584
+30. Pisters R, Lane DA, Nieuwlaat R, de Vos CB, Crijns HJ, Lip GY. A novel user-friendly score (HAS-BLED) to assess 1-year risk of major bleeding in patients with atrial fibrillation: the Euro Heart Survey. Chest. 2010;138(5):1093–100. https://doi.org/10.1378/chest.10-0134
+31. Chung F, Yegneswaran B, Liao P, Chung SA, Vairavanathan S, Islam S, et al. STOP questionnaire: a tool to screen patients for obstructive sleep apnea. Anesthesiology. 2008;108(5):812–21. https://doi.org/10.1097/ALN.0b013e31816d83e4
+32. Borg GAV. Psychophysical bases of perceived exertion. Med Sci Sports Exerc. 1982;14(5):377–81. https://doi.org/10.1249/00005768-198205000-00012
+
+### Radiation — Aircrew Cosmic Dose
+
+- Federal Aviation Administration. *CARI-7: Computer Program for Calculating Cosmic Radiation Dose Rate*. Washington DC: FAA Civil Aerospace Medical Institute; 2014.
+- International Commission on Radiological Protection. *Occupational Intakes of Radionuclides: Part 1*. ICRP Publication 132. Ann ICRP. 2016;45(Suppl).
+- National Council on Radiation Protection and Measurements. *Radiation Protection Guidance for Activities in Low-Earth Orbit*. NCRP Report No. 132. Bethesda: NCRP; 2000.
